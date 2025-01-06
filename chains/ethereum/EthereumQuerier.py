@@ -3,10 +3,6 @@ import web3
 from base_models import BaseQuerier
 from typing import Optional
 
-ETHERSCAN_API_KEY = 'SNUFUDQ2JBM7KXKXEZUZCST4DIYW63TP61'
-QUICKNODE_ENDPOINT = "https://empty-intensive-borough.quiknode.pro/3fb0280d24123ab6e2b1cae33478a4c549252972"
-
-
 class EthereumQuerier(BaseQuerier):
     """
     Ethereum-specific querier.
