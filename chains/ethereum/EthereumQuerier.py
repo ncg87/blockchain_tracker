@@ -1,41 +1,54 @@
 import requests
 import web3
-from base_models import BaseQuerier
+from ..base_models import BaseQuerier
 from typing import Optional
+from config import Settings
+import logging
 
 class EthereumQuerier(BaseQuerier):
     """
     Ethereum-specific querier.
     """
     
-    def __init__(self, provider: str):
-        super().__init__(provider)
+    def __init__(self):
+        super().__init__()
 
     def get_block(self, block_number: Optional[int] = None):
         """
         Fetch a block by number. If not specified, fetch the latest block.
         """
-        if not self.is_connected():
-            raise ConnectionError("Failed to connect to the Ethereum provider.")
-        
-        if block_number is None:
-            return self.w3.eth.get_block('latest', full_transactions=True)
-        
-        return self.w3.eth.get_block(block_number, full_transactions=True)
+        self.logger.info(f"Fetching block {'latest' if block_number is None else block_number}")
+        try:
+            block = self.w3.eth.get_block('latest' if block_number is None else block_number, full_transactions=True)
+            self.logger.debug(f"Block {block['number']} fetched successfully.")
+            return block
+        except Exception as e:
+            self.logger.error(f"Failed to fetch block: {e}")
+            raise
  
     def get_contract_abi(self, contract_address):
         """
         Get the ABI of a contract.
         """
-        url = "https://api.etherscan.io/api"
-        params = {
-            'module': 'contract',
-            'action': 'getabi',
-            'address': contract_address,
-            'apikey': self.etherscan_api_key
-        }
-        response = requests.get(url, params=params)
-        return response.json()['result']
+        self.logger.info(f"Fetching ABI for contract {contract_address}")
+        try:
+            url = "https://api.etherscan.io/api"
+            params = {
+                'module': 'contract',
+                'action': 'getabi',
+                'address': contract_address,
+                'apikey': Settings.ETHERSCAN_API_KEY
+            }
+            response = requests.get(url, params=params)
+            abi = response.json().get('result', None)
+            if abi == 'Contract source code not verified':
+                self.logger.warning(f"Contract {contract_address} source code not verified.")
+                return None
+            self.logger.debug(f"ABI for {contract_address} fetched successfully.")
+            return abi
+        except Exception as e:
+            self.logger.error(f"Failed to fetch ABI: {e}")
+            return None
     
     def is_contract(self, address):
         """
@@ -47,3 +60,16 @@ class EthereumQuerier(BaseQuerier):
         code = self.w3.eth.get_code(address)
         # True for contracts, False for EOAs
         return len(code) > 0 
+    
+    def decode_input_data(self, input_data, address, abi):
+        """
+        Decode the input data of a transaction.
+        """
+        try:
+            contract = self.w3.eth.contract(address=address, abi=abi)
+            decoded = contract.decode_function_input(input_data)
+            self.logger.debug(f"Input data decoded successfully for {address}")
+            return decoded
+        except Exception as e:
+            self.logger.error(f"Failed to decode input data for {address}: {e}")
+            return None
