@@ -1,5 +1,5 @@
 from .BaseQuerier import BaseQuerier
-from .BaseParser import BaseParser
+from .BaseProcessor import BaseProcessor
 from .BasePipeline import BasePipeline
 
-__all__ = ['BaseQuerier', 'BaseParser', 'BasePipeline']
+__all__ = ['BaseQuerier', 'BaseProcessor', 'BasePipeline']
