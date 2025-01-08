@@ -57,4 +57,5 @@ class XRPQuerier(BaseQuerier):
         Stream blocks with full transactions using WebSocket.
         """
         async for full_block in self.ws.run(duration):
-            yield full_block
+            if full_block:
+                yield full_block

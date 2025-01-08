@@ -46,7 +46,8 @@ class BNBQuerier(BaseQuerier):
         Stream blocks with full transactions using WebSocket.
         """
         async for full_block in self.ws.run(duration):
-            yield full_block
+            if full_block:
+                yield full_block
     
     def get_contract_abi(self, contract_address):
         """

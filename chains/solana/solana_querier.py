@@ -70,6 +70,5 @@ class SolanaQuerier(BaseQuerier):
             if slot is not None:
                 # Fetch block concurrently
                 block = await self.get_block(slot)
-                print(block.keys())
                 if block:
                     yield block

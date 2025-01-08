@@ -1,0 +1,175 @@
+2025-01-08 17:48:24,033 - INFO - Applying schema from c:\Users\Nicko\vscodeprojects\blockchain_tracker\database\schema.sql
+2025-01-08 17:48:24,034 - INFO - Schema applied successfully.
+2025-01-08 17:48:24,034 - INFO - Starting Ethereum pipeline...
+2025-01-08 17:48:24,034 - INFO - Initialized Ethereum querier
+2025-01-08 17:48:24,035 - INFO - Initializing WebSocketHandler for Ethereum
+2025-01-08 17:48:24,035 - INFO - Initializing EthereumWebSocketHandler for Ethereum
+2025-01-08 17:48:24,035 - INFO - Initialized Ethereum processor
+2025-01-08 17:48:24,035 - INFO - Starting BNB pipeline...
+2025-01-08 17:48:24,035 - INFO - Initialized BNB querier
+2025-01-08 17:48:24,035 - INFO - Initializing WebSocketHandler for BNB
+2025-01-08 17:48:24,035 - INFO - Initializing BNBWebSocketHandler for BNB
+2025-01-08 17:48:24,035 - INFO - Initialized BNB processor
+2025-01-08 17:48:24,035 - INFO - Starting Bitcoin pipeline...
+2025-01-08 17:48:24,035 - INFO - Initialized Bitcoin querier
+2025-01-08 17:48:24,035 - INFO - BitcoinQuerier initialized
+2025-01-08 17:48:24,035 - INFO - Initialized Bitcoin processor
+2025-01-08 17:48:24,035 - INFO - Starting Solana pipeline...
+2025-01-08 17:48:24,036 - INFO - Initialized Solana querier
+2025-01-08 17:48:24,421 - INFO - Initialized Solana processor
+2025-01-08 17:48:24,422 - INFO - Starting XRP pipeline...
+2025-01-08 17:48:24,422 - INFO - Initialized XRP querier
+2025-01-08 17:48:24,422 - INFO - Initializing WebSocketHandler for XRP
+2025-01-08 17:48:24,422 - INFO - Initializing XRPWebSocketHandler for XRP Ledger
+2025-01-08 17:48:24,422 - INFO - Initialized XRP processor
+2025-01-08 17:48:24,422 - INFO - Starting Ethereum pipeline in real-time mode...
+2025-01-08 17:48:24,423 - INFO - Starting BNB pipeline in real-time mode...
+2025-01-08 17:48:24,424 - INFO - Starting Bitcoin pipeline in real-time mode...
+2025-01-08 17:48:24,424 - INFO - Starting block stream...
+2025-01-08 17:48:24,591 - INFO - New block detected: 000000000000000000001500abef83b2eb21966b9095eab0f7370c9fb2ebdd6c
+2025-01-08 17:48:24,591 - INFO - Fetching the most recent block
+2025-01-08 17:48:25,591 - INFO - Received block: 000000000000000000001500abef83b2eb21966b9095eab0f7370c9fb2ebdd6c
+2025-01-08 17:48:25,592 - INFO - Starting Solana pipeline in real-time mode...
+2025-01-08 17:48:25,592 - INFO - Starting block streaming...
+2025-01-08 17:48:25,592 - INFO - Starting XRP pipeline in real-time mode...
+2025-01-08 17:48:25,592 - INFO - Processing block 878395 on Bitcoin
+2025-01-08 17:48:25,593 - INFO - Inserting block 878395 into database
+2025-01-08 17:48:25,597 - INFO - Block 878395 inserted successfully
+2025-01-08 17:48:26,858 - INFO - Connected to WebSocket: Ethereum
+2025-01-08 17:48:26,859 - INFO - Subscribed to Ethereum updates.
+2025-01-08 17:48:26,859 - INFO - Connected to WebSocket: XRP
+2025-01-08 17:48:26,859 - INFO - Subscribed to XRP updates.
+2025-01-08 17:48:26,859 - INFO - Connected to WebSocket: BNB
+2025-01-08 17:48:26,859 - INFO - Subscribed to BNB updates.
+2025-01-08 17:48:27,047 - INFO - Connected to Solana WebSocket.
+2025-01-08 17:48:27,048 - INFO - Subscribed to slot updates.
+2025-01-08 17:48:27,270 - INFO - Fetching block for slot: 312755874
+2025-01-08 17:48:27,716 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:28,284 - INFO - Received block for slot: 291070941
+2025-01-08 17:48:28,284 - INFO - Fetching block for slot: 312755875
+2025-01-08 17:48:28,572 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:28,925 - INFO - Received block for slot: 291070942
+2025-01-08 17:48:28,926 - INFO - Processing Solana block 291070941
+2025-01-08 17:48:28,926 - INFO - Inserting block 291070941 into database
+2025-01-08 17:48:28,929 - INFO - Block 291070941 inserted successfully
+2025-01-08 17:48:28,937 - INFO - Processing Solana block 291070942
+2025-01-08 17:48:28,937 - INFO - Inserting block 291070942 into database
+2025-01-08 17:48:28,941 - INFO - Block 291070942 inserted successfully
+2025-01-08 17:48:28,941 - INFO - Fetching block for slot: 312755876
+2025-01-08 17:48:29,313 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:29,710 - INFO - Received block for slot: 291070943
+2025-01-08 17:48:29,710 - INFO - Fetching block for slot: 312755877
+2025-01-08 17:48:30,054 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:30,422 - INFO - Received block for slot: 291070944
+2025-01-08 17:48:30,422 - INFO - Fetching block for slot: 312755878
+2025-01-08 17:48:30,750 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:31,113 - INFO - Received block for slot: 291070945
+2025-01-08 17:48:31,113 - INFO - Processing Solana block 291070943
+2025-01-08 17:48:31,113 - INFO - Inserting block 291070943 into database
+2025-01-08 17:48:31,130 - INFO - Block 291070943 inserted successfully
+2025-01-08 17:48:31,138 - INFO - Processing Solana block 291070944
+2025-01-08 17:48:31,138 - INFO - Inserting block 291070944 into database
+2025-01-08 17:48:31,141 - INFO - Block 291070944 inserted successfully
+2025-01-08 17:48:31,148 - INFO - Processing Solana block 291070945
+2025-01-08 17:48:31,148 - INFO - Inserting block 291070945 into database
+2025-01-08 17:48:31,150 - INFO - Block 291070945 inserted successfully
+2025-01-08 17:48:31,380 - INFO - Fetching block for slot: 312755879
+2025-01-08 17:48:31,684 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:31,956 - INFO - Received block for slot: 291070946
+2025-01-08 17:48:31,956 - INFO - Fetching block for slot: 312755880
+2025-01-08 17:48:32,195 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:32,443 - INFO - Received block for slot: 291070947
+2025-01-08 17:48:32,443 - INFO - Fetching block for slot: 312755881
+2025-01-08 17:48:32,860 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:33,282 - INFO - Received block for slot: 291070948
+2025-01-08 17:48:33,282 - INFO - Fetching block for slot: 312755882
+2025-01-08 17:48:33,638 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:34,002 - INFO - Received block for slot: 291070949
+2025-01-08 17:48:34,003 - INFO - Processing Solana block 291070946
+2025-01-08 17:48:34,003 - INFO - Inserting block 291070946 into database
+2025-01-08 17:48:34,008 - INFO - Block 291070946 inserted successfully
+2025-01-08 17:48:34,013 - INFO - Processing Solana block 291070947
+2025-01-08 17:48:34,013 - INFO - Inserting block 291070947 into database
+2025-01-08 17:48:34,016 - INFO - Block 291070947 inserted successfully
+2025-01-08 17:48:34,022 - INFO - Processing Solana block 291070948
+2025-01-08 17:48:34,022 - INFO - Inserting block 291070948 into database
+2025-01-08 17:48:34,025 - INFO - Block 291070948 inserted successfully
+2025-01-08 17:48:34,035 - INFO - Processing Solana block 291070949
+2025-01-08 17:48:34,036 - INFO - Inserting block 291070949 into database
+2025-01-08 17:48:34,039 - INFO - Block 291070949 inserted successfully
+2025-01-08 17:48:34,040 - INFO - Fetching block for slot: 312755883
+2025-01-08 17:48:34,360 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:34,581 - INFO - Received block for slot: 291070950
+2025-01-08 17:48:34,582 - INFO - Fetching block for slot: 312755884
+2025-01-08 17:48:35,015 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:35,476 - INFO - Received block for slot: 291070951
+2025-01-08 17:48:35,476 - INFO - Fetching block for slot: 312755885
+2025-01-08 17:48:35,728 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:35,929 - INFO - Received block for slot: 291070952
+2025-01-08 17:48:35,929 - INFO - Fetching block for slot: 312755886
+2025-01-08 17:48:36,223 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:36,960 - INFO - Received block for slot: 291070953
+2025-01-08 17:48:36,960 - INFO - Fetching block for slot: 312755887
+2025-01-08 17:48:37,337 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:38,220 - INFO - Received block for slot: 291070954
+2025-01-08 17:48:38,220 - INFO - Fetching block for slot: 312755888
+2025-01-08 17:48:38,696 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:39,665 - INFO - Received block for slot: 291070955
+2025-01-08 17:48:39,665 - INFO - Fetching block for slot: 312755889
+2025-01-08 17:48:40,069 - INFO - HTTP Request: POST https://dimensional-omniscient-needle.solana-mainnet.quiknode.pro/b673c5969121edb8f0170e0025333ad090bc12b3 "HTTP/1.1 200 OK"
+2025-01-08 17:48:40,923 - INFO - Received block for slot: 291070956
+2025-01-08 17:48:40,923 - INFO - Stream duration expired.
+2025-01-08 17:48:40,924 - INFO - Processing Solana block 291070950
+2025-01-08 17:48:40,924 - INFO - Inserting block 291070950 into database
+2025-01-08 17:48:40,947 - INFO - Block 291070950 inserted successfully
+2025-01-08 17:48:40,956 - INFO - Processing Solana block 291070951
+2025-01-08 17:48:40,956 - INFO - Inserting block 291070951 into database
+2025-01-08 17:48:40,962 - INFO - Block 291070951 inserted successfully
+2025-01-08 17:48:40,977 - INFO - Processing Solana block 291070952
+2025-01-08 17:48:40,977 - INFO - Inserting block 291070952 into database
+2025-01-08 17:48:40,985 - INFO - Block 291070952 inserted successfully
+2025-01-08 17:48:40,995 - INFO - Processing Solana block 291070953
+2025-01-08 17:48:40,995 - INFO - Inserting block 291070953 into database
+2025-01-08 17:48:41,001 - INFO - Block 291070953 inserted successfully
+2025-01-08 17:48:41,016 - INFO - Processing Solana block 291070954
+2025-01-08 17:48:41,016 - INFO - Inserting block 291070954 into database
+2025-01-08 17:48:41,028 - INFO - Block 291070954 inserted successfully
+2025-01-08 17:48:41,045 - INFO - Processing Solana block 291070955
+2025-01-08 17:48:41,045 - INFO - Inserting block 291070955 into database
+2025-01-08 17:48:41,052 - INFO - Block 291070955 inserted successfully
+2025-01-08 17:48:41,078 - INFO - Processing Solana block 291070956
+2025-01-08 17:48:41,078 - INFO - Inserting block 291070956 into database
+2025-01-08 17:48:41,085 - INFO - Block 291070956 inserted successfully
+2025-01-08 17:48:41,258 - INFO - Block streaming duration ended.
+2025-01-08 17:48:41,258 - INFO - Completed Solana pipeline in real-time mode.
+2025-01-08 17:48:41,296 - INFO - Completed Bitcoin pipeline in real-time mode.
+2025-01-08 17:48:41,367 - INFO - Received block: 45598426
+2025-01-08 17:48:41,368 - INFO - Processing block 0x2b7c6da on BNB
+2025-01-08 17:48:41,368 - INFO - Inserting block 45598426 into database
+2025-01-08 17:48:41,386 - INFO - Block 45598426 inserted successfully
+2025-01-08 17:48:41,438 - INFO - Received ledger: 93329220
+2025-01-08 17:48:41,438 - INFO - Processing block 93329220 on XRP
+2025-01-08 17:48:41,439 - INFO - Inserting block 93329220 into database
+2025-01-08 17:48:41,444 - INFO - Block 93329220 inserted successfully
+2025-01-08 17:48:41,460 - INFO - Received block: 21582847
+2025-01-08 17:48:41,460 - INFO - Processing block 0x14953ff on Ethereum
+2025-01-08 17:48:41,461 - INFO - Inserting block 21582847 into database
+2025-01-08 17:48:41,464 - INFO - Block 21582847 inserted successfully
+2025-01-08 17:48:42,105 - INFO - Received ledger: 93329221
+2025-01-08 17:48:42,106 - INFO - Processing block 93329221 on XRP
+2025-01-08 17:48:42,106 - INFO - Inserting block 93329221 into database
+2025-01-08 17:48:42,124 - INFO - Block 93329221 inserted successfully
+2025-01-08 17:48:42,139 - INFO - WebSocket connection stopped for XRP.
+2025-01-08 17:48:42,140 - INFO - Completed XRP pipeline in real-time mode.
+2025-01-08 17:48:44,145 - INFO - Received block: 45598429
+2025-01-08 17:48:44,146 - INFO - Processing block 0x2b7c6dd on BNB
+2025-01-08 17:48:44,146 - INFO - Inserting block 45598429 into database
+2025-01-08 17:48:44,151 - INFO - Block 45598429 inserted successfully
+2025-01-08 17:48:44,179 - INFO - WebSocket connection stopped for BNB.
+2025-01-08 17:48:44,180 - INFO - BNB pipeline completed in real-time mode.
+2025-01-08 17:48:48,671 - INFO - Received block: 21582848
+2025-01-08 17:48:48,672 - INFO - Processing block 0x1495400 on Ethereum
+2025-01-08 17:48:48,672 - INFO - Inserting block 21582848 into database
+2025-01-08 17:48:48,679 - INFO - Block 21582848 inserted successfully
+2025-01-08 17:48:48,707 - INFO - WebSocket connection stopped for Ethereum.
+2025-01-08 17:48:48,707 - INFO - Completed Ethereum pipeline in real-time mode.
