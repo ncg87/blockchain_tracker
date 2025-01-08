@@ -1,62 +1,40 @@
-from ..base_models import BaseWebSocketHandler
 import json
-
+import asyncio
+from ..base_models import BaseWebSocketHandler
 
 class XRPWebSocketHandler(BaseWebSocketHandler):
     def __init__(self, websocket_url):
-        super().__init__("XRP Ledger", websocket_url)
+        super().__init__("XRP", websocket_url)
         self.logger.info("Initializing XRPWebSocketHandler for XRP Ledger")
 
     def get_subscription_message(self):
         """
-        Define the subscription message for XRP Ledger.
-        Subscribe to both ledger updates and transactions.
+        Define the subscription message for XRP.
         """
         return {
-            "id": 1,
             "command": "subscribe",
-            "streams": ["ledger", "transactions"]
+            "streams": ["ledger"]
         }
 
     def parse_message(self, message):
         """
-        Parse incoming WebSocket messages for XRP Ledger.
-        Extract relevant data based on the message type (ledger or transaction).
+        Parse incoming WebSocket messages for XRP.
+        Extract ledger closure notifications.
         """
-        if "type" in message:
-            if message["type"] == "ledgerClosed":
-                return {"ledger_index": message["ledger_index"]}
-            elif message["type"] == "transaction":
-                return {
-                    "tx_id": message["transaction"]["hash"],
-                    "ledger_index": message["ledger_index"]
-                }
+        if "type" in message and message["type"] == "ledgerClosed":
+            return message["ledger_index"]
         return None
 
-    async def fetch_full_data(self, parsed_message):
+    async def fetch_full_data(self, ledger_index):
         """
-        Fetch full ledger or transaction details based on the parsed message.
-        Use a separate REST or WebSocket request as needed.
+        Fetch full ledger data, including transactions, using WebSocket requests.
         """
-        if "ledger_index" in parsed_message and "tx_id" not in parsed_message:
-            # Fetch full ledger details
-            request_message = {
-                "id": 2,
-                "command": "ledger",
-                "ledger_index": parsed_message["ledger_index"],
-                "transactions": True,
-                "expand": True
-            }
-        elif "tx_id" in parsed_message:
-            # Fetch full transaction details
-            request_message = {
-                "id": 3,
-                "command": "tx",
-                "transaction": parsed_message["tx_id"]
-            }
-        else:
-            return None
-        await self.connection.send(json.dumps(request_message))
+        tx_request = {
+            "command": "ledger",
+            "ledger_index": ledger_index,
+            "transactions": True,
+            "expand": True  # Include full transaction details
+        }
+        await self.connection.send(json.dumps(tx_request))
         response = await self.connection.recv()
         return json.loads(response).get("result")
-

@@ -1,4 +1,5 @@
 from ..base_models import BaseQuerier
+from .xrp_websocket_handler import XRPWebSocketHandler
 from xrpl.clients import JsonRpcClient
 from config import Settings
 from typing import Optional
@@ -14,6 +15,7 @@ class XRPQuerier(BaseQuerier):
         super().__init__('XRP')
         nest_asyncio.apply()
         self.client = JsonRpcClient(Settings.XRP_ENDPOINT)
+        self.ws = XRPWebSocketHandler(Settings.XRP_WEBSOCKET_ENDPOINT)
 
     def is_connected(self) -> bool:
         """
@@ -49,3 +51,10 @@ class XRPQuerier(BaseQuerier):
         except Exception as e:
             self.logger.error(f"Failed to fetch ledger {block_number}: {e}")
             return None
+        
+    async def stream_blocks(self, duration=None):
+        """
+        Stream blocks with full transactions using WebSocket.
+        """
+        async for full_block in self.ws.run(duration):
+            yield full_block

@@ -10,7 +10,7 @@ class XRPProcessor(BaseProcessor):
         super().__init__(database, 'XRP')
         self.querier = querier
         
-    def process_block(self, ledger):
+    async def process_block(self, ledger):
         """
         Process raw block data and store it in the database.
         """
