@@ -6,6 +6,7 @@ from config import Settings
 import logging
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
+from .bnb_websocket_handler import BNBWebSocketHandler
 
 class BNBQuerier(BaseQuerier):
     """
@@ -18,14 +19,16 @@ class BNBQuerier(BaseQuerier):
         
         # PoA middleware for BNB
         self.w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
-    
+        self.ws = BNBWebSocketHandler(Settings.BNB_WEBSOCKET_ENDPOINT)
+        
+        
     def is_connected(self) -> bool:
         """
         Check if the connection to the provider is successful.
         """
         return self.w3.is_connected()
 
-    def get_block(self, block_number: Optional[int] = None):
+    async def get_block(self, block_number: Optional[int] = None):
         """
         Fetch a block by number. If not specified, fetch the latest block.
         """
@@ -37,7 +40,14 @@ class BNBQuerier(BaseQuerier):
         except Exception as e:
             self.logger.error(f"Failed to fetch block: {e}")
             raise
- 
+    
+    async def stream_blocks(self, duration=None):
+        """
+        Stream blocks with full transactions using WebSocket.
+        """
+        async for full_block in self.ws.run(duration):
+            yield full_block
+    
     def get_contract_abi(self, contract_address):
         """
         Get the ABI of a contract.

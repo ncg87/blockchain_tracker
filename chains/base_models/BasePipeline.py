@@ -12,5 +12,9 @@ class BasePipeline(ABC):
         self.logger.info(f"Starting {self.chain_name} pipeline...")
 
     @abstractmethod
-    def run(self, *args, **kwargs):
+    async def run(self, *args, **kwargs):
+        pass
+    
+    @abstractmethod
+    async def run_historical(self, *args, **kwargs):
         pass

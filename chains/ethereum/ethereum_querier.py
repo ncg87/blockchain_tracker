@@ -5,8 +5,8 @@ from typing import Optional
 from config import Settings
 import logging
 from web3 import Web3
-import websocket
 
+from .ethereum_websocket_handler import EthereumWebSocketHandler
 class EthereumQuerier(BaseQuerier):
     """
     Ethereum-specific querier.
@@ -15,7 +15,7 @@ class EthereumQuerier(BaseQuerier):
     def __init__(self):
         super().__init__('Ethereum')
         self.w3 = Web3(Web3.HTTPProvider(Settings.ETHEREUM_ENDPOINT))
-        self.ws = websocket.WebSocketApp(Settings.ETHEREUM_WEBSOCKET_ENDPOINT, on_message=self.on_message, on_error=self.on_error, on_close=self.on_close, on_open=self.on_open)
+        self.ws = EthereumWebSocketHandler(Settings.ETHEREUM_WEBSOCKET_ENDPOINT)
     
     def is_connected(self) -> bool:
         """
@@ -23,7 +23,7 @@ class EthereumQuerier(BaseQuerier):
         """
         return self.w3.is_connected()
 
-    def get_block(self, block_number: Optional[int] = None):
+    async def get_block(self, block_number: Optional[int] = None):
         """
         Fetch a block by number. If not specified, fetch the latest block.
         """
@@ -35,7 +35,16 @@ class EthereumQuerier(BaseQuerier):
         except Exception as e:
             self.logger.error(f"Failed to fetch block: {e}")
             raise
- 
+            
+    async def stream_blocks(self, duration=None):
+        """
+        Stream blocks with full transactions using WebSocket.
+        """
+        async for full_block in self.ws.run(duration):
+            yield full_block
+
+
+    
     def get_contract_abi(self, contract_address):
         """
         Get the ABI of a contract.

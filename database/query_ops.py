@@ -1,4 +1,5 @@
 from database import Database
+from datetime import datetime
 
 class QueryOperations:
     """
@@ -42,3 +43,33 @@ class QueryOperations:
         except Exception as e:
             self.db.logger.error(f"Error querying blocks: {e}")
             return []
+    
+    def query_by_network(self, network, block_number=None):
+        """
+        Query block(s) for a specific network. Optionally filter by block number.
+        :param network: The blockchain network (e.g., 'Ethereum', 'Bitcoin').
+        :param block_number: The specific block number to query (optional).
+        :return: List of blocks matching the criteria.
+        """
+        try:
+            self.db.logger.info(f"Querying blocks for network {network} with block_number={block_number}")
+            
+            if block_number is not None:
+                # Query for a specific block in the network
+                self.db.cursor.execute("""
+                    SELECT * FROM blocks
+                    WHERE network = ? AND block_number = ?
+                """, (network, block_number))
+            else:
+                # Query for all blocks in the network
+                self.db.cursor.execute("""
+                    SELECT * FROM blocks
+                    WHERE network = ?
+                    ORDER BY block_number DESC
+                """, (network,))
+            
+            return self.db.cursor.fetchall()
+        except Exception as e:
+            self.db.logger.error(f"Error querying blocks for network {network}: {e}")
+            return []
+

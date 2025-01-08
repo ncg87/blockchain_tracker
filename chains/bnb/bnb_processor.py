@@ -1,6 +1,7 @@
 import json
-
+from hexbytes import HexBytes
 from ..base_models import BaseProcessor
+from ..utils import decode_hex, normalize_hex
 
 class BNBProcessor(BaseProcessor):
     """
@@ -13,7 +14,7 @@ class BNBProcessor(BaseProcessor):
         super().__init__(database, 'BNB')
         self.querier = querier
         
-    def process_block(self, block):
+    async def process_block(self, block):
         """
         Process raw block data and store it in the database.
         """
@@ -22,24 +23,28 @@ class BNBProcessor(BaseProcessor):
         # Block specific data
         block_specific_data = {           
             "miner": block["miner"],
-            "gas_limit": block["gasLimit"],
-            "gas_used": block["gasUsed"],
-            "base_fee": block["baseFeePerGas"],
-            "block_size": block["size"],
-            "proof_of_authority_data": block["proofOfAuthorityData"].hex(),
-            "blob_gas_used": block["blobGasUsed"],
-            "excess_blob_gas": block["excessBlobGas"],
+            "gas_limit": decode_hex(block["gasLimit"]),
+            "gas_used": decode_hex(block["gasUsed"]),
+            "base_fee": decode_hex(block["baseFeePerGas"]),
+            "block_size": decode_hex(block["size"]),
+            "proof_of_authority_data": normalize_hex(block["proofOfAuthorityData"] if "proofOfAuthorityData" in block else block["extraData"]),
+            "blob_gas_used": decode_hex(block["blobGasUsed"]),
+            "excess_blob_gas": decode_hex(block["excessBlobGas"]),
         } 
         # Prepare block data for insertion
         block_data = {
             "network": self.network,
-            "block_number": block["number"],
-            "block_hash": block["hash"].hex(),
-            "parent_hash": block["parentHash"].hex(),
-            "timestamp": block["timestamp"],
+            "block_number": decode_hex(block["number"]),
+            "block_hash": normalize_hex(block["hash"]),
+            "parent_hash": normalize_hex(block["parentHash"]),
+            "timestamp": decode_hex(block["timestamp"]),
             "block_data": json.dumps(block_specific_data) # Process this to JSON upon Postgres insertion
         }
-        # Insert block 
+        
+        # Insert block, ***TODO: Add transaction processing*** 
+        # ***TODO: Add withdrawals processing***
+        # *** Make ASYNC ***
+        
         self.insert_ops.insert_block(block_data)
         self.logger.debug(f"Block {block['number']} stored successfully.")
         
@@ -48,3 +53,4 @@ class BNBProcessor(BaseProcessor):
         
         # Process withdrawals
         #self._process_withdrawals(block)
+        

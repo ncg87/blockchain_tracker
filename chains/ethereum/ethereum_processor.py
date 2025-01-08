@@ -1,7 +1,8 @@
 import logging
 import json
-
+from hexbytes import HexBytes
 from ..base_models import BaseProcessor
+from ..utils import decode_hex, normalize_hex, decode_extra_data
 
 class EthereumProcessor(BaseProcessor):
     """
@@ -14,7 +15,7 @@ class EthereumProcessor(BaseProcessor):
         super().__init__(database, 'Ethereum')
         self.querier = querier
 
-    def process_block(self, block):
+    async def process_block(self, block):
         """
         Process raw block data and store it in the database.
         """
@@ -23,20 +24,21 @@ class EthereumProcessor(BaseProcessor):
         # Block specific data
         block_specific_data = {           
             "miner": block["miner"],
-            "gas_limit": block["gasLimit"],
-            "gas_used": block["gasUsed"],
-            "base_fee": block["baseFeePerGas"],
-            "block_size": block["size"],
-            "blob_gas_used": block["blobGasUsed"],
-            "excess_blob_gas": block["excessBlobGas"],
+            "gas_limit": decode_hex(block["gasLimit"]),
+            "extra_data": decode_extra_data(block),
+            "gas_used": decode_hex(block["gasUsed"]),
+            "base_fee": decode_hex(block["baseFeePerGas"]),
+            "block_size": decode_hex(block["size"]),
+            "blob_gas_used": decode_hex(block["blobGasUsed"]),
+            "excess_blob_gas": decode_hex(block["excessBlobGas"]),
         } 
         
         block_data = {
             "network": self.network,
-            "block_number": block["number"],
-            "block_hash": block["hash"].hex(),
-            "parent_hash": block["parentHash"].hex(),
-            "timestamp": block["timestamp"],
+            "block_number": decode_hex(block["number"]),
+            "block_hash": normalize_hex(block["hash"]),
+            "parent_hash": normalize_hex(block["parentHash"]),
+            "timestamp": decode_hex(block["timestamp"]),
             "block_data": json.dumps(block_specific_data) # Process this to JSON upon Postgres insertion
         }
         self.insert_ops.insert_block(block_data)

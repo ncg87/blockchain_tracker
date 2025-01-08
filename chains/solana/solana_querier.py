@@ -1,6 +1,9 @@
 from solana.rpc.api import Client
 from ..base_models import BaseQuerier
 from config import Settings
+import asyncio
+from .solana_websocket_handler import SolanaWebSocketHandler
+
 class SolanaQuerier(BaseQuerier):
     """
     Solana-specific querier.
@@ -9,6 +12,7 @@ class SolanaQuerier(BaseQuerier):
     def __init__(self):
         super().__init__('Solana')
         self.client = Client(Settings.SOLANA_ENDPOINT)
+        self.ws = SolanaWebSocketHandler(Settings.SOLANA_WEBSOCKET_ENDPOINT)
 
     def is_connected(self) -> bool:
         """
@@ -21,7 +25,7 @@ class SolanaQuerier(BaseQuerier):
             self.logger.error(f"Failed to connect to Solana RPC: {e}")
             return False
 
-    def get_block(self, slot = None):
+    async def get_block(self, slot = None):
         """
         Fetch a block by slot. If slot is None, fetch the latest block.
         """
@@ -48,3 +52,10 @@ class SolanaQuerier(BaseQuerier):
         except Exception as e:
             self.logger.error(f"Failed to fetch block for slot {slot}: {e}")
             raise
+        
+    async def stream_blocks(self, duration=None):
+        """
+        Stream blocks with full transactions using WebSocket.
+        """
+        async for full_block in self.ws.run(duration):
+            yield full_block

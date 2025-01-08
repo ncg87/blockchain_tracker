@@ -11,7 +11,7 @@ class BitcoinProcessor(BaseProcessor):
         super().__init__(database, 'Bitcoin')
         self.querier = querier
         
-    def process_block(self, block):
+    async def process_block(self, block):
         """
         Process raw block data and store it in the database.
         """

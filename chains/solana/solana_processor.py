@@ -12,7 +12,7 @@ class SolanaProcessor(BaseProcessor):
         super().__init__(database, 'Solana')
         self.querier = querier
     
-    def process_block(self, block):
+    async def process_block(self, block):
         """
         Process raw block data and store it using the database class.
         """
