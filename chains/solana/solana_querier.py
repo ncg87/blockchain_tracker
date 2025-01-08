@@ -2,6 +2,7 @@ from solana.rpc.api import Client
 from ..base_models import BaseQuerier
 from config import Settings
 import asyncio
+import json
 from .solana_websocket_handler import SolanaWebSocketHandler
 
 class SolanaQuerier(BaseQuerier):
@@ -46,16 +47,29 @@ class SolanaQuerier(BaseQuerier):
             if not block_object:
                 self.logger.warning(f"No block data found for slot: {slot}")
                 return None
-
             self.logger.debug(f"Block {slot} fetched successfully.")
-            return block_object.value
+            # Convert block to a dictionary
+            return json.loads(block_object.to_json())['result']
         except Exception as e:
             self.logger.error(f"Failed to fetch block for slot {slot}: {e}")
             raise
         
     async def stream_blocks(self, duration=None):
         """
-        Stream blocks with full transactions using WebSocket.
+        Stream blocks using WebSocket and fetch block details concurrently.
+        :param duration: Duration for streaming in seconds.
         """
-        async for full_block in self.ws.run(duration):
-            yield full_block
+        self.logger.info("Starting block streaming...")
+        start_time = asyncio.get_running_loop().time()
+
+        async for slot in self.ws.run(duration):
+            # Break loop if duration has expired
+            if duration and asyncio.get_running_loop().time() - start_time > duration:
+                self.logger.info("Stream duration expired.")
+                break
+            if slot is not None:
+                # Fetch block concurrently
+                block = await self.get_block(slot)
+                print(block.keys())
+                if block:
+                    yield block

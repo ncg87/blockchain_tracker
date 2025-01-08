@@ -22,7 +22,7 @@ class SolanaPipeline(BasePipeline):
             tasks = []  # List to hold block processing tasks
 
             async for full_block in self.querier.stream_blocks(duration):
-                self.logger.info(f"Received block for slot: {full_block.get('slot')}")
+                self.logger.info(f"Received block for slot: {full_block.get('blockHeight')}")
                 
                 # Create a new task for processing the block
                 task = asyncio.create_task(self.processor.process_block(full_block))

@@ -16,9 +16,7 @@ class SolanaProcessor(BaseProcessor):
         """
         Process raw block data and store it using the database class.
         """
-        
-        # Convert block data to dictionary
-        block = json.loads(block.to_json())
+    
         
         self.logger.info(f"Processing {self.network} block {block['blockHeight']}")
         
