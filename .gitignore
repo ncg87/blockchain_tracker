@@ -1,2 +1,14 @@
 .env
 __pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ruff_ignore/
+.ruff_cache/
+.ruff_ignore/
+*.log
+*.log.*
+*.log.*.*
+*.log.*.*.*
+*.log.*.*.*.*
+*.log.*.*.*.*.*
