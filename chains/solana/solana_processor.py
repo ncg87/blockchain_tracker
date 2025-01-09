@@ -5,11 +5,11 @@ class SolanaProcessor(BaseProcessor):
     """
     Solana processor class.
     """
-    def __init__(self, database, querier):
+    def __init__(self, sql_database, mongodb_database, querier):
         """
         Initialize the processor with a database instance.
         """
-        super().__init__(database, 'Solana')
+        super().__init__(sql_database, mongodb_database, 'Solana')
         self.querier = querier
     
     async def process_block(self, block):
@@ -20,19 +20,18 @@ class SolanaProcessor(BaseProcessor):
         
         self.logger.info(f"Processing {self.network} block {block['blockHeight']}")
         
-        block_specific_data = {
-            "parent_slot": block["parentSlot"],
-        }
+        # Insert block into MongoDB
+        self.mongodb_insert_ops.insert_block(block, self.network, block['blockHeight'])
         
+        # Prepare block data for SQL insertion
         block_data = {
             "network": self.network,
             "block_number": block["blockHeight"],
             "block_hash": block["blockhash"],
             "parent_hash": block["previousBlockhash"],
             "timestamp": block["blockTime"],
-            "block_data": json.dumps(block_specific_data)
         }
-        self.insert_ops.insert_block(block_data)
+        self.sql_insert_ops.insert_block(block_data)
         self.logger.debug(f"Block {block['blockHeight']} stored successfully.")
         
         # Process transactions

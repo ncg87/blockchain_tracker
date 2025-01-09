@@ -7,8 +7,8 @@ class BitcoinProcessor(BaseProcessor):
     """
     Bitcoin processor class.
     """
-    def __init__(self, database, querier):
-        super().__init__(database, 'Bitcoin')
+    def __init__(self, sql_database, mongodb_database, querier):
+        super().__init__(sql_database, mongodb_database, 'Bitcoin')
         self.querier = querier
         
     async def process_block(self, block):
@@ -17,27 +17,19 @@ class BitcoinProcessor(BaseProcessor):
         """
         self.logger.info(f"Processing block {block['height']} on {self.network}")
         
-        # Block specific data
-        block_specific_data = {           
-            "version": block["version"],
-            "merkle_root": block["merkleroot"],
-            "chainwork": block["chainwork"],
-            "bits": block["bits"],
-            "weight": block["weight"],
-            "size": block["size"],
-            "num_tx": block["nTx"],
-        } 
-        # Prepare block data for insertion
+        # Insert block into MongoDB
+        self.mongodb_insert_ops.insert_block(block, self.network, block['height'])
+        
+        # Prepare block data for SQL insertion
         block_data = {
             "network": self.network,
             "block_number": block["height"],
             "block_hash": block["hash"],
             "parent_hash": block["previousblockhash"],
             "timestamp": block["time"],
-            "block_data": json.dumps(block_specific_data) # Process this to JSON upon Postgres insertion
         }
         # Insert block 
-        self.insert_ops.insert_block(block_data)
+        self.sql_insert_ops.insert_block(block_data)
         self.logger.debug(f"Block {block['height']} stored successfully.")
         
         # Process transactions
@@ -49,7 +41,15 @@ class BitcoinProcessor(BaseProcessor):
         """
         try:
             for tx in block["tx"]:
-                pass
+                transaction = {
+                    "block_number": block["height"],
+                    "timestamp": block["time"],
+                    "hash": tx["hash"],
+                    "id": tx["txid"],
+                    "amount": tx["vout"][0]["value"],
+                    "fee": tx["fee"],
+                }
+                self.insert_ops.insert_transaction(transaction)
         except Exception as e:
             self.logger.error(f"Failed to process transactions in block {block['height']}: {e}")
             return

@@ -6,8 +6,8 @@ class XRPProcessor(BaseProcessor):
     """
     XRP-specific processor.
     """
-    def __init__(self, database, querier):
-        super().__init__(database, 'XRP')
+    def __init__(self, sql_database, mongodb_database, querier):
+        super().__init__(sql_database, mongodb_database, 'XRP')
         self.querier = querier
         
     async def process_block(self, ledger):
@@ -19,11 +19,9 @@ class XRPProcessor(BaseProcessor):
         
         ledger = ledger['ledger']
         
-        # Block specific data
-        block_specific_data = {           
-            "account_hash": ledger["account_hash"],
-            "total_coins": ledger["total_coins"],
-        } 
+        # Insert block into MongoDB
+        self.mongodb_insert_ops.insert_block(ledger, self.network, ledger['ledger_index'])
+        
         
         # Prepare block data for insertion
         block_data = {
@@ -32,13 +30,18 @@ class XRPProcessor(BaseProcessor):
             "block_hash": ledger["ledger_hash"],
             "parent_hash": ledger["parent_hash"],
             "timestamp": ledger["close_time"],
-            "block_data": json.dumps(block_specific_data) # Process this to JSON upon Postgres insertion
         }
         
         # Insert block data into the database
-        self.insert_ops.insert_block(block_data)
+        self.sql_insert_ops.insert_block(block_data)
         self.logger.debug(f"Block {ledger['ledger_index']} stored successfully.")
 
         # Process transactions
         #self._process_transactions(block)
+        
+        def _process_transactions(self, ledger):
+            """
+            Process transactions in the ledger.
+            """
+            pass
         

@@ -7,11 +7,11 @@ class BNBProcessor(BaseProcessor):
     """
     BNB processor class.
     """
-    def __init__(self, database, querier):
+    def __init__(self, sql_database, mongodb_database, querier):
         """
         Initialize the BNB processor with a database and querier.
         """
-        super().__init__(database, 'BNB')
+        super().__init__(sql_database, mongodb_database, 'BNB')
         self.querier = querier
         
     async def process_block(self, block):
@@ -20,32 +20,23 @@ class BNBProcessor(BaseProcessor):
         """
         self.logger.info(f"Processing block {block['number']} on {self.network}")
         
-        # Block specific data
-        block_specific_data = {           
-            "miner": block["miner"],
-            "gas_limit": decode_hex(block["gasLimit"]),
-            "gas_used": decode_hex(block["gasUsed"]),
-            "base_fee": decode_hex(block["baseFeePerGas"]),
-            "block_size": decode_hex(block["size"]),
-            "proof_of_authority_data": normalize_hex(block["proofOfAuthorityData"] if "proofOfAuthorityData" in block else block["extraData"]),
-            "blob_gas_used": decode_hex(block["blobGasUsed"]),
-            "excess_blob_gas": decode_hex(block["excessBlobGas"]),
-        } 
-        # Prepare block data for insertion
+        # Insert block into MongoDB
+        self.mongodb_insert_ops.insert_block(block, self.network, block['number'])
+        
+        # Prepare block data for SQL insertion
         block_data = {
             "network": self.network,
             "block_number": decode_hex(block["number"]),
             "block_hash": normalize_hex(block["hash"]),
             "parent_hash": normalize_hex(block["parentHash"]),
             "timestamp": decode_hex(block["timestamp"]),
-            "block_data": json.dumps(block_specific_data) # Process this to JSON upon Postgres insertion
         }
         
         # Insert block, ***TODO: Add transaction processing*** 
         # ***TODO: Add withdrawals processing***
         # *** Make ASYNC ***
         
-        self.insert_ops.insert_block(block_data)
+        self.sql_insert_ops.insert_block(block_data)
         self.logger.debug(f"Block {block['number']} stored successfully.")
         
         # Process transactions

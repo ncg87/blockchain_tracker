@@ -1,9 +1,7 @@
-from .base import Database
-from .insert_ops import InsertOperations
-from .query_ops import QueryOperations
+from .mongodb import MongoDatabase, MongoInsertOperations, MongoQueryOperations
+from .sql import SQLDatabase, SQLInsertOperations, SQLQueryOperations
 
 __all__ = [
-    'Database',
-    'InsertOperations',
-    'QueryOperations',
-]
+          'MongoDatabase', 'MongoInsertOperations', 'MongoQueryOperations',
+          'SQLDatabase', 'SQLInsertOperations', 'SQLQueryOperations'
+           ]

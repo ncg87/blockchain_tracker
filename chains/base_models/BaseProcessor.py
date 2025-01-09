@@ -1,19 +1,23 @@
 from abc import ABC, abstractmethod
 import logging
 
-from database import InsertOperations, QueryOperations
-
+from database import SQLDatabase, SQLInsertOperations, SQLQueryOperations
+from database import MongoDatabase, MongoInsertOperations, MongoQueryOperations
 logger = logging.getLogger(__name__)
 
 class BaseProcessor(ABC):
     """
     Base class for all blockchain processors.
     """
-    def __init__(self, database, network):
+    def __init__(self, sql_database, mongodb_database, network):
         
-        # Database operations
-        self.insert_ops = InsertOperations(database)
-        self.query_ops = QueryOperations(database)
+        # SQL Database operations
+        self.sql_insert_ops = SQLInsertOperations(sql_database)
+        self.sql_query_ops = SQLQueryOperations(sql_database)
+        
+        # MongoDB Database operations
+        self.mongodb_insert_ops = MongoInsertOperations(mongodb_database)
+        self.mongodb_query_ops = MongoQueryOperations(mongodb_database)
         
         # Network
         self.network = network

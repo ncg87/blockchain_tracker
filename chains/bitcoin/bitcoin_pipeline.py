@@ -9,10 +9,10 @@ class BitcoinPipeline(BasePipeline):
     Bitcoin pipeline class supporting asynchronous block streaming.
     """
 
-    def __init__(self, database):
-        super().__init__(database, 'Bitcoin')
+    def __init__(self, sql_database, mongodb_database):
+        super().__init__(sql_database, mongodb_database, 'Bitcoin')
         self.querier = BitcoinQuerier()
-        self.processor = BitcoinProcessor(self.database, self.querier)
+        self.processor = BitcoinProcessor(self.sql_database, self.mongodb_database, self.querier)
 
     async def run(self, duration=None):
         """

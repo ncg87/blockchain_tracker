@@ -8,10 +8,10 @@ class BNBPipeline(BasePipeline):
     """
     BNB pipeline class supporting asynchronous block streaming.
     """
-    def __init__(self, database):
-        super().__init__(database, 'BNB')
+    def __init__(self, sql_database, mongodb_database):
+        super().__init__(sql_database, mongodb_database, 'BNB')
         self.querier = BNBQuerier()
-        self.processor = BNBProcessor(self.database, self.querier)
+        self.processor = BNBProcessor(self.sql_database, self.mongodb_database, self.querier)
 
     async def run(self, duration=None):
         """

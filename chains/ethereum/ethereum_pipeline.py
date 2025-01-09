@@ -10,10 +10,10 @@ class EthereumPipeline(BasePipeline):
     """
     Ethereum pipeline class supporting asynchronous block streaming.
     """
-    def __init__(self, database):
-        super().__init__(database, 'Ethereum')
+    def __init__(self, sql_database, mongodb_database):
+        super().__init__(sql_database, mongodb_database, 'Ethereum')
         self.querier = EthereumQuerier()
-        self.processor = EthereumProcessor(self.database, self.querier)
+        self.processor = EthereumProcessor(self.sql_database, self.mongodb_database, self.querier)
 
     async def run(self, duration=None):
         """

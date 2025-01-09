@@ -1,8 +1,7 @@
 import asyncio
 from chains import EthereumPipeline, BNBPipeline, BitcoinPipeline, SolanaPipeline, XRPPipeline
-from database import Database
+from database import SQLDatabase, MongoDatabase
 import logging
-from config import Settings
 
 # General logging setup for maintenance.log
 logging.basicConfig(
@@ -23,14 +22,15 @@ error_logger.addHandler(error_handler)
 
 async def main():
     try:
-        database = Database()
+        sql_database = SQLDatabase()
+        mongodb_database = MongoDatabase()
 
         # Initialize pipelines
-        ethereum_pipeline = EthereumPipeline(database)
-        bnb_pipeline = BNBPipeline(database)
-        bitcoin_pipeline = BitcoinPipeline(database)
-        solana_pipeline = SolanaPipeline(database)
-        xrp_pipeline = XRPPipeline(database)
+        ethereum_pipeline = EthereumPipeline(sql_database, mongodb_database)
+        bnb_pipeline = BNBPipeline(sql_database, mongodb_database)
+        bitcoin_pipeline = BitcoinPipeline(sql_database, mongodb_database)
+        solana_pipeline = SolanaPipeline(sql_database, mongodb_database)
+        xrp_pipeline = XRPPipeline(sql_database, mongodb_database)
 
         duration = 15
 

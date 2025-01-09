@@ -6,10 +6,10 @@ class XRPPipeline(BasePipeline):
     """
     XRP-specific pipeline for processing ledger data.
     """
-    def __init__(self, database):
-        super().__init__(database, 'XRP')
+    def __init__(self, sql_database, mongodb_database):
+        super().__init__(sql_database, mongodb_database, 'XRP')
         self.querier = XRPQuerier()
-        self.processor = XRPProcessor(database, self.querier)
+        self.processor = XRPProcessor(sql_database, mongodb_database, self.querier)
 
     async def run(self, duration=None):
         """

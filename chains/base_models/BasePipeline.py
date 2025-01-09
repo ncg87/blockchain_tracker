@@ -4,8 +4,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 class BasePipeline(ABC):
-    def __init__(self, database, chain_name):
-        self.database = database
+    def __init__(self, sql_database, mongodb_database, chain_name):
+        self.sql_database = sql_database
+        self.mongodb_database = mongodb_database
         self.chain_name = chain_name
         self.logger = logger
         
