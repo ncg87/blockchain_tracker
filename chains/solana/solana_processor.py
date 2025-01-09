@@ -21,7 +21,7 @@ class SolanaProcessor(BaseProcessor):
         self.logger.info(f"Processing {self.network} block {block['blockHeight']}")
         
         # Insert block into MongoDB
-        self.mongodb_insert_ops.insert_block(block, self.network, block['blockHeight'])
+        self.mongodb_insert_ops.insert_block(block, self.network, block['blockHeight'], block['blockTime'])
         
         # Prepare block data for SQL insertion
         block_data = {

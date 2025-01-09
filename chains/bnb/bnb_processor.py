@@ -21,7 +21,7 @@ class BNBProcessor(BaseProcessor):
         self.logger.info(f"Processing block {block['number']} on {self.network}")
         
         # Insert block into MongoDB
-        self.mongodb_insert_ops.insert_block(block, self.network, block['number'])
+        self.mongodb_insert_ops.insert_block(block, self.network, block['number'], block['timestamp'])
         
         # Prepare block data for SQL insertion
         block_data = {

@@ -22,7 +22,7 @@ class EthereumProcessor(BaseProcessor):
         self.logger.info(f"Processing block {block['number']} on {self.network}")
         
         # Insert block into MongoDB
-        self.mongodb_insert_ops.insert_block(block, self.network, block['number'])
+        self.mongodb_insert_ops.insert_block(block, self.network, block['number'], block['timestamp'])
         
         
         block_data = {

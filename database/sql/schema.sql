@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS blocks (
     block_hash TEXT NOT NULL UNIQUE,
     parent_hash TEXT,
     timestamp DATETIME NOT NULL,
+    block_data TEXT -- Remove this column in future
 );
 
 -- Index for parent-child lookups

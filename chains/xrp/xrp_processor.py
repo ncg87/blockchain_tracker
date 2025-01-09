@@ -20,7 +20,7 @@ class XRPProcessor(BaseProcessor):
         ledger = ledger['ledger']
         
         # Insert block into MongoDB
-        self.mongodb_insert_ops.insert_block(ledger, self.network, ledger['ledger_index'])
+        self.mongodb_insert_ops.insert_block(ledger, self.network, ledger['ledger_index'], ledger['close_time'])
         
         
         # Prepare block data for insertion
