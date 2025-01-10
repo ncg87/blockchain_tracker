@@ -1,5 +1,13 @@
 from ..base_models import BaseProcessor
 import json
+from operator import itemgetter
+
+
+# Item getters
+get_block_hash = itemgetter('blockhash')
+get_previous_block_hash = itemgetter('previousBlockhash')
+get_block_height = itemgetter('blockHeight')
+get_block_time = itemgetter('blockTime')
 
 class SolanaProcessor(BaseProcessor):
     """
@@ -16,23 +24,24 @@ class SolanaProcessor(BaseProcessor):
         """
         Process raw block data and store it using the database class.
         """
-    
+        block_height = get_block_height(block)
+        block_time = get_block_time(block)
         
-        self.logger.info(f"Processing {self.network} block {block['blockHeight']}")
+        self.logger.info(f"Processing {self.network} block {block_height}")
         
         # Insert block into MongoDB
-        self.mongodb_insert_ops.insert_block(block, self.network, block['blockHeight'], block['blockTime'])
+        self.mongodb_insert_ops.insert_block(block, self.network, block_height, block_time)
         
         # Prepare block data for SQL insertion
         block_data = {
             "network": self.network,
-            "block_number": block["blockHeight"],
-            "block_hash": block["blockhash"],
-            "parent_hash": block["previousBlockhash"],
-            "timestamp": block["blockTime"],
+            "block_number": block_height,
+            "block_hash": get_block_hash(block),
+            "parent_hash": get_previous_block_hash(block),
+            "timestamp": block_time,
         }
         self.sql_insert_ops.insert_block(block_data)
-        self.logger.debug(f"Block {block['blockHeight']} stored successfully.")
+        self.logger.debug(f"Block {block_height} stored successfully.")
         
         # Process transactions
         #self._process_transactions(block)

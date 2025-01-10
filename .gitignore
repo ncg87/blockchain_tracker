@@ -16,3 +16,4 @@ block_examples
 *.json
 *.db
 *.db.*
+*.db-journal

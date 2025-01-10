@@ -62,7 +62,7 @@ class BitcoinProcessor(BaseProcessor):
                 }
                 # Create a bulk insert operation
                 self.sql_insert_ops.insert_bitcoin_transaction(transaction)
-            self.logger.debug(f"Inserted {len(block['tx'])} transactions in block {block_number} on {self.network}")
+            self.logger.info(f"Inserted {len(block['tx'])} transactions in block {block_number} on {self.network}")
         except Exception as e:
             self.logger.error(f"Failed to process transactions in block {block_number}: {e}")
             return

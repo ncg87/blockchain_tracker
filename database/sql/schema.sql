@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS base_bitcoin_transactions (
     version INTEGER NOT NULL,
     value_satoshis REAL NOT NULL,
     timestamp DATETIME NOT NULL,
-    fee REAL
+    fee REAL,
+    PRIMARY KEY (transaction_id)
 );
 
 -- ABI Table

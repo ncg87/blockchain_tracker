@@ -14,6 +14,8 @@ get_gas_price = itemgetter('gasPrice')
 get_chain_id = itemgetter('chainId')
 get_hash = itemgetter('hash')
 get_parent_hash = itemgetter('parentHash')
+get_block_number = itemgetter('number')
+get_block_time = itemgetter('timestamp')
 
 class BNBProcessor(BaseProcessor):
     """
@@ -31,8 +33,8 @@ class BNBProcessor(BaseProcessor):
         Process raw block data and store it in the database.
         """
         
-        height = decode_hex(block['number'])
-        timestamp = decode_hex(block['timestamp'])
+        height = decode_hex(get_block_number(block))
+        timestamp = decode_hex(get_block_time(block))
 
         self.logger.info(f"Processing block {height} on {self.network}")
         

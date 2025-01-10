@@ -4,6 +4,7 @@ from config import Settings
 import asyncio
 import json
 from .solana_websocket_handler import SolanaWebSocketHandler
+from solana.rpc.api import RPCException
 
 class SolanaQuerier(BaseQuerier):
     """
@@ -50,6 +51,11 @@ class SolanaQuerier(BaseQuerier):
             self.logger.debug(f"Block {slot} fetched successfully.")
             # Convert block to a dictionary
             return json.loads(block_object.to_json())['result']
+        except RPCException as e:
+            if "Block not available" in str(e):
+                self.logger.warning(f"Block {slot} not available, skipping...")
+                return None
+            raise 
         except Exception as e:
             self.logger.error(f"Failed to fetch block for slot {slot}: {e}")
             raise
