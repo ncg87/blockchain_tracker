@@ -76,6 +76,7 @@ class BNBProcessor(BaseProcessor):
         
         except Exception as e:
             self.logger.error(f"Error processing transactions for block {decode_hex(block['number'])}: {e}")
+    
     def calculate_gas_cost(self, transaction):
         """
         Calculate the gas cost of a Ethereum transaction.
