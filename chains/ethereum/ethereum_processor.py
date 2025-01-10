@@ -22,7 +22,7 @@ class EthereumProcessor(BaseProcessor):
         self.logger.info(f"Processing block {block['number']} on {self.network}")
         
         # Insert block into MongoDB
-        self.mongodb_insert_ops.insert_block(block, self.network, block['number'], block['timestamp'])
+        self.mongodb_insert_ops.insert_block(block, self.network, decode_hex(block['number']), decode_hex(block['timestamp']))
         
         
         block_data = {
@@ -70,7 +70,7 @@ class EthereumProcessor(BaseProcessor):
                 # Store transaction data
                 self.sql_insert_ops.insert_evm_transaction(self.network, transaction_data)
                 self.logger.debug(f"Transaction {normalize_hex(transaction['hash'])} processed.")
-            self.logger.info(f"Processed {len(block['transactions'])} transactions for block {decode_hex(block['number'])}")
+            self.logger.info(f"Processed {len(block['transactions'])} {self.network} transactions for block {decode_hex(block['number'])}")
         
         except Exception as e:
             self.logger.error(f"Error processing transactions for block {decode_hex(block['number'])}: {e}")

@@ -72,7 +72,7 @@ class BNBProcessor(BaseProcessor):
                 # Store transaction data
                 self.sql_insert_ops.insert_evm_transaction(self.network, transaction_data)
                 self.logger.debug(f"Transaction {normalize_hex(transaction['hash'])} processed.")
-            self.logger.info(f"Processed {len(block['transactions'])} transactions for block {decode_hex(block['number'])}")
+            self.logger.info(f"Processed {len(block['transactions'])} {self.network} transactions for block {decode_hex(block['number'])}")
         
         except Exception as e:
             self.logger.error(f"Error processing transactions for block {decode_hex(block['number'])}: {e}")
