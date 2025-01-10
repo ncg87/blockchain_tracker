@@ -8,6 +8,7 @@ get_txid = itemgetter('txid')
 get_version = itemgetter('version')
 get_vout = itemgetter('vout')
 get_value = itemgetter('value')
+get_fee = itemgetter('fee')
 
 class BitcoinProcessor(BaseProcessor):
     """
@@ -60,7 +61,7 @@ class BitcoinProcessor(BaseProcessor):
                     get_version(tx),
                     sum(map(get_value, get_vout(tx))),
                     timestamp,
-                    None,
+                    self.get_fee_with_default(tx),
                 ) for tx in block["tx"]
             ]
             
@@ -69,3 +70,6 @@ class BitcoinProcessor(BaseProcessor):
         except Exception as e:
             self.logger.error(f"Failed to process transactions in block {block_number}: {e}")
             return
+        
+    def get_fee_with_default(self, tx):
+        return get_fee(tx) if 'fee' in tx else 0
