@@ -84,7 +84,25 @@ class EthereumProcessor(BaseProcessor):
         except Exception as e:
             self.logger.error(f"Error calculating gas cost for transaction {normalize_hex(transaction['hash'])}: {e}")
             return None
-
+    
+    def _process_native_transfer(self, transaction, timestamp):
+        """
+        Process native transfer transaction data.
+        """
+        transaction_data = {
+                "block_number": transaction["blockNumber"],
+                "transaction_hash": normalize_hex(transaction["hash"]),
+                "from_address": transaction["from"],
+                "to_address": transaction.get("to"),
+                "amount": decode_hex(transaction.get("value")),
+                "gas": decode_hex(transaction.get("gas")),
+                "gas_price": decode_hex(transaction.get("gasPrice")),
+                "timestamp": timestamp,
+            }
+        
+        self.sql_insert_ops.insert_ethereum_transaction(self.network, transaction_data)
+        self.logger.debug(f"Transaction {normalize_hex(transaction['hash'])} processed.")
+    
  
  
  

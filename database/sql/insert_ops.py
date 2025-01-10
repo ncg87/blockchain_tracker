@@ -44,10 +44,23 @@ class SQLInsertOperations:
         """
         try:
             self.db.logger.debug(f"Inserting {network} transaction {transaction['transaction_hash']} into SQL database")
-
+            # Convert timestamp to SQL-compliant DATETIME format
+            if isinstance(transaction['timestamp'], int):  # If given as UNIX time
+                transaction['timestamp'] = datetime.utcfromtimestamp(transaction['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+            elif isinstance(transaction['timestamp'], str):  # If already a string, assume it's correct
+                # Optionally, validate the format
+                try:
+                    datetime.strptime(transaction['timestamp'], '%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    raise ValueError("Timestamp string is not in '%Y-%m-%d %H:%M:%S' format")
+            elif isinstance(transaction['timestamp'], datetime):  # If given as a datetime object
+                    transaction['timestamp'] = transaction['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                    raise TypeError("Invalid timestamp format. Must be int (UNIX), str, or datetime object.")
+            
             # Insert transaction into the database
             self.db.cursor.execute("""
-                INSERT INTO base_env_transactions (block_number, network, transaction_hash, chain_id, from_address, to_address, amount, gas_costs, timestamp)
+                INSERT INTO base_env_transactions (block_number, network, transaction_hash, chain_id, from_address, to_address, value_wei, total_gas, timestamp)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (transaction_hash) DO NOTHING
             """, (transaction['block_number'], network, transaction['transaction_hash'], transaction['chain_id'], transaction['from_address'], transaction['to_address'], transaction['amount'], transaction['gas_costs'], transaction['timestamp']))
@@ -56,3 +69,10 @@ class SQLInsertOperations:
             self.db.logger.debug(f"Transaction {transaction['transaction_hash']} inserted successfully")
         except Exception as e:
             self.db.logger.error(f"Error inserting transaction {transaction['transaction_hash']}: {e}")
+
+# add in future to reduce total code
+def convert_timestamp(timestamp):
+    """
+    Convert a timestamp to a SQL-compatible DATETIME format.
+    """
+    return datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')

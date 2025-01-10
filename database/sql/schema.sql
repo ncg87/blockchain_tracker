@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS blocks (
     block_data TEXT -- Remove this column in future
 );
 
-DROP TABLE IF EXISTS base_env_transactions;
 -- Transactions table
 CREATE TABLE IF NOT EXISTS base_env_transactions (
 
@@ -21,10 +20,24 @@ CREATE TABLE IF NOT EXISTS base_env_transactions (
     chain_id INTEGER NOT NULL,
     from_address TEXT NOT NULL,
     to_address TEXT NOT NULL,
-    amount INTEGER NOT NULL,
-    gas_costs INTEGER NOT NULL,
+    value_wei INTEGER NOT NULL,
+    total_gas INTEGER NOT NULL,
     timestamp DATETIME NOT NULL,
     PRIMARY KEY (chain_id, transaction_hash)
+);
+
+-- ABI Table
+CREATE TABLE IF NOT EXISTS ethereum_contract_abis (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    contract_address TEXT NOT NULL,
+    abi TEXT NOT NULL
+);
+
+-- Event Signature Table
+CREATE TABLE IF NOT EXISTS ethereum_event_signatures (
+    signature_hash TEXT PRIMARY KEY,
+    event_name TEXT,
+    inputs JSONB
 );
 
 -- Index for parent-child lookups

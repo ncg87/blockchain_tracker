@@ -44,6 +44,22 @@ class EthereumQuerier(BaseQuerier):
             if full_block:
                 yield full_block
 
+    def get_block_logs(self, block_number):
+        """
+        Get the logs of a block.
+        """
+        self.logger.info(f"Fetching logs for block {block_number}")
+        # Fetch logs for the block
+        try:    
+            logs = self.w3.eth.get_logs({
+                "fromBlock": block_number,
+                "toBlock": block_number
+            })
+            self.logger.debug(f"Logs fetched successfully for block {block_number}")
+            return logs
+        except Exception as e:
+            self.logger.error(f"Failed to fetch logs for block {block_number}: {e}")
+            return None
 
     
     def get_contract_abi(self, contract_address):

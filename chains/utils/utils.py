@@ -7,7 +7,7 @@ def normalize_hex(value):
     :return: Hexadecimal string.
     """
     if isinstance(value, HexBytes):
-        return value.hex()  # Convert HexBytes to hex string
+        return value.to_0x_hex()  # Convert HexBytes to hex string
     return value  # Assume it's already a string
 
 def decode_hex(value):

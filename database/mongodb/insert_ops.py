@@ -29,6 +29,10 @@ class MongoInsertOperations:
         :param network: The blockchain network name (collection name).
         """
         try:
+            
+            # Decode block number and timestamp
+            block_number = decode_hex(block_number)
+            timestamp = decode_hex(timestamp)
             # Validate inputs
             if not network or not isinstance(network, str):
                 raise ValueError("Invalid network name provided for MongoDB collection.")
@@ -50,3 +54,15 @@ class MongoInsertOperations:
             self.logger.info(f"Inserted block {block_number} into {network} collection in MongoDB.")
         except Exception as e:
             self.logger.error(f"Error inserting block {block_number} into {network} collection in MongoDB: {e}")
+            
+def decode_hex(value):
+    """
+    Decode a hexadecimal string to an integer if it's an Ethereum-style integer (e.g., block numbers, gas values).
+    Does not decode long hashes or other non-integer hex values.
+    :param value: Hexadecimal string (e.g., '0x677df92f') or other types.
+    :return: Decoded integer or original value if not a valid short hex integer.
+    """
+    if isinstance(value, str) and value.startswith("0x"):
+        # Only decode if the hex string is short (e.g., block numbers, gas, timestamps)
+        return int(value, 16)
+    return value  # Return original value if not a short hex integer

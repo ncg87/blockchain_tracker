@@ -13,8 +13,8 @@ class MongoQueryOperations:
         Decompress gzip-compressed block data.
         """
         try:
-            decompressed_data = gzip.decompress(compressed_data).decode('utf-8')
-            return json.loads(decompressed_data)
+            decompressed_data = json.loads(gzip.decompress(compressed_data).decode('utf-8'))
+            return decompressed_data
         except Exception as e:
             self.logger.error(f"Error decompressing block data: {e}")
             raise
@@ -41,13 +41,13 @@ class MongoQueryOperations:
                 # Decompress the block data if specified
                 if decompress:
                     raw_block_data = self._decompress_data(document["compressed_data"])
+                    return {
+                        "block_number": document["block_number"],
+                        "timestamp": document["timestamp"],
+                        "raw_block_data": raw_block_data,
+                    }   
                 else:
-                    raw_block_data = document["compressed_data"]
-                return {
-                    "block_number": document["block_number"],
-                    "timestamp": document["timestamp"],
-                    "raw_block_data": raw_block_data,
-                }
+                    return document
             else:
                 self.logger.warning(f"Block {block_number} not found in {network} collection.")
                 return None
@@ -76,25 +76,47 @@ class MongoQueryOperations:
             # Convert to a list
             block_list = list(recent_blocks)
 
+            # Logging statements
+            if not block_list:
+                self.logger.warning(f"No blocks found in the {network} collection.")
+                return []
+            self.logger.info(f"Retrieved {len(block_list)} most recent blocks from the {network} collection.")
+            
             # Decompress the block data if specified
             if decompress:
                 decompressed_blocks = []
                 for block in block_list:
-                    decompressed_block = {
+                    decompressed_blocks.append({
                         "block_number": block["block_number"],
                         "timestamp": block["timestamp"],
                         "raw_block_data": self._decompress_data(block["compressed_data"])
-                    }
-                    decompressed_blocks.append(decompressed_block)
+                    })
                 return decompressed_blocks
 
-            if block_list:
-                self.logger.info(f"Retrieved {len(block_list)} most recent blocks from the {network} collection.")
-            else:
-                self.logger.warning(f"No blocks found in the {network} collection.")
-            
             return block_list
+        
         except Exception as e:
             self.logger.error(f"Error retrieving recent blocks from {network} collection in MongoDB: {e}")
             return []
+        
+    def get_evm_transactions(self, network, block_number):
+        try:
+            self.logger.info(f"Retrieving transactions from {network} collection in MongoDB for block {block_number}")
+            collection = self.mongodb.get_collection(network)
+            transactions = collection.find({"block_number": block_number})
+            self.logger.info(f"Retrieved {len(transactions)} transactions from {network} collection in MongoDB for block {block_number}")
+            return transactions
+        except Exception as e:
+            self.logger.error(f"Error retrieving transactions from {network} collection in MongoDB: {e}")
+            return []
 
+    def get_recent_transactions(self, network, limit=10):
+        try:
+            self.logger.info(f"Retrieving recent transactions from {network} collection in MongoDB")
+            collection = self.mongodb.get_collection(network)
+            transactions = collection.find().sort("timestamp", -1).limit(limit)
+            self.logger.info(f"Retrieved {len(transactions)} recent transactions from {network} collection in MongoDB")
+            return transactions
+        except Exception as e:
+            self.logger.error(f"Error retrieving recent transactions from {network} collection in MongoDB: {e}")
+            return []

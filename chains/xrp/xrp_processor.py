@@ -19,8 +19,8 @@ class XRPProcessor(BaseProcessor):
         
         ledger = ledger['ledger']
         
-        # Insert block into MongoDB
-        self.mongodb_insert_ops.insert_block(ledger, self.network, ledger['ledger_index'], ledger['close_time'])
+        # Insert block into MongoDB, add 30 years since XRP has its own epoch
+        self.mongodb_insert_ops.insert_block(ledger, self.network, ledger['ledger_index'], ledger['close_time'] + 946684800)
         
         
         # Prepare block data for insertion
@@ -29,7 +29,7 @@ class XRPProcessor(BaseProcessor):
             "block_number": ledger["ledger_index"],
             "block_hash": ledger["ledger_hash"],
             "parent_hash": ledger["parent_hash"],
-            "timestamp": ledger["close_time"],
+            "timestamp": ledger["close_time"] + 946684800,
         }
         
         # Insert block data into the database
