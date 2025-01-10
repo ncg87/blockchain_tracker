@@ -1,16 +1,20 @@
-// Create constraints for unique identifiers
+// Constraints and Indexes
 CREATE CONSTRAINT tx_hash_unique IF NOT EXISTS
 FOR (tx:Transaction) REQUIRE tx.txid IS UNIQUE;
 
 CREATE CONSTRAINT address_unique IF NOT EXISTS
 FOR (addr:Address) REQUIRE addr.address IS UNIQUE;
 
-// Create indexes for common query patterns
 CREATE INDEX tx_block_idx IF NOT EXISTS
 FOR (tx:Transaction) ON (tx.block_height);
 
-CREATE INDEX output_idx IF NOT EXISTS
-FOR (out:Output) ON (out.value);
+// Composite index for outputs
+CREATE INDEX output_composite_idx IF NOT EXISTS
+FOR (out:Output) ON (out.tx_index, out.value);
+
+// Index for relationship queries
+CREATE INDEX output_spent_idx IF NOT EXISTS
+FOR (out:Output) ON (out.spent);
 
 // Node structure
 // Transaction nodes - stores minimal transaction data
