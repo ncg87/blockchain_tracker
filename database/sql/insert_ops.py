@@ -59,6 +59,43 @@ class SQLInsertOperations:
             self.db.logger.debug(f"Transaction {transaction['transaction_id']} inserted successfully")
         except Exception as e:
             self.db.logger.error(f"Error inserting transaction {transaction['transaction_id']}: {e}")
+            
+    def insert_bulk_evm_transactions(self, network, transactions, block_number):
+        """
+        Bulk insert EVM transactions into the database.
+        """
+        try:
+            self.db.logger.debug(f"Inserting {network} transactions {block_number} into SQL database in bulk.")
+        
+            
+            self.db.cursor.executemany("""
+                INSERT INTO base_evm_transactions (block_number, network, transaction_hash, chain_id, from_address, to_address, value_wei, total_gas, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (transaction_hash) DO NOTHING
+            """, transactions)
+            self.db.conn.commit()
+
+            self.db.logger.debug(f"{len(transactions)} {network} transactions inserted successfully in bulk.")
+        except Exception as e:
+            self.db.logger.error(f"Error inserting bulk {network} transactions: {e}")
+    
+    def insert_bulk_bitcoin_transactions(self, transactions, block_number):
+        """
+        Bulk insert Bitcoin transactions into the database.
+        """
+        try:
+            self.db.logger.debug(f"Inserting Bitcoin transaction {block_number} into SQL database in bulk.")
+            
+            self.db.cursor.executemany("""
+                INSERT INTO base_bitcoin_transactions (block_number, transaction_id, version, value_satoshis, timestamp, fee)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT (transaction_id) DO NOTHING
+            """, transactions)
+            self.db.conn.commit()
+
+            self.db.logger.debug(f"{len(transactions)} Bitcoin transactions inserted successfully in bulk.")
+        except Exception as e:
+            self.db.logger.error(f"Error inserting bulk Bitcoin transactions: {e}")
 
 # add in future to reduce total code
 def convert_timestamp(timestamp):

@@ -52,16 +52,19 @@ class BitcoinProcessor(BaseProcessor):
             
         self.logger.info(f"Processing transactions in block {block_number} on {self.network}")
         try:
-            for tx in block["tx"]:
-                transaction = {
-                    "block_number": block_number,
-                    "transaction_id": get_txid(tx),
-                    "version": get_version(tx),
-                    "timestamp": timestamp,
-                    "value_satoshis": sum(map(get_value, get_vout(tx))),
-                }
-                # Create a bulk insert operation
-                self.sql_insert_ops.insert_bitcoin_transaction(transaction)
+            
+            transactions = [
+                (
+                    block_number,
+                    get_txid(tx),
+                    get_version(tx),
+                    sum(map(get_value, get_vout(tx))),
+                    timestamp,
+                    None,
+                ) for tx in block["tx"]
+            ]
+            
+            self.sql_insert_ops.insert_bulk_bitcoin_transactions(transactions, block_number)
             self.logger.info(f"Inserted {len(block['tx'])} transactions in block {block_number} on {self.network}")
         except Exception as e:
             self.logger.error(f"Failed to process transactions in block {block_number}: {e}")

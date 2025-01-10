@@ -70,7 +70,24 @@ class BNBProcessor(BaseProcessor):
         try:
             
             self.logger.info(f"Processing {self.network} transactions for block {decode_hex(block['number'])}")
-            for transaction in block['transactions']:
+            transactions = [
+                (
+                    block_number,
+                    self.network,
+                    normalize_hex(get_hash(transaction)),
+                    self.get_chain_id_with_default(transaction),
+                    get_from(transaction),
+                    get_to(transaction),
+                    decode_hex(get_value(transaction)),
+                    decode_hex(get_gas(transaction)) * decode_hex(get_gas_price(transaction)),
+                    timestamp
+                ) for transaction in block['transactions']
+            ]
+            
+            self.sql_insert_ops.insert_bulk_evm_transactions(self.network, transactions, block_number)
+            self.logger.info(f"Processed {len(block['transactions'])} {self.network} transactions for block {decode_hex(block['number'])}")
+            
+            #for transaction in block['transactions']:
                 
                 # Checks if the transaction is between two wallets, and then check the logs for data about the transaction
                 #if normalize_hex(transaction['input']) == '0x':
@@ -78,20 +95,19 @@ class BNBProcessor(BaseProcessor):
             
                 
                 # Format transaction data
-                transaction_data = {
-                    "block_number": block_number,
-                    "transaction_hash": normalize_hex(get_hash(transaction)),
-                    "chain_id" : self.get_chain_id_with_default(transaction),
-                    "from_address": get_from(transaction),
-                    "to_address": get_to(transaction),
-                    "amount": decode_hex(get_value(transaction)),
-                    "gas_costs": decode_hex(get_gas(transaction)) * decode_hex(get_gas_price(transaction)),
-                    "timestamp": timestamp
-                }
+            #    transaction_data = {
+            #        "block_number": block_number,
+            #        "transaction_hash": normalize_hex(get_hash(transaction)),
+            #        "chain_id" : self.get_chain_id_with_default(transaction),
+            #        "from_address": get_from(transaction),
+            #        "to_address": get_to(transaction),
+            #        "amount": decode_hex(get_value(transaction)),
+            #        "gas_costs": decode_hex(get_gas(transaction)) * decode_hex(get_gas_price(transaction)),
+            #        "timestamp": timestamp
+            #    }
                 # Store transaction data
-                self.sql_insert_ops.insert_evm_transaction(self.network, transaction_data)
-                self.logger.debug(f"Transaction {normalize_hex(transaction['hash'])} processed.")
-            self.logger.info(f"Processed {len(block['transactions'])} {self.network} transactions for block {decode_hex(block['number'])}")
+            #    self.sql_insert_ops.insert_evm_transaction(self.network, transaction_data)
+            #    self.logger.debug(f"Transaction {normalize_hex(transaction['hash'])} processed.")
         
         except Exception as e:
             self.logger.error(f"Error processing transactions for block {decode_hex(block['number'])}: {e}")

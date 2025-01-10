@@ -63,18 +63,43 @@ class SolanaQuerier(BaseQuerier):
     async def stream_blocks(self, duration=None):
         """
         Stream blocks using WebSocket and fetch block details concurrently.
-        :param duration: Duration for streaming in seconds.
         """
         self.logger.info("Starting block streaming...")
         start_time = asyncio.get_running_loop().time()
+        
+        # Keep track of the last processed slot to avoid duplicates
+        last_processed_slot = None
 
-        async for slot in self.ws.run(duration):
-            # Break loop if duration has expired
+        async for ws_slot in self.ws.run(duration):
             if duration and asyncio.get_running_loop().time() - start_time > duration:
                 self.logger.info("Stream duration expired.")
                 break
-            if slot is not None:
-                # Fetch block concurrently
-                block = await self.get_block(slot)
-                if block:
-                    yield block
+                
+            if ws_slot is not None:
+                try:
+                    # Get current slot from RPC
+                    current_slot = self.client.get_slot().value
+                    slot_diff = ws_slot - current_slot
+                    
+                    # Only process if we haven't seen this slot before
+                    if last_processed_slot and ws_slot <= last_processed_slot:
+                        continue
+                    
+                    # If WebSocket slot is ahead of RPC slot, wait for RPC to catch up
+                    if slot_diff > 0:
+                        self.logger.debug(f"Waiting for slot {ws_slot} to be available (current: {current_slot})")
+                        await asyncio.sleep(1)  # Wait a bit for RPC to catch up
+                        continue
+                    
+                    # Try to fetch the block
+                    block = await self.get_block(ws_slot)
+                    if block:
+                        last_processed_slot = ws_slot
+                        self.logger.info(f"Successfully fetched and processing block {ws_slot}")
+                        yield block
+                    else:
+                        self.logger.debug(f"No block data available for slot {ws_slot}")
+                        
+                except Exception as e:
+                    self.logger.error(f"Error processing slot {ws_slot}: {e}")
+                    continue

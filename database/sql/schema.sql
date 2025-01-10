@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS blocks (
     block_data TEXT -- Remove this column in future
 );
 
+
 -- Transactions table
 CREATE TABLE IF NOT EXISTS base_evm_transactions (
 
@@ -19,7 +20,7 @@ CREATE TABLE IF NOT EXISTS base_evm_transactions (
     transaction_hash TEXT NOT NULL UNIQUE,
     chain_id INTEGER NOT NULL,
     from_address TEXT NOT NULL,
-    to_address TEXT NOT NULL,
+    to_address TEXT,
     value_wei INTEGER NOT NULL,
     total_gas INTEGER NOT NULL,
     timestamp DATETIME NOT NULL,
