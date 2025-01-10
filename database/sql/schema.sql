@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS blocks (
 );
 
 -- Transactions table
-CREATE TABLE IF NOT EXISTS base_env_transactions (
+CREATE TABLE IF NOT EXISTS base_evm_transactions (
 
     block_number INTEGER NOT NULL,
     network TEXT NOT NULL,
@@ -24,6 +24,16 @@ CREATE TABLE IF NOT EXISTS base_env_transactions (
     total_gas INTEGER NOT NULL,
     timestamp DATETIME NOT NULL,
     PRIMARY KEY (chain_id, transaction_hash)
+);
+
+
+CREATE TABLE IF NOT EXISTS base_bitcoin_transactions (
+    block_number INTEGER NOT NULL,
+    transaction_id TEXT NOT NULL UNIQUE,
+    version INTEGER NOT NULL,
+    value_satoshis REAL NOT NULL,
+    timestamp DATETIME NOT NULL,
+    fee REAL
 );
 
 -- ABI Table
@@ -45,4 +55,9 @@ CREATE INDEX IF NOT EXISTS idx_parent_child_hash ON blocks (parent_hash, block_h
 
 -- Index for network and timestamp queries
 CREATE INDEX IF NOT EXISTS idx_network_timestamp ON blocks (network, timestamp);
+CREATE INDEX IF NOT EXISTS idx_network_timestamp ON base_evm_transactions (network, timestamp);
+CREATE INDEX IF NOT EXISTS idx_network_timestamp ON base_bitcoin_transactions (network, timestamp);
 
+-- Index by block number
+CREATE INDEX IF NOT EXISTS idx_block_number ON base_evm_transactions (block_number);
+CREATE INDEX IF NOT EXISTS idx_block_number ON base_bitcoin_transactions (block_number);

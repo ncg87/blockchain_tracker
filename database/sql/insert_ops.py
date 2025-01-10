@@ -60,7 +60,7 @@ class SQLInsertOperations:
             
             # Insert transaction into the database
             self.db.cursor.execute("""
-                INSERT INTO base_env_transactions (block_number, network, transaction_hash, chain_id, from_address, to_address, value_wei, total_gas, timestamp)
+                INSERT INTO base_evm_transactions (block_number, network, transaction_hash, chain_id, from_address, to_address, value_wei, total_gas, timestamp)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (transaction_hash) DO NOTHING
             """, (transaction['block_number'], network, transaction['transaction_hash'], transaction['chain_id'], transaction['from_address'], transaction['to_address'], transaction['amount'], transaction['gas_costs'], transaction['timestamp']))
@@ -69,6 +69,23 @@ class SQLInsertOperations:
             self.db.logger.debug(f"Transaction {transaction['transaction_hash']} inserted successfully")
         except Exception as e:
             self.db.logger.error(f"Error inserting transaction {transaction['transaction_hash']}: {e}")
+
+    def insert_bitcoin_transaction(self, transaction):
+        """
+        Insert a bitcoin transaction into the database.
+        """
+        try:
+            self.db.logger.debug(f"Inserting bitcoin transaction {transaction['transaction_id']} into SQL database")
+            self.db.cursor.execute("""
+                INSERT INTO base_bitcoin_transactions (block_number, transaction_id, version, value_satoshis, timestamp, fee    )
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT (transaction_id) DO NOTHING
+            """, (transaction['block_number'], transaction['transaction_id'], transaction['version'], transaction['value_satoshis'], transaction['timestamp'], transaction.get('fee', 0)))
+            self.db.conn.commit()
+
+            self.db.logger.debug(f"Transaction {transaction['transaction_id']} inserted successfully")
+        except Exception as e:
+            self.db.logger.error(f"Error inserting transaction {transaction['transaction_id']}: {e}")
 
 # add in future to reduce total code
 def convert_timestamp(timestamp):

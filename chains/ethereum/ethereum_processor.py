@@ -100,7 +100,7 @@ class EthereumProcessor(BaseProcessor):
                 "timestamp": timestamp,
             }
         
-        self.sql_insert_ops.insert_ethereum_transaction(self.network, transaction_data)
+        self.sql_insert_ops.insert_evm_transaction(self.network, transaction_data)
         self.logger.debug(f"Transaction {normalize_hex(transaction['hash'])} processed.")
     
  

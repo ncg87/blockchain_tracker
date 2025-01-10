@@ -32,13 +32,13 @@ async def main():
         solana_pipeline = SolanaPipeline(sql_database, mongodb_database)
         xrp_pipeline = XRPPipeline(sql_database, mongodb_database)
 
-        duration = 15
+        duration = 1200
 
         # Run all pipelines concurrently
         await asyncio.gather(
-            ethereum_pipeline.run(duration=duration),
-            bnb_pipeline.run(duration=duration),
-            #bitcoin_pipeline.run(duration=duration),
+            #ethereum_pipeline.run(duration=duration),
+            #bnb_pipeline.run(duration=duration),
+            bitcoin_pipeline.run(duration=duration),
             #solana_pipeline.run(duration=duration),
             #xrp_pipeline.run(duration=duration),
         )

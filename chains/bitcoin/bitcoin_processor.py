@@ -33,23 +33,24 @@ class BitcoinProcessor(BaseProcessor):
         self.logger.debug(f"Block {block['height']} stored successfully.")
         
         # Process transactions
-        #self._process_transactions(block)
+        self._process_transactions(block)
     
     def _process_transactions(self, block):
         """
         Process transactions in the block.
         """
+        self.logger.info(f"Processing transactions in block {block['height']} on {self.network}")
         try:
             for tx in block["tx"]:
                 transaction = {
                     "block_number": block["height"],
+                    "transaction_id": tx["txid"],
+                    "version": tx["version"],
                     "timestamp": block["time"],
-                    "hash": tx["hash"],
-                    "id": tx["txid"],
-                    "amount": tx["vout"][0]["value"],
-                    "fee": tx["fee"],
+                    "value_satoshis": tx["vout"][0]["value"],
                 }
-                self.insert_ops.insert_transaction(transaction)
+                self.sql_insert_ops.insert_bitcoin_transaction(transaction)
+            self.logger.debug(f"Inserted {len(block['tx'])} transactions in block {block['height']} on {self.network}")
         except Exception as e:
             self.logger.error(f"Failed to process transactions in block {block['height']}: {e}")
             return

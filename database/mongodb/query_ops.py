@@ -19,7 +19,7 @@ class MongoQueryOperations:
             self.logger.error(f"Error decompressing block data: {e}")
             raise
 
-    def get_block_by_number(self, block_number, network, decompress = True):
+    def get_block_by_number(self, network, block_number, decompress = True):
         """
         Retrieve a block by block number and decompress the raw data.
         :param block_number: The block number to query.

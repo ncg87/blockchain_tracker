@@ -76,10 +76,29 @@ class SQLQueryOperations:
     def query_evm_transactions(self, network, block_number):
         try:
             self.db.cursor.execute("""
-                SELECT * FROM base_env_transactions WHERE network = ? AND block_number = ?
+                SELECT * FROM base_evm_transactions WHERE network = ? AND block_number = ?
             """, (network, block_number))
             return self.db.cursor.fetchall()
         except Exception as e:
             self.db.logger.error(f"Error querying transactions for network {network} from SQL database: {e}")
             return []
 
+    def query_bitcoin_transactions(self, block_number):
+        try:
+            self.db.cursor.execute("""
+                SELECT * FROM base_bitcoin_transactions WHERE block_number = ?
+            """, (block_number))
+            return self.db.cursor.fetchall()
+        except Exception as e:
+            self.db.logger.error(f"Error querying Bitcoin transactions for block {block_number} from SQL database: {e}")
+            return []
+    
+    def query_recent_bitcoin_transactions(self, limit=10):
+        try:
+            self.db.cursor.execute("""
+                SELECT * FROM base_bitcoin_transactions ORDER BY timestamp DESC LIMIT ?
+            """, (limit,))
+            return self.db.cursor.fetchall()
+        except Exception as e:
+            self.db.logger.error(f"Error querying recent Bitcoin transactions from SQL database: {e}")
+            return []
