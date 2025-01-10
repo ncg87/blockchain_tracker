@@ -72,4 +72,14 @@ class SQLQueryOperations:
         except Exception as e:
             self.db.logger.error(f"Error querying blocks for network {network} from SQL database: {e}")
             return []
+        
+    def query_evm_transactions(self, network, block_number):
+        try:
+            self.db.cursor.execute("""
+                SELECT * FROM base_env_transactions WHERE network = ? AND block_number = ?
+            """, (network, block_number))
+            return self.db.cursor.fetchall()
+        except Exception as e:
+            self.db.logger.error(f"Error querying transactions for network {network} from SQL database: {e}")
+            return []
 

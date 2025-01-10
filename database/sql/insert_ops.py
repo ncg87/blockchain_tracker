@@ -10,7 +10,7 @@ class SQLInsertOperations:
         Insert a block into the database, converting the timestamp to SQL-compatible format if necessary.
         """
         try:
-            self.db.logger.info(f"Inserting block {block['block_number']} into SQL database")
+            self.db.logger.info(f"Inserting {block['network']} block {block['block_number']} into SQL database")
 
             # Convert timestamp to SQL-compliant DATETIME format
             if isinstance(block['timestamp'], int):  # If given as UNIX time
@@ -37,3 +37,22 @@ class SQLInsertOperations:
             self.db.logger.info(f"Block {block['block_number']} inserted successfully")
         except Exception as e:
             self.db.logger.error(f"Error inserting block {block['block_number']}: {e}")
+
+    def insert_evm_transaction(self, network, transaction):
+        """
+        Insert a transaction into the database.
+        """
+        try:
+            self.db.logger.debug(f"Inserting {network} transaction {transaction['transaction_hash']} into SQL database")
+
+            # Insert transaction into the database
+            self.db.cursor.execute("""
+                INSERT INTO base_env_transactions (block_number, network, transaction_hash, chain_id, from_address, to_address, amount, gas_costs, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (transaction_hash) DO NOTHING
+            """, (transaction['block_number'], network, transaction['transaction_hash'], transaction['chain_id'], transaction['from_address'], transaction['to_address'], transaction['amount'], transaction['gas_costs'], transaction['timestamp']))
+            self.db.conn.commit()
+
+            self.db.logger.debug(f"Transaction {transaction['transaction_hash']} inserted successfully")
+        except Exception as e:
+            self.db.logger.error(f"Error inserting transaction {transaction['transaction_hash']}: {e}")

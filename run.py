@@ -9,7 +9,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler("maintenance.log", mode='w'),  # Reset on each run
-        # logging.StreamHandler()  # Optional: Logs to the console
+        #logging.StreamHandler()  # Optional: Logs to the console
     ]
 )
 
@@ -38,9 +38,9 @@ async def main():
         await asyncio.gather(
             ethereum_pipeline.run(duration=duration),
             bnb_pipeline.run(duration=duration),
-            bitcoin_pipeline.run(duration=duration),
-            solana_pipeline.run(duration=duration),
-            xrp_pipeline.run(duration=duration),
+            #bitcoin_pipeline.run(duration=duration),
+            #solana_pipeline.run(duration=duration),
+            #xrp_pipeline.run(duration=duration),
         )
     except Exception as e:
         # Log any errors

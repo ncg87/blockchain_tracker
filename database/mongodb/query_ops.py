@@ -1,6 +1,7 @@
 import gzip
 import logging
 from .base import MongoDatabase
+import json
 
 class MongoQueryOperations:
     def __init__(self, mongodb: MongoDatabase):
@@ -13,7 +14,7 @@ class MongoQueryOperations:
         """
         try:
             decompressed_data = gzip.decompress(compressed_data).decode('utf-8')
-            return decompressed_data
+            return json.loads(decompressed_data)
         except Exception as e:
             self.logger.error(f"Error decompressing block data: {e}")
             raise
@@ -77,8 +78,15 @@ class MongoQueryOperations:
 
             # Decompress the block data if specified
             if decompress:
+                decompressed_blocks = []
                 for block in block_list:
-                    block["raw_block_data"] = self._decompress_data(block["compressed_data"])
+                    decompressed_block = {
+                        "block_number": block["block_number"],
+                        "timestamp": block["timestamp"],
+                        "raw_block_data": self._decompress_data(block["compressed_data"])
+                    }
+                    decompressed_blocks.append(decompressed_block)
+                return decompressed_blocks
 
             if block_list:
                 self.logger.info(f"Retrieved {len(block_list)} most recent blocks from the {network} collection.")
