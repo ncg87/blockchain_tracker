@@ -11,21 +11,7 @@ class SQLInsertOperations:
         """
         try:
             self.db.logger.info(f"Inserting {block['network']} block {block['block_number']} into SQL database")
-
-            # Convert timestamp to SQL-compliant DATETIME format
-            if isinstance(block['timestamp'], int):  # If given as UNIX time
-                block['timestamp'] = datetime.utcfromtimestamp(block['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
-            elif isinstance(block['timestamp'], str):  # If already a string, assume it's correct
-                # Optionally, validate the format
-                try:
-                    datetime.strptime(block['timestamp'], '%Y-%m-%d %H:%M:%S')
-                except ValueError:
-                    raise ValueError("Timestamp string is not in '%Y-%m-%d %H:%M:%S' format")
-            elif isinstance(block['timestamp'], datetime):  # If given as a datetime object
-                block['timestamp'] = block['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
-            else:
-                raise TypeError("Invalid timestamp format. Must be int (UNIX), str, or datetime object.")
-
+            
             # Insert block into the database
             self.db.cursor.execute("""
                 INSERT INTO blocks (network, block_number, block_hash, parent_hash, timestamp)
@@ -44,19 +30,6 @@ class SQLInsertOperations:
         """
         try:
             self.db.logger.debug(f"Inserting {network} transaction {transaction['transaction_hash']} into SQL database")
-            # Convert timestamp to SQL-compliant DATETIME format
-            if isinstance(transaction['timestamp'], int):  # If given as UNIX time
-                transaction['timestamp'] = datetime.utcfromtimestamp(transaction['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
-            elif isinstance(transaction['timestamp'], str):  # If already a string, assume it's correct
-                # Optionally, validate the format
-                try:
-                    datetime.strptime(transaction['timestamp'], '%Y-%m-%d %H:%M:%S')
-                except ValueError:
-                    raise ValueError("Timestamp string is not in '%Y-%m-%d %H:%M:%S' format")
-            elif isinstance(transaction['timestamp'], datetime):  # If given as a datetime object
-                    transaction['timestamp'] = transaction['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
-            else:
-                    raise TypeError("Invalid timestamp format. Must be int (UNIX), str, or datetime object.")
             
             # Insert transaction into the database
             self.db.cursor.execute("""
@@ -92,4 +65,18 @@ def convert_timestamp(timestamp):
     """
     Convert a timestamp to a SQL-compatible DATETIME format.
     """
-    return datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Convert timestamp to SQL-compliant DATETIME format
+    if isinstance(timestamp, int):  # If given as UNIX time
+        timestamp = datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+    elif isinstance(timestamp, str):  # If already a string, assume it's correct
+        # Optionally, validate the format
+        try:
+            datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            raise ValueError("Timestamp string is not in '%Y-%m-%d %H:%M:%S' format")
+    elif isinstance(timestamp, datetime):  # If given as a datetime object
+        timestamp = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        raise TypeError("Invalid timestamp format. Must be int (UNIX), str, or datetime object.")
+    return timestamp

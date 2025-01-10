@@ -3,7 +3,19 @@ import json
 from hexbytes import HexBytes
 from ..base_models import BaseProcessor
 from ..utils import decode_hex, normalize_hex, decode_extra_data
+from operator import itemgetter
 
+
+# Item getters
+get_hash = itemgetter('hash')
+get_from = itemgetter('from')
+get_to = itemgetter('to')
+get_value = itemgetter('value')
+get_gas = itemgetter('gas')
+get_gas_price = itemgetter('gasPrice')
+get_chain_id = itemgetter('chainId')
+get_hash = itemgetter('hash')
+get_parent_hash = itemgetter('parentHash')
 class EthereumProcessor(BaseProcessor):
     """
     Ethereum processor class.
@@ -19,38 +31,41 @@ class EthereumProcessor(BaseProcessor):
         """
         Process raw block data and store it in the database.
         """
-        self.logger.info(f"Processing block {block['number']} on {self.network}")
+        
+        height = decode_hex(block['number'])
+        timestamp = decode_hex(block['timestamp'])
+        
+        self.logger.info(f"Processing block {height} on {self.network}")
         
         # Insert block into MongoDB
-        self.mongodb_insert_ops.insert_block(block, self.network, decode_hex(block['number']), decode_hex(block['timestamp']))
-        
+        self.mongodb_insert_ops.insert_block(block, self.network, height, timestamp)
         
         block_data = {
             "network": self.network,
-            "block_number": decode_hex(block["number"]),
-            "block_hash": normalize_hex(block["hash"]),
-            "parent_hash": normalize_hex(block["parentHash"]),
-            "timestamp": decode_hex(block["timestamp"]),
+            "block_number": height,
+            "block_hash": decode_hex(get_hash(block)),
+            "parent_hash": decode_hex(get_parent_hash(block)),
+            "timestamp": timestamp,
         }
         self.sql_insert_ops.insert_block(block_data)
-        self.logger.debug(f"Block {block['number']} stored successfully.")
+        self.logger.debug(f"Block {height} stored successfully.")
         
         # Process transactions
-        self._process_transactions(block)
+        self._process_transactions(block, height, timestamp)
         
         # Process withdrawals
         #self._process_withdrawals(block)
  
  
     
-    def _process_transactions(self, block):
+    def _process_transactions(self, block, block_number, timestamp):
         """
         Process raw transaction data, decode input data if ABI is available, and store it.
         """
         try:
-            self.logger.info(f"Processing {self.network} transactions for block {decode_hex(block['number'])}")
+            
+            self.logger.info(f"Processing {self.network} transactions for block {block_number}")
             for transaction in block['transactions']:
-                timestamp = decode_hex(block['timestamp'])
                 
                 # Checks if the transaction is between two wallets, and then check the logs for data about the transaction
                 #if normalize_hex(transaction['input']) == '0x':
@@ -58,13 +73,13 @@ class EthereumProcessor(BaseProcessor):
                 
                 # Format transaction data
                 transaction_data = {
-                    "block_number": decode_hex(transaction["blockNumber"]),
-                    "transaction_hash": normalize_hex(transaction["hash"]),
-                    "chain_id" : decode_hex(transaction.get("chainId",1)),
-                    "from_address": transaction["from"],
-                    "to_address": transaction.get("to"),
-                    "amount": decode_hex(transaction.get("value")),
-                    "gas_costs": self.calculate_gas_cost(transaction),
+                    "block_number": block_number,
+                    "transaction_hash": normalize_hex(get_hash(transaction)),
+                    "chain_id" : self.get_chain_id_with_default(transaction),
+                    "from_address": get_from(transaction),
+                    "to_address": get_to(transaction),
+                    "amount": decode_hex(get_value(transaction)),
+                    "gas_costs": decode_hex(get_gas(transaction)) * decode_hex(get_gas_price(transaction)),
                     "timestamp": timestamp
                 }
                 # Store transaction data
@@ -75,15 +90,8 @@ class EthereumProcessor(BaseProcessor):
         except Exception as e:
             self.logger.error(f"Error processing transactions for block {decode_hex(block['number'])}: {e}")
     
-    def calculate_gas_cost(self, transaction):
-        """
-        Calculate the gas cost of a Ethereum transaction.
-        """
-        try:
-            return decode_hex(transaction.get("gas")) * decode_hex(transaction.get("gasPrice"))
-        except Exception as e:
-            self.logger.error(f"Error calculating gas cost for transaction {normalize_hex(transaction['hash'])}: {e}")
-            return None
+    def get_chain_id_with_default(self, tx):
+        return decode_hex(get_chain_id(tx)) if 'chainId' in tx else 1
     
     def _process_native_transfer(self, transaction, timestamp):
         """
