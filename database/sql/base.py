@@ -1,22 +1,32 @@
-import sqlite3
+import psycopg2
+from psycopg2 import sql
 import logging
 import os
+from config.settings import Settings
 
 logger = logging.getLogger(__name__)
 
 class SQLDatabase:
     """
-    Database class.
+    PostgreSQL Database class.
     """
-    def __init__(self, db_name="blockchain_data.db", schema_file="schema.sql"):
+    def __init__(self, db_name="blockchain_data", user="postgres", password="", host="localhost", port=5432, schema_file="schema.sql"):
         """
         Initialize the database.
         """
         self.db_name = db_name
-        self.conn = sqlite3.connect(self.db_name)
+        self.user = user
+        self.password = password
+        self.host = host
+        self.port = port
+
+        self.conn = psycopg2.connect(
+            **Settings.POSTGRES_CONFIG
+        )
+        
         self.cursor = self.conn.cursor()
         self.logger = logger
-        
+
         schema_file = os.path.join(os.path.dirname(__file__), schema_file)
         self._apply_schema(schema_file)
 
@@ -28,7 +38,7 @@ class SQLDatabase:
         try:
             with open(schema_file, 'r') as f:
                 schema = f.read()
-            self.cursor.executescript(schema)
+            self.cursor.execute(schema)
             self.conn.commit()
             self.logger.info("Schema applied successfully.")
         except Exception as e:

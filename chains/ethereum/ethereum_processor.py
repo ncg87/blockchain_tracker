@@ -35,26 +35,21 @@ class EthereumProcessor(BaseProcessor):
         Process raw block data and store it in the database.
         """
         
-        height = decode_hex(get_block_number(block))
+        block_number = decode_hex(get_block_number(block))
         timestamp = decode_hex(get_block_time(block))
         
-        self.logger.info(f"Processing block {height} on {self.network}")
+        self.logger.info(f"Processing block {block_number} on {self.network}")
         
         # Insert block into MongoDB
-        self.mongodb_insert_ops.insert_block(block, self.network, height, timestamp)
+        self.mongodb_insert_ops.insert_block(block, self.network, block_number, timestamp)
+
+        # Insert block into PostgreSQL
+        self.sql_insert_ops.insert_block(self.network, block_number, normalize_hex(get_hash(block)), normalize_hex(get_parent_hash(block)), timestamp)
         
-        block_data = {
-            "network": self.network,
-            "block_number": height,
-            "block_hash": decode_hex(get_hash(block)),
-            "parent_hash": decode_hex(get_parent_hash(block)),
-            "timestamp": timestamp,
-        }
-        self.sql_insert_ops.insert_block(block_data)
-        self.logger.debug(f"Block {height} stored successfully.")
+        self.logger.debug(f"Processed {self.network} block {block_number}")
         
         # Process transactions
-        self._process_transactions(block, height, timestamp)
+        self._process_transactions(block, block_number, timestamp)
         
         # Process withdrawals
         #self._process_withdrawals(block)
@@ -83,7 +78,7 @@ class EthereumProcessor(BaseProcessor):
             ]
             
             self.sql_insert_ops.insert_bulk_evm_transactions(self.network, transactions, block_number)
-            self.logger.info(f"Processed {len(block['transactions'])} {self.network} transactions for block {block_number}")
+            self.logger.debug(f"Processed {len(block['transactions'])} {self.network} transactions for block {block_number}")
         
         except Exception as e:
             self.logger.error(f"Error processing transactions for block {block_number}: {e}")

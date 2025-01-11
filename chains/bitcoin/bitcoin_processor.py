@@ -9,6 +9,8 @@ get_version = itemgetter('version')
 get_vout = itemgetter('vout')
 get_value = itemgetter('value')
 get_fee = itemgetter('fee')
+get_parent_hash = itemgetter('previousblockhash')
+get_hash = itemgetter('hash')
 
 class BitcoinProcessor(BaseProcessor):
     """
@@ -30,17 +32,9 @@ class BitcoinProcessor(BaseProcessor):
         # Insert block into MongoDB
         self.mongodb_insert_ops.insert_block(block, self.network, block_number, timestamp)
         
-        # Prepare block data for SQL insertion
-        block_data = {
-            "network": self.network,
-            "block_number": block_number,
-            "block_hash": block["hash"],
-            "parent_hash": block["previousblockhash"],
-            "timestamp": timestamp,
-        }
-        # Insert block 
-        self.sql_insert_ops.insert_block(block_data)
-        self.logger.debug(f"Block {block_number} stored successfully.")
+        # Insert block into PostgreSQL
+        self.sql_insert_ops.insert_block(self.network, block_number, get_hash(block), get_parent_hash(block), timestamp)
+        self.logger.debug(f"Processed {self.network} block {block_number}")
         
         # Process transactions
         self._process_transactions(block, block_number, timestamp)
@@ -49,11 +43,9 @@ class BitcoinProcessor(BaseProcessor):
         """
         Process transactions in the block.
         """
-        
-            
+         
         self.logger.info(f"Processing transactions in block {block_number} on {self.network}")
-        try:
-            
+        try: 
             transactions = [
                 (
                     block_number,
@@ -66,7 +58,7 @@ class BitcoinProcessor(BaseProcessor):
             ]
             
             self.sql_insert_ops.insert_bulk_bitcoin_transactions(transactions, block_number)
-            self.logger.info(f"Inserted {len(block['tx'])} transactions in block {block_number} on {self.network}")
+            self.logger.debug(f"Inserted {len(block['tx'])} transactions in block {block_number} on {self.network}")
         except Exception as e:
             self.logger.error(f"Failed to process transactions in block {block_number}: {e}")
             return

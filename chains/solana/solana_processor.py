@@ -1,6 +1,7 @@
 from ..base_models import BaseProcessor
 import json
 from operator import itemgetter
+import numpy as np
 
 
 # Item getters
@@ -8,6 +9,16 @@ get_block_hash = itemgetter('blockhash')
 get_previous_block_hash = itemgetter('previousBlockhash')
 get_block_height = itemgetter('blockHeight')
 get_block_time = itemgetter('blockTime')
+get_transactions = itemgetter('transactions')
+get_transaction = itemgetter('transaction')
+get_signature = itemgetter('signatures')
+get_meta = itemgetter('meta')
+get_fee = itemgetter('fee')
+get_pre_token_balances = itemgetter('preBalances')
+get_post_token_balances = itemgetter('postBalances')
+get_account_keys = itemgetter('accountKeys')
+get_pubkey = itemgetter('pubkey')
+get_message = itemgetter('message')
 
 class SolanaProcessor(BaseProcessor):
     """
@@ -24,51 +35,61 @@ class SolanaProcessor(BaseProcessor):
         """
         Process raw block data and store it using the database class.
         """
-        block_height = get_block_height(block)
-        block_time = get_block_time(block)
-        
-        self.logger.info(f"Processing {self.network} block {block_height}")
-        
-        # Insert block into MongoDB
-        self.mongodb_insert_ops.insert_block(block, self.network, block_height, block_time)
-        
-        # Prepare block data for SQL insertion
-        block_data = {
-            "network": self.network,
-            "block_number": block_height,
-            "block_hash": get_block_hash(block),
-            "parent_hash": get_previous_block_hash(block),
-            "timestamp": block_time,
-        }
-        self.sql_insert_ops.insert_block(block_data)
-        self.logger.debug(f"Block {block_height} stored successfully.")
-        
-        # Process transactions
-        #self._process_transactions(block)
+        try:
+            block_height = get_block_height(block)
+            block_time = get_block_time(block)
+                
+            self.logger.info(f"Processing {self.network} block {block_height}")
+            
+            # Insert block into MongoDB
+            self.mongodb_insert_ops.insert_block(block, self.network, block_height, block_time)
+            
+            # Insert block into PostgreSQL
+            self.sql_insert_ops.insert_block(self.network, block_height, get_block_hash(block), get_previous_block_hash(block), block_time)
+            self.logger.debug(f"{self.network} block {block_height} stored successfully.")
+            
+            # Process transactions
+            self._process_transactions(block, block_height, block_time)
+            
+            self.logger.debug(f"Processed {self.network} block {block_height}")
+        except Exception as e:
+            self.logger.error(f"Error processing block {block_height}: {e}")
     
-    def _process_transactions(self, block):
+    def _process_transactions(self, block, block_height, timestamp):
         """
         Process raw transaction data, decode input data if ABI is available, and store it.
         """
-        self.logger.info(f"Processing {self.network} transactions for block {block['blockHeight']}")
-        for transaction in block['transactions']:
+        try:
+            transactions = get_transactions(block)
+            self.logger.info(f"Processing {len(transactions)} {self.network} transactions for block {block_height}")
+            transacations_data = []
+            for tx in transactions:
+                meta = get_meta(tx)
+                transaction = get_transaction(tx)
+                transacations_data.append(
+                    (
+                        block_height,
+                        get_signature(transaction)[0],
+                        self._get_transaction_value(meta),
+                        get_fee(meta),
+                        get_pubkey(get_account_keys(get_message(transaction))[0]),
+                        timestamp,
+                    )
+                )
             
-            transaction_data = {
-                "network":  self.network,
-                "block_number": transaction["blockHeight"],
-                "timestamp": block["blockTime"],
-                
-                "transaction_hash": transaction["hash"],
-                "from_address": transaction["from"],
-                "to_address": transaction.get("to"),
-                "amount": transaction.get("value"),
-                "gas": transaction.get("gas"),
-                "gas_price": transaction.get("gasPrice"),
-                "input_data": transaction['input'].hex(),
-            }
-            
-            self.database.insert_transaction(transaction_data)
-            self.logger.debug(f"Transaction {transaction['signature']} stored successfully.")
+            self.sql_insert_ops.insert_bulk_solana_transactions(transacations_data, block_height)
+            self.logger.debug(f"Processed {len(transactions)} {self.network} transactions for block {block_height}")
+        except Exception as e:
+            self.logger.error(f"Error processing transactions for block {block_height}: {e}")
 
+    def _get_transaction_value(self, meta):
+        """
+        Get the transaction value from the transaction data.
+        """
+        pre_balances = get_pre_token_balances(meta)
+        post_balances = get_post_token_balances(meta)
+        fee = get_fee(meta)
+        
+        return int(np.subtract(np.sum(np.abs(np.subtract(post_balances, pre_balances))), fee))
 
 

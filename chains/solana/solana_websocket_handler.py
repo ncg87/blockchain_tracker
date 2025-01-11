@@ -13,6 +13,7 @@ class SolanaWebSocketHandler:
         self.logger = logging.getLogger(__name__)
         self.retry_attempts = 5
         self.retry_delay = 2
+        self.running = False
 
     async def connect(self):
         """
@@ -22,6 +23,7 @@ class SolanaWebSocketHandler:
             try:
                 self.connection = await websockets.connect(self.websocket_url)
                 self.logger.info("Connected to Solana WebSocket.")
+                self.running = True
                 return
             except Exception as e:
                 self.logger.error(f"Connection attempt {attempt + 1} failed: {e}")
@@ -54,6 +56,7 @@ class SolanaWebSocketHandler:
             while True:
                 if duration and asyncio.get_running_loop().time() - start_time > duration:
                     self.logger.info("WebSocket stream duration expired.")
+                    await self.stop()
                     break
 
                 message = await self.connection.recv()
@@ -63,8 +66,29 @@ class SolanaWebSocketHandler:
                     if slot is not None:
                         yield slot
         except websockets.ConnectionClosed:
-            self.logger.error("WebSocket connection closed. Reconnecting...")
-            await self.connect()
-            await self.subscribe()
+            if self.running:
+                self.logger.error("WebSocket connection closed. Reconnecting...")
+                self.running = False
+                await self.reconnect()
         except Exception as e:
             self.logger.error(f"Error in WebSocket stream: {e}")
+
+    async def stop(self):
+        """
+        Close the WebSocket connection.
+        """
+        self.running = False
+        if self.connection:
+            await self.connection.close()
+        self.logger.info("WebSocket connection closed.")
+        
+    async def reconnect(self):
+        """
+        Reconnect to the WebSocket.
+        """
+        self.connection = None
+        await self.connect()
+        await self.subscribe()
+        self.running = True 
+    
+

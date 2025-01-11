@@ -17,7 +17,7 @@ def decode_hex(value):
     :param value: Hexadecimal string (e.g., '0x677df92f') or other types.
     :return: Decoded integer or original value if not a valid short hex integer.
     """
-    if isinstance(value, str) and value.startswith("0x") and len(value) <= 10:
+    if isinstance(value, str) and value.startswith("0x"):
         # Only decode if the hex string is short (e.g., block numbers, gas, timestamps)
         return int(value, 16)
     return value  # Return original value if not a short hex integer

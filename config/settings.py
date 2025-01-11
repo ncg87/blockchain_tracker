@@ -16,3 +16,21 @@ class Settings:
     BNB_ENDPOINT = os.getenv('BNB_ENDPOINT')
     BNB_WEBSOCKET_ENDPOINT = os.getenv('BNB_WEBSOCKET_ENDPOINT')
     NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD')
+    
+    # MONGO CONFIG
+    MONGO_URI = os.getenv('MONGO_URI')
+    MONGO_DB_NAME = os.getenv('MONGO_DB_NAME')
+    
+    # POSTGRES CONFIG
+    POSTGRES_CONFIG = {
+        "dbname": os.getenv('DB_NAME'),
+        "user": os.getenv('DB_USER'),
+        "password": os.getenv('DB_PASSWORD'),
+        "host": os.getenv('DB_HOST'),
+        "port": int(os.getenv('DB_PORT')) if os.getenv('DB_PORT') else 5432,
+    }
+    
+    # NEO4J CONFIG
+    NEO4J_URI = os.getenv('NEO4J_URI')
+    NEO4J_DB_NAME = os.getenv('NEO4J_DB_NAME')
+    NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD')

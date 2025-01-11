@@ -38,19 +38,9 @@ class XRPProcessor(BaseProcessor):
         # Insert block into MongoDB, add 30 years since XRP has its own epoch
         self.mongodb_insert_ops.insert_block(ledger, self.network, ledger_index, timestamp)
         
-        
-        # Prepare block data for insertion
-        block_data = {
-            "network": self.network,
-            "block_number": ledger_index,
-            "block_hash": get_ledger_hash(ledger),
-            "parent_hash": get_parent_hash(ledger),
-            "timestamp": timestamp,
-        }
-        
-        # Insert block data into the database
-        self.sql_insert_ops.insert_block(block_data)
-        self.logger.debug(f"Block {ledger_index} stored successfully.")
+        # Insert block data into the PostgreSQL database
+        self.sql_insert_ops.insert_block(self.network, ledger_index, get_ledger_hash(ledger), get_parent_hash(ledger), timestamp)
+        self.logger.debug(f"Processed {self.network} block {ledger_index}")
 
         # Process transactions
         self._process_transactions(ledger, ledger_index, timestamp)
@@ -73,7 +63,7 @@ class XRPProcessor(BaseProcessor):
             ]
             
             self.sql_insert_ops.insert_bulk_xrp_transactions(transactions, ledger_index)
-            self.logger.info(f"Processed {len(ledger['transactions'])} {self.network} transactions for block {ledger_index}")
+            self.logger.debug(f"Processed {len(ledger['transactions'])} {self.network} transactions for block {ledger_index}")
         except Exception as e:
             self.logger.error(f"Error processing transactions for block {ledger_index}: {e}")
             
