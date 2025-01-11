@@ -85,7 +85,7 @@ class BNBProcessor(BaseProcessor):
             ]
             
             self.sql_insert_ops.insert_bulk_evm_transactions(self.network, transactions, block_number)
-            self.logger.info(f"Processed {len(block['transactions'])} {self.network} transactions for block {decode_hex(block['number'])}")
+            self.logger.info(f"Processed {len(block['transactions'])} {self.network} transactions for block {block_number}")
             
             #for transaction in block['transactions']:
                 
@@ -110,7 +110,7 @@ class BNBProcessor(BaseProcessor):
             #    self.logger.debug(f"Transaction {normalize_hex(transaction['hash'])} processed.")
         
         except Exception as e:
-            self.logger.error(f"Error processing transactions for block {decode_hex(block['number'])}: {e}")
+            self.logger.error(f"Error processing transactions for block {block_number}: {e}")
     
     def get_chain_id_with_default(self, tx):
         return decode_hex(get_chain_id(tx)) if 'chainId' in tx else 1

@@ -59,13 +59,30 @@ class SQLInsertOperations:
             self.db.logger.debug(f"Transaction {transaction['transaction_id']} inserted successfully")
         except Exception as e:
             self.db.logger.error(f"Error inserting transaction {transaction['transaction_id']}: {e}")
+     
+    def insert_xrp_transaction(self, transaction):
+        """
+        Insert an XRP transaction into the database.
+        """
+        try:
+            self.db.logger.debug(f"Inserting XRP transaction {transaction['transaction_hash']} into SQL database")
+            self.db.cursor.execute("""
+                INSERT INTO base_xrp_transactions (block_number, transaction_hash, account, type, fee, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT (transaction_hash) DO NOTHING
+            """, (transaction['block_number'], transaction['transaction_hash'], transaction['account'], transaction['type'], transaction['fee'], transaction['timestamp']))
+            self.db.conn.commit()
+
+            self.db.logger.debug(f"Transaction {transaction['transaction_hash']} inserted successfully")
+        except Exception as e:
+            self.db.logger.error(f"Error inserting transaction {transaction['transaction_hash']}: {e}")
             
     def insert_bulk_evm_transactions(self, network, transactions, block_number):
         """
         Bulk insert EVM transactions into the database.
         """
         try:
-            self.db.logger.debug(f"Inserting {network} transactions {block_number} into SQL database in bulk.")
+            self.db.logger.info(f"Inserting {network} transactions {block_number} into SQL database in bulk.")
         
             
             self.db.cursor.executemany("""
@@ -75,7 +92,7 @@ class SQLInsertOperations:
             """, transactions)
             self.db.conn.commit()
 
-            self.db.logger.debug(f"{len(transactions)} {network} transactions inserted successfully in bulk.")
+            self.db.logger.info(f"{len(transactions)} {network} transactions inserted successfully in bulk.")
         except Exception as e:
             self.db.logger.error(f"Error inserting bulk {network} transactions: {e}")
     
@@ -84,7 +101,7 @@ class SQLInsertOperations:
         Bulk insert Bitcoin transactions into the database.
         """
         try:
-            self.db.logger.debug(f"Inserting Bitcoin transaction {block_number} into SQL database in bulk.")
+            self.db.logger.info(f"Inserting Bitcoin transaction {block_number} into SQL database in bulk.")
             
             self.db.cursor.executemany("""
                 INSERT INTO base_bitcoin_transactions (block_number, transaction_id, version, value_satoshis, timestamp, fee)
@@ -93,10 +110,28 @@ class SQLInsertOperations:
             """, transactions)
             self.db.conn.commit()
 
-            self.db.logger.debug(f"{len(transactions)} Bitcoin transactions inserted successfully in bulk.")
+            self.db.logger.info(f"{len(transactions)} Bitcoin transactions inserted successfully in bulk.")
         except Exception as e:
             self.db.logger.error(f"Error inserting bulk Bitcoin transactions: {e}")
 
+    def insert_bulk_xrp_transactions(self, transactions, block_number):
+        """
+        Bulk insert XRP transactions into the database.
+        """
+        try:
+            self.db.logger.info(f"Inserting XRP transaction {block_number} into SQL database in bulk.")
+            
+            self.db.cursor.executemany("""
+                INSERT INTO base_xrp_transactions (block_number, transaction_hash, account, type, fee, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT (transaction_hash) DO NOTHING
+            """, transactions)
+            self.db.conn.commit()
+            
+            self.db.logger.info(f"{len(transactions)} XRP transactions inserted successfully in bulk.")
+        except Exception as e:
+            self.db.logger.error(f"Error inserting bulk XRP transactions: {e}")
+    
 # add in future to reduce total code
 def convert_timestamp(timestamp):
     """

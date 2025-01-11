@@ -8,6 +8,12 @@ get_ledger_index = itemgetter('ledger_index')
 get_block_time = itemgetter('close_time')
 get_parent_hash = itemgetter('parent_hash')
 
+get_hash = itemgetter('hash')
+get_account = itemgetter('Account')
+get_type = itemgetter('TransactionType')
+get_fee = itemgetter('Fee')
+
+
 
 class XRPProcessor(BaseProcessor):
     """
@@ -47,11 +53,28 @@ class XRPProcessor(BaseProcessor):
         self.logger.debug(f"Block {ledger_index} stored successfully.")
 
         # Process transactions
-        #self._process_transactions(block)
+        self._process_transactions(ledger, ledger_index, timestamp)
         
-        def _process_transactions(self, ledger):
-            """
-            Process transactions in the ledger.
-            """
-            pass
+    def _process_transactions(self, ledger, ledger_index, timestamp):
+        """
+        Process transactions in the ledger.
+        """
+        try:
+            self.logger.info(f"Processing {len(ledger['transactions'])} {self.network} transactions for block {ledger_index}")
+            transactions = [
+                (
+                    ledger_index,
+                    get_hash(tx),
+                    get_account(tx),
+                    get_type(tx),
+                    get_fee(tx),
+                    timestamp,
+                ) for tx in ledger['transactions']
+            ]
+            
+            self.sql_insert_ops.insert_bulk_xrp_transactions(transactions, ledger_index)
+            self.logger.info(f"Processed {len(ledger['transactions'])} {self.network} transactions for block {ledger_index}")
+        except Exception as e:
+            self.logger.error(f"Error processing transactions for block {ledger_index}: {e}")
+            
         
