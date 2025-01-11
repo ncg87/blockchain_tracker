@@ -9,11 +9,11 @@ class Neo4jDB:
     """
     Neo4j Database class.
     """
-    def __init__(self, uri="bolt://localhost:7687", user="neo4j", schema_file="schema.cypher"):
+    def __init__(self, uri="bolt://localhost:7687", user="neo4j", password="password", schema_file="schema.cypher"):
         """
         Initialize the Neo4j database connection.
         """
-        self.driver = neo4j.GraphDatabase.driver(uri, auth=(user, Settings.NEO4J_PASSWORD))
+        self.driver = neo4j.GraphDatabase.driver(uri, auth=(user, password))
         self.logger = logger
         self.logger.info("Neo4jDB initialized")
         

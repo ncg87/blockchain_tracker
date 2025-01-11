@@ -17,3 +17,4 @@ block_examples
 *.db
 *.db.*
 *.db-journal
+run.bat
