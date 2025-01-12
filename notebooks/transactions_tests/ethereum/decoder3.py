@@ -6,7 +6,7 @@ from eth_abi.registry import registry
 
 abi_codec = ABICodec(registry)
 
-class LogDecoder2:
+class LogDecoder3:
     def __init__(self, etherscan_api_key):
         self.etherscan_api_key = etherscan_api_key
         self.abi_cache = {}
@@ -92,48 +92,50 @@ class LogDecoder2:
         except Exception as e:
             print(f"Error decoding log {log} for event {event_abi['name']}: {e}")
             return None
-
-    def process_transaction_logs(self, transaction_logs):
+        
+    def process_transaction_logs(self, logs):
         decoded_transactions = {}
+        
+        # Group logs by transaction hash first
+        for log in logs:
+            log = dict(log)
+            tx_hash = log.get("transactionHash").to_0x_hex()
+            if tx_hash not in decoded_transactions:
+                decoded_transactions[tx_hash] = []
+                
+            contract_address = log.get("address")
+            if not contract_address:
+                print(f"No contract address found for log: {log}")
+                self.unknown_logs.append(log)
+                continue
 
-        for tx_hash, logs in transaction_logs.items():
-            decoded_logs = []
-            for log in logs:
-                contract_address = log.get("address")
-                if not contract_address:
-                    print(f"No contract address found for log: {log}")
-                    self.unknown_logs.append(log)
-                    continue
+            if not log.get("topics"):
+                print(f"No event signature found for log: {log}")
+                self.unknown_logs.append(log)
+                continue
 
-                if not log.get("topics"):
-                    print(f"No event signature found for log: {log}")
-                    self.unknown_logs.append(log)
-                    continue
+            # Proceed with ABI fetching and decoding
+            abi = self.fetch_abi_from_explorer(contract_address)
+            if abi:
+                signature_to_event = self.map_signatures_to_events(abi)
+                event_signature = log["topics"][0].hex() if log["topics"] else None
+                if event_signature in signature_to_event:
+                    event_abi = signature_to_event[event_signature]
+                    decoded_log = self.decode_log(log, event_abi)
+                    if decoded_log:
+                        decoded_log["contract"] = contract_address
+                        decoded_transactions[tx_hash].append(decoded_log)
+                        continue
 
-                # Proceed with ABI fetching and decoding
-                abi = self.fetch_abi_from_explorer(contract_address)
-                if abi:
-                    signature_to_event = self.map_signatures_to_events(abi)
-                    event_signature = log["topics"][0].hex() if log["topics"] else None
-                    if event_signature in signature_to_event:
-                        event_abi = signature_to_event[event_signature]
-                        decoded_log = self.decode_log(log, event_abi)
-                        if decoded_log:
-                            decoded_log["contract"] = contract_address
-                            decoded_logs.append(decoded_log)
-                            continue
+            # Fallback: Decode without ABI using known events
+            decoded_log = self.decode_log_without_abi(log)
+            if decoded_log["event"] == "Unknown":
+                # Further fallback: Attempt heuristic decoding
+                #decoded_log = self.heuristic_decode_log(log)
+                self.unknown_logs.append(log)
 
-                # Fallback: Decode without ABI using known events
-                decoded_log = self.decode_log_without_abi(log)
-                if decoded_log["event"] == "Unknown":
-                    # Further fallback: Attempt heuristic decoding
-                    decoded_log = self.heuristic_decode_log(log)
-                    self.unknown_logs.append(log)
-
-                decoded_log["contract"] = contract_address
-                decoded_logs.append(decoded_log)
-
-            decoded_transactions[tx_hash] = decoded_logs
+            decoded_log["contract"] = contract_address
+            decoded_transactions[tx_hash].append(decoded_log)
 
         return decoded_transactions
         
