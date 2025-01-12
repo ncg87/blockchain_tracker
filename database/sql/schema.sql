@@ -1,15 +1,3 @@
--- Drop existing materialized view
-DROP MATERIALIZED VIEW IF EXISTS mv_daily_transactions;
-
--- Drop existing tables
-DROP TABLE IF EXISTS blocks CASCADE;
-DROP TABLE IF EXISTS base_evm_transactions CASCADE;
-DROP TABLE IF EXISTS base_bitcoin_transactions CASCADE;
-DROP TABLE IF EXISTS base_xrp_transactions CASCADE;
-DROP TABLE IF EXISTS base_solana_transactions CASCADE;
-DROP TABLE IF EXISTS ethereum_contract_abis CASCADE;
-DROP TABLE IF EXISTS ethereum_event_signatures CASCADE;
-
 -- Blocks table - Partitioned by network
 CREATE TABLE IF NOT EXISTS blocks (
     id SERIAL,
@@ -23,11 +11,11 @@ CREATE TABLE IF NOT EXISTS blocks (
 ) PARTITION BY LIST (network);
 
 -- Create partitions for each network
-CREATE TABLE blocks_ethereum PARTITION OF blocks FOR VALUES IN ('Ethereum');
-CREATE TABLE blocks_bitcoin PARTITION OF blocks FOR VALUES IN ('Bitcoin');
-CREATE TABLE blocks_xrp PARTITION OF blocks FOR VALUES IN ('XRP');
-CREATE TABLE blocks_solana PARTITION OF blocks FOR VALUES IN ('Solana');
-CREATE TABLE blocks_bnb PARTITION OF blocks FOR VALUES IN ('BNB');
+CREATE TABLE IF NOT EXISTS blocks_ethereum PARTITION OF blocks FOR VALUES IN ('Ethereum');
+CREATE TABLE IF NOT EXISTS blocks_bitcoin PARTITION OF blocks FOR VALUES IN ('Bitcoin');
+CREATE TABLE IF NOT EXISTS blocks_xrp PARTITION OF blocks FOR VALUES IN ('XRP');
+CREATE TABLE IF NOT EXISTS blocks_solana PARTITION OF blocks FOR VALUES IN ('Solana');
+CREATE TABLE IF NOT EXISTS blocks_bnb PARTITION OF blocks FOR VALUES IN ('BNB');
 
 -- Block-specific indexes
 CREATE INDEX IF NOT EXISTS idx_blocks_timestamp ON blocks USING brin (timestamp) WITH (pages_per_range = 128);
@@ -47,8 +35,8 @@ CREATE TABLE IF NOT EXISTS base_evm_transactions (
 ) PARTITION BY LIST (network);
 
 -- Create network partitions
-CREATE TABLE base_evm_transactions_ethereum PARTITION OF base_evm_transactions FOR VALUES IN ('Ethereum');
-CREATE TABLE base_evm_transactions_bnb PARTITION OF base_evm_transactions FOR VALUES IN ('BNB');
+CREATE TABLE IF NOT EXISTS base_evm_transactions_ethereum PARTITION OF base_evm_transactions FOR VALUES IN ('Ethereum');
+CREATE TABLE IF NOT EXISTS base_evm_transactions_bnb PARTITION OF base_evm_transactions FOR VALUES IN ('BNB');
 
 -- EVM transaction indexes
 CREATE INDEX IF NOT EXISTS idx_evm_tx_from ON base_evm_transactions 
@@ -113,6 +101,12 @@ CREATE INDEX IF NOT EXISTS idx_solana_tx_account ON base_solana_transactions
     INCLUDE (value_lamports, fee_lamports);
 CREATE INDEX IF NOT EXISTS idx_solana_tx_timestamp ON base_solana_transactions 
     USING btree (timestamp);
+
+CREATE TABLE IF NOT EXISTS signatures_to_events (
+    signature_hash VARCHAR(128) NOT NULL,
+    event_name VARCHAR(100) NOT NULL,
+    CONSTRAINT pk_signatures_to_events PRIMARY KEY (signature_hash)
+) WITH (fillfactor = 100);
 
 -- Contract ABIs table
 CREATE TABLE IF NOT EXISTS ethereum_contract_abis (

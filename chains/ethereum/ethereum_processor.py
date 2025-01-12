@@ -18,6 +18,9 @@ get_hash = itemgetter('hash')
 get_parent_hash = itemgetter('parentHash')
 get_block_number = itemgetter('number')
 get_block_time = itemgetter('timestamp')
+get_logs = itemgetter('logs')
+get_address = itemgetter('address')
+get_topics = itemgetter('topics')
 
 class EthereumProcessor(BaseProcessor):
     """
@@ -85,6 +88,65 @@ class EthereumProcessor(BaseProcessor):
     
     def get_chain_id_with_default(self, tx):
         return decode_hex(get_chain_id(tx)) if 'chainId' in tx else 1
+    
+    
+    def _process_logs(self, block_number, timestamp):
+        """
+        Process raw log data and store it.
+        """
+        try:
+            logs = self.querier.get_block_logs(block_number)
+            for log in logs:
+                # Get contractaddress from log
+                address = get_address(log)
+                
+                # If no address, skip log, possible that it is a contract creation
+                if not address:
+                    # self.database.insert_unknown_log(log) # maybe instead save the address
+                    self.logger.debug(f"No address found for log: {log}")
+                    continue
+                
+                topics = get_topics(log)
+                # Then no event signature, save this
+                if not topics:
+                    self.logger.debug(f"No event signature found for log: {log}")
+                    # self.database.insert_address(log)
+                    continue
+                
+                # Get the event signature
+                event_signature = topics[0].hex()
+                
+                # Check database, with address for the known events
+                known_events = self.database.query_known_events(address)
+                
+                if event_signature not in known_events:
+                
+                    # Try to get ABI
+                    abi = self.get_contract_abi(address)
+
+                    #decoder.decode_event(log, abi)
+                
+            if not abi:
+                self.logger.debug(f"No ABI found for logs in block {address}")
+                return
+            
+            
+        except Exception as e:
+            self.logger.error(f"Error processing logs for block {block_number}: {e}")
+    
+    
+    def get_contract_abi(self, address):
+        # First try to get ABI from DB
+        if self.database.query_contract_metadata(address):
+            return self.database.query_contract_metadata(address)
+        else:
+            # If not found, try to get it from Etherscan
+            abi = self.querier.get_contract_abi(address)
+            if abi:
+                # If found, store it in DB
+                self.database.insert_contract_metadata(address, self.network, abi)
+            return abi
+    
     
     def _process_native_transfer(self, transaction, timestamp):
         """

@@ -6,7 +6,7 @@ from eth_abi.registry import registry
 
 abi_codec = ABICodec(registry)
 
-class LogDecoder:
+class LogDecoder2:
     def __init__(self, etherscan_api_key):
         self.etherscan_api_key = etherscan_api_key
         self.abi_cache = {}
@@ -95,8 +95,6 @@ class LogDecoder:
 
     def process_transaction_logs(self, transaction_logs):
         decoded_transactions = {}
-        summarized_transactions = []
-        unknown_logs = []  # To track logs that remain unknown
 
         for tx_hash, logs in transaction_logs.items():
             decoded_logs = []
@@ -120,28 +118,27 @@ class LogDecoder:
                     if event_signature in signature_to_event:
                         event_abi = signature_to_event[event_signature]
                         decoded_log = self.decode_log(log, event_abi)
-                        decoded_logs.append(decoded_log)
-                        continue
+                        if decoded_log:
+                            decoded_log["contract"] = contract_address
+                            decoded_logs.append(decoded_log)
+                            continue
 
                 # Fallback: Decode without ABI using known events
                 decoded_log = self.decode_log_without_abi(log)
                 if decoded_log["event"] == "Unknown":
                     # Further fallback: Attempt heuristic decoding
                     decoded_log = self.heuristic_decode_log(log)
-                    unknown_logs.append(log)  # Track for logging statistics
+                    self.unknown_logs.append(log)
 
+                decoded_log["contract"] = contract_address
                 decoded_logs.append(decoded_log)
 
-            # Summarize the transaction
             decoded_transactions[tx_hash] = decoded_logs
-            transaction_summary = self.summarize_transaction(tx_hash, decoded_logs)
-            summarized_transactions.append(transaction_summary)
 
         # Log statistics for unknown events
-        self.log_unknown_events(unknown_logs)
+        #self.log_unknown_events(self.unknown_logs)
 
-        return summarized_transactions
-
+        return decoded_transactions
 
     def summarize_transaction(self, transaction_hash, decoded_logs):
         """
