@@ -2,7 +2,8 @@ from .base import SQLDatabase
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from psycopg2.extras import RealDictCursor
-
+from dataclasses import dataclass
+import json
 class SQLQueryOperations:
     """
     Query operations class optimized for PostgreSQL.
@@ -213,3 +214,56 @@ class SQLQueryOperations:
         except Exception as e:
             self.db.logger.error(f"Error querying daily stats: {e}")
             return []
+    
+    def query_ethereum_event(self, signature_hash: str) -> Optional[Dict[str, Any]]:
+        """
+        Query an Ethereum event by its signature hash.
+        """
+        try:
+            self.db.cursor.execute("""
+                SELECT * 
+                FROM ethereum_known_events 
+                WHERE signature_hash = %s
+            """, (signature_hash,))
+            
+            result = self.db.cursor.fetchone()
+            
+            if result:
+                return EventSignature(
+                    signature_hash=result.get('signature_hash'),
+                    name=result.get('name'),
+                    full_signature=result.get('full_signature'),
+                    input_types=json.loads(result.get('input_types')),
+                    indexed_inputs=json.loads(result.get('indexed_inputs')),
+                    inputs=json.loads(result.get('inputs'))
+                )
+            return None
+        except Exception as e:
+            self.db.logger.error(f"Error querying Ethereum event: {e}")
+            return None 
+    
+    
+    
+    def query_ethereum_contract_abi(self, contract_address: str) -> Optional[Dict[str, Any]]:
+        """
+        Query an Ethereum contract ABI by its address.
+        """
+        try:
+            self.db.cursor.execute("""
+                SELECT * 
+                FROM ethereum_contract_abis 
+                WHERE contract_address = %s
+            """, (contract_address,))
+            return self.db.cursor.fetchone()
+        except Exception as e:
+            #self.db.logger.error(f"Error querying Ethereum contract ABI: {e}")
+            return None
+
+@dataclass
+class EventSignature:
+    signature_hash: str
+    name: str
+    full_signature: str
+    input_types: List[str]
+    indexed_inputs: List[bool]
+    inputs: List[dict]

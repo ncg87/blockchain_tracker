@@ -102,26 +102,29 @@ CREATE INDEX IF NOT EXISTS idx_solana_tx_account ON base_solana_transactions
 CREATE INDEX IF NOT EXISTS idx_solana_tx_timestamp ON base_solana_transactions 
     USING btree (timestamp);
 
-CREATE TABLE IF NOT EXISTS signatures_to_events (
-    signature_hash VARCHAR(128) NOT NULL,
-    event_name VARCHAR(100) NOT NULL,
-    CONSTRAINT pk_signatures_to_events PRIMARY KEY (signature_hash)
-) WITH (fillfactor = 100);
 
--- Contract ABIs table
+-- Ethereum Known Events table
+CREATE TABLE IF NOT EXISTS ethereum_known_events (
+    signature_hash VARCHAR(128) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    full_signature VARCHAR(100) NOT NULL,
+    input_types VARCHAR(100) NOT NULL,
+    indexed_inputs VARCHAR(100) NOT NULL,
+    inputs TEXT NOT NULL,
+    CONSTRAINT pk_signature_hash PRIMARY KEY (signature_hash)
+) WITH (fillfactor = 100);
+CREATE INDEX IF NOT EXISTS idx_signature_hash ON ethereum_known_events
+    USING btree (signature_hash);
+
+
+-- Ethereum Contract ABIs table
 CREATE TABLE IF NOT EXISTS ethereum_contract_abis (
-    id SERIAL PRIMARY KEY,
     contract_address VARCHAR(64) NOT NULL,
-    CONSTRAINT uq_contract_address UNIQUE (contract_address)
+    abi TEXT NOT NULL,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_contract_address PRIMARY KEY (contract_address)
 ) WITH (fillfactor = 100);
 
--- Event Signatures table
-CREATE TABLE IF NOT EXISTS ethereum_event_signatures (
-    signature_hash VARCHAR(128) NOT NULL,
-    event_name VARCHAR(100) NOT NULL,
-    CONSTRAINT pk_event_signatures PRIMARY KEY (signature_hash)
-) WITH (fillfactor = 100);
+CREATE INDEX IF NOT EXISTS idx_contract_address ON ethereum_contract_abis
+    USING btree (contract_address);
 
-CREATE INDEX IF NOT EXISTS idx_event_signatures_name ON ethereum_event_signatures 
-    USING btree (event_name) 
-    INCLUDE (signature_hash);

@@ -2,6 +2,7 @@ from datetime import datetime
 from psycopg2.extras import execute_values, execute_batch
 from typing import List, Dict, Any
 from .base import SQLDatabase
+import json
 
 class SQLInsertOperations:
     def __init__(self, db: SQLDatabase):
@@ -133,6 +134,55 @@ class SQLInsertOperations:
         except Exception as e:
             self.db.logger.error(f"Error refreshing materialized view: {e}")
             self.db.conn.rollback()
+            
+    def insert_ethereum_event(self, event_signature):
+        """
+        Insert an Ethereum event into the PostgreSQL database.
+        """
+        try:
+            self.db.logger.info(f"Inserting Ethereum event {event_signature} into PostgreSQL database")
+            insert_query = """
+                INSERT INTO ethereum_known_events (signature_hash, name, full_signature, input_types, indexed_inputs, inputs)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (signature_hash) DO NOTHING
+            """
+            self.db.cursor.execute(insert_query, (
+                event_signature.signature_hash,
+                event_signature.name,
+                event_signature.full_signature,
+                json.dumps(event_signature.input_types),
+                json.dumps(event_signature.indexed_inputs),
+                json.dumps(event_signature.inputs)
+            ))
+            self.db.conn.commit()
+        except Exception as e:
+            self.db.logger.error(f"Error inserting Ethereum event: {e} - {event_signature}")
+            self.db.conn.rollback()
+        
+    def insert_ethereum_contract_abi(self, contract_address: str, abi: str):
+        """
+        Insert an Ethereum contract ABI into the PostgreSQL database.
+        """
+        try:
+            #self.db.logger.info(f"Inserting Ethereum contract ABI {abi} for contract {contract_address} into PostgreSQL database")
+            insert_query = """
+                INSERT INTO ethereum_contract_abis (contract_address, abi)
+                VALUES (%s, %s)
+                ON CONFLICT (contract_address) DO NOTHING
+            """
+            self.db.cursor.execute(insert_query, (contract_address, json.dumps(abi)))
+            self.db.conn.commit()
+        except Exception as e:
+            self.db.logger.error(f"Error inserting Ethereum contract ABI: {e} - {abi} for contract {contract_address}")
+            self.db.conn.rollback()
+
+
+
+
+
+
+
+
 
 def convert_timestamp(timestamp):
     """

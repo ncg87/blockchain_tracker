@@ -5,7 +5,7 @@ from typing import Optional
 from config import Settings
 import logging
 from web3 import Web3
-
+import json
 from .ethereum_websocket_handler import EthereumWebSocketHandler
 class EthereumQuerier(BaseQuerier):
     """
@@ -66,7 +66,7 @@ class EthereumQuerier(BaseQuerier):
         """
         Get the ABI of a contract.
         """
-        self.logger.info(f"Fetching ABI for contract {contract_address}")
+        self.logger.debug(f"Fetching ABI for contract {contract_address}")
         try:
             url = "https://api.etherscan.io/api"
             params = {
@@ -76,14 +76,19 @@ class EthereumQuerier(BaseQuerier):
                 'apikey': Settings.ETHERSCAN_API_KEY
             }
             response = requests.get(url, params=params)
-            abi = response.json().get('result', None)
-            if abi == 'Contract source code not verified':
-                self.logger.warning(f"Contract {contract_address} source code not verified.")
+            if response.status_code == 200:
+                data = response.json()
+                if data["status"] == "1":
+                    abi = json.loads(data["result"])
+                    return abi
+                else:
+                    #self.logger.error(f"Failed to fetch ABI: {data['message']}")
+                    return None
+            else:
+                #self.logger.error(f"Failed to fetch ABI: {response.status_code}")
                 return None
-            self.logger.debug(f"ABI for {contract_address} fetched successfully.")
-            return abi
         except Exception as e:
-            self.logger.error(f"Failed to fetch ABI: {e}")
+            #self.logger.error(f"Failed to fetch ABI: {e}")
             return None
     
     def is_contract(self, address):

@@ -32,7 +32,7 @@ async def main():
         solana_pipeline = SolanaPipeline(sql_database, mongodb_database)
         xrp_pipeline = XRPPipeline(sql_database, mongodb_database)
 
-        duration = 7200
+        duration = 21600
 
         # Run all pipelines concurrently
         await asyncio.gather(

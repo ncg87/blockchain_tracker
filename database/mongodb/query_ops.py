@@ -120,3 +120,13 @@ class MongoQueryOperations:
         except Exception as e:
             self.logger.error(f"Error retrieving recent transactions from {network} collection in MongoDB: {e}")
             return []
+
+    def get_recent_ethereum_transactions(self, limit=10):
+        try:
+            collection = self.mongodb.get_collection('EthereumTransactions')
+            transactions = collection.find().sort("timestamp", -1).limit(limit)
+            self.logger.info(f"Retrieved {len(transactions)} recent Ethereum transactions from MongoDB")
+            return transactions
+        except Exception as e:
+            self.logger.error(f"Error retrieving recent Ethereum transactions from MongoDB: {e}")
+            return []

@@ -54,7 +54,18 @@ class MongoInsertOperations:
             self.logger.info(f"Inserted block {block_number} into {network} collection in MongoDB.")
         except Exception as e:
             self.logger.error(f"Error inserting block {block_number} into {network} collection in MongoDB: {e}")
-            
+    
+    def insert_ethereum_transactions(self, transactions, block_number, timestamp):
+        collection = self.mongodb.get_collection('EthereumTransactions')
+        for transaction_hash, logs in transactions.items():
+            compressed_data = self._compress_data(logs)
+            collection.insert_one({
+                "block_number": block_number,
+                "timestamp": timestamp,
+                "transaction_hash": transaction_hash,
+                "compressed_logs": compressed_data
+            })
+
 def decode_hex(value):
     """
     Decode a hexadecimal string to an integer if it's an Ethereum-style integer (e.g., block numbers, gas values).
