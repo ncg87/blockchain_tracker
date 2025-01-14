@@ -6,6 +6,15 @@ from operator import itemgetter
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 import json
+from queue import Queue, Empty
+import threading
+from psycopg2.pool import ThreadedConnectionPool
+from config import Settings
+import signal
+import time
+import os
+from .cache import BoundedCache
+
 # Common item getters
 get_hash = itemgetter('hash')
 get_from = itemgetter('from')
@@ -30,6 +39,69 @@ class EVMProcessor(BaseProcessor):
         super().__init__(sql_database, mongodb_database, network_name)
         self.querier = querier
         self.decoder = decoder
+        
+        # Initialize connection pool
+        self.db_pool = ThreadedConnectionPool(
+            minconn=5,
+            maxconn=20,
+            **Settings.POSTGRES_CONFIG
+        )
+        
+        # Processing queues
+        self.log_queue = Queue(maxsize=10000)
+        self.result_queue = Queue(maxsize=10000)
+        
+        # Replace simple dict with BoundedCache for ABI caching
+        self.abi_cache = BoundedCache(max_size=1000, ttl_hours=24)
+        
+        # Shutdown flag
+        self._shutdown_flag = threading.Event()
+        
+        # Start background workers
+        self._start_processing_workers()
+        
+        # Register signal handlers
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+
+    def _signal_handler(self, signum, frame):
+        """Handle shutdown signals"""
+        self.logger.info(f"Received signal {signum}. Starting graceful shutdown...")
+        self.shutdown()
+
+    def schedule_shutdown(self, delay_hours=24):
+        """Schedule an automatic shutdown after specified hours"""
+        def shutdown_timer():
+            time.sleep(delay_hours * 3600)  # Convert hours to seconds
+            self.logger.info(f"Automatic shutdown triggered after {delay_hours} hours")
+            self.shutdown()
+
+        shutdown_thread = threading.Thread(target=shutdown_timer, daemon=True)
+        shutdown_thread.start()
+
+    def _start_processing_workers(self):
+        """Start background workers for continuous processing"""
+        def process_worker():
+            while not self._shutdown_flag.is_set():
+                try:
+                    batch = self.log_queue.get(timeout=1)  # 1 second timeout
+                    if batch is None:
+                        break
+                    result = self._process_logs_batch_optimized(batch, self.abi_cache)
+                    self.result_queue.put(result)
+                except Empty:
+                    continue  # Keep checking shutdown flag
+                except Exception as e:
+                    self.logger.error(f"Worker error: {e}")
+                    
+        self.workers = []
+        for _ in range(8):  # Number of worker threads
+            worker = threading.Thread(
+                target=process_worker, 
+                daemon=True
+            )
+            worker.start()
+            self.workers.append(worker)
 
     async def process_block(self, block):
         """
@@ -87,70 +159,86 @@ class EVMProcessor(BaseProcessor):
     def get_chain_id_with_default(self, tx):
         pass
     
-    def process_logs(self, block_number, timestamp, batch_size=100, max_workers=4):
-        """
-        Process raw log data and store it.
-        """
+    def process_logs(self, block_number, timestamp, batch_size=1000, max_workers=8):
+        """Optimized log processing with parallel execution"""
         block_number = decode_hex(block_number)
         timestamp = decode_hex(timestamp)
         
         try:
-            # Get block logs
             logs = self.querier.get_block_logs(block_number)
+            if not logs:
+                return
             
-            # Split logs into batches
-            batches = [
-                logs[i:i + batch_size] 
-                for i in range(0, len(logs), batch_size)
-            ]
+            # Pre-fetch all unique contract addresses
+            addresses = {log['address'] for log in logs if log.get('address')}
             
-            # Process batches in parallel
+            # Bulk load ABIs
+            for addr in addresses:
+                # Use get() method from BoundedCache
+                if self.abi_cache.get(addr) is None:
+                    abi = self.get_contract_abi(addr)
+                    if abi:
+                        self.abi_cache.set(addr, abi)
+            
+            # Pre-fetch all event signatures
+            event_signatures = {
+                topics[0].hex() 
+                for log in logs 
+                if (topics := log.get('topics')) and topics
+            }
+            
+            # Bulk load event signatures
+            for sig in event_signatures:
+                if self.decoder._event_signature_cache.get(sig) is None:
+                    event_obj = self.decoder.sql_query_ops.query_evm_event(self.network, sig)
+                    if event_obj:
+                        self.decoder._event_signature_cache.set(sig, event_obj)
+            
+            # Process in parallel with pre-loaded data
+            batches = [logs[i:i + batch_size] for i in range(0, len(logs), batch_size)]
+            
+            # Submit batches to worker queue
+            for batch in batches:
+                self.log_queue.put(batch)
+            
+            # Collect results
             decoder_logs = defaultdict(list)
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                results = list(executor.map(self._process_logs_batch, batches))
-            
-            # Merge results
-            for result in results:
-                for tx_hash, decoded_logs in result.items():
+            for _ in range(len(batches)):
+                batch_result = self.result_queue.get()
+                for tx_hash, decoded_logs in batch_result.items():
                     decoder_logs[tx_hash].extend(decoded_logs)
-
-            # Eventually going to insert into DB
-            self.mongodb_insert_ops.insert_evm_transactions(dict(decoder_logs), self.network, block_number, timestamp)
-        
+            
+            # Bulk insert into MongoDB
+            if decoder_logs:
+                self.mongodb_insert_ops.insert_evm_transactions(
+                    dict(decoder_logs), 
+                    self.network, 
+                    block_number, 
+                    timestamp
+                )
+            
         except Exception as e:
             self.logger.error(f"Error processing logs for block {block_number}: {e}", exc_info=True)
-    
-    def _process_logs_batch(self, log_chunk):
+
+    def _process_logs_batch_optimized(self, log_chunk, pre_loaded_abis):
+        """Optimized batch processing with pre-loaded data"""
         decoded_logs = defaultdict(list)
+        
         for log in log_chunk:
-            # Convert AttributeDict to dict
             log = dict(log)
             try:
-                # Get transaction hash from log
-                transaction_hash = normalize_hex(get_transaction_hash(log))
-                
-                # Get contract address from log and topics
+                tx_hash = normalize_hex(get_transaction_hash(log))
                 address = get_address(log)
-                topics = log.get('topics', [])
-                # If no address, skip log, possible that it is a contract creation
-                if not address or not topics:
-                    # self.database.insert_unknown_log(log) # maybe instead save the address
-                    self.logger.debug(f"No address found for log: {log}")
-                    decoded_log = {
-                        "event": "Unknown",
-                        "error": "Missing contract address or topics",
-                        "raw_log": log
-                    }
+                
+                if not address or not log.get('topics'):
                     continue
                 
-                # ^^ checks to see if the logs is eligible for decoding
-                abi = self.get_contract_abi(address)
-
+                # Use get() method from BoundedCache
+                abi = pre_loaded_abis.get(address)
                 if abi is not None:
                     decoded_log = self.decoder.decode_log(log, abi)
-                
-                decoded_log['contract'] = address
-                decoded_logs[transaction_hash].append(decoded_log)
+                    decoded_log['contract'] = address
+                    decoded_logs[tx_hash].append(decoded_log)
                 
             except Exception as e:
                 error_log = {
@@ -164,8 +252,9 @@ class EVMProcessor(BaseProcessor):
                     decoded_logs[tx_hash].append(error_log)
                 except:
                     continue
+                    
         return decoded_logs
-    
+
     def get_contract_abi(self, address):
         # First try to get ABI from DB
         
@@ -199,3 +288,33 @@ class EVMProcessor(BaseProcessor):
             # Store withdrawal data
             self.database.insert_withdrawal(withdrawal_data)
             self.logger.debug(f"Withdrawal {withdrawal_data['withdrawal_index']} processed.")
+
+    def shutdown(self):
+        """Cleanup method for graceful shutdown"""
+        try:
+            # Set shutdown flag
+            self._shutdown_flag.set()
+            
+            # Signal workers to stop
+            for _ in self.workers:
+                self.log_queue.put(None)
+            
+            # Wait for workers to finish with timeout
+            shutdown_start = time.time()
+            for worker in self.workers:
+                remaining_time = max(0, 60 - (time.time() - shutdown_start))
+                worker.join(timeout=remaining_time)
+                
+            # Close database pool
+            if hasattr(self, 'db_pool'):
+                self.db_pool.closeall()
+                
+            self.logger.info("Processor shutdown completed")
+            
+        except Exception as e:
+            self.logger.error(f"Error during shutdown: {e}")
+        finally:
+            # Force exit if cleanup takes too long
+            if time.time() - shutdown_start > 65:  # 5 second grace period
+                self.logger.warning("Forcing exit after timeout")
+                os._exit(0)

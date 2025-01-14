@@ -7,6 +7,10 @@ from database import SQLInsertOperations, SQLQueryOperations
 import json
 from dataclasses import dataclass
 from typing import List
+from datetime import datetime
+import threading
+import time
+from .cache import BoundedCache
 
 @dataclass
 class EventSignature:
@@ -31,6 +35,8 @@ class EVMDecoder:
         self.logger = logger
         self.abi_codec = ABICodec(registry)
         self.network = network
+        self._event_signature_cache = BoundedCache(max_size=1000, ttl_hours=24)
+        self._start_cleanup_thread()
     
     
     # We already check if there is an event signature, so we can decode the log
@@ -39,18 +45,26 @@ class EVMDecoder:
             # Get the event signature from log
             event_signature = get_topics(log)[0].hex()
             
-            # Try to get the event from the DB
-            event_object = self.sql_query_ops.query_evm_event(self.network, event_signature)
-            # Decode event manually if not found and add to the DB
+            # Try to get the event from cache first
+            event_object = self._event_signature_cache.get(event_signature)
+            
+            # If not in cache, try to get from DB
             if event_object is None:
-                # Search for matching event in ABI
-                for event in (e for e in abi if e["type"] == "event"):
-                    # Get the signature for the hash
-                    new_sig = self.get_event_signature(event)
-                    if new_sig.signature_hash == event_signature:
-                        event_object = new_sig
-                        self.sql_insert_ops.insert_evm_event(self.network, event_object)
-                        break
+                event_object = self.sql_query_ops.query_evm_event(self.network, event_signature)
+                # If found in DB, add to cache
+                if event_object:
+                    self._event_signature_cache.set(event_signature, event_object)
+                # If not in DB, search ABI and add to both DB and cache
+                else:
+                    # Search for matching event in ABI
+                    for event in (e for e in abi if e["type"] == "event"):
+                        new_sig = self.get_event_signature(event)
+                        if new_sig.signature_hash == event_signature:
+                            event_object = new_sig
+                            self.sql_insert_ops.insert_evm_event(self.network, event_object)
+                            self._event_signature_cache.set(event_signature, event_object)
+                            break
+
             if event_object:
                 decoded_log = self._decode_log(log, event_object)
             else:
@@ -199,6 +213,32 @@ class EVMDecoder:
                     "decode_error": str(e),
                     "raw_log": log
                 }
+
+    def cleanup_cache(self):
+        """Periodic cleanup of expired cache entries"""
+        try:
+            current_time = datetime.now()
+            expired_keys = [
+                key for key, (_, timestamp) in self._event_signature_cache.cache.items()
+                if current_time - timestamp > self._event_signature_cache.ttl
+            ]
+            for key in expired_keys:
+                del self._event_signature_cache.cache[key]
+        except Exception as e:
+            self.logger.error(f"Cache cleanup error: {e}", exc_info=True)
+
+    def _start_cleanup_thread(self):
+        """Start a background thread for cache cleanup"""
+        def cleanup_loop():
+            while True:
+                try:
+                    time.sleep(3600)  # Run every hour
+                    self.cleanup_cache()
+                except Exception as e:
+                    self.logger.error(f"Cache cleanup thread error: {e}", exc_info=True)
+
+        cleanup_thread = threading.Thread(target=cleanup_loop, daemon=True)
+        cleanup_thread.start()
 
 
 
