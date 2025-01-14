@@ -306,7 +306,20 @@ class EVMProcessor(BaseProcessor):
             self.logger.error(f"Error processing logs for block {block_number}: {e}", exc_info=True)
 
     def _process_logs_batch_optimized(self, log_chunk, pre_loaded_abis):
-        """Optimized batch processing with pre-loaded data"""
+        try:
+            # Convert to format Rust expects
+            logs_for_rust = [self._prepare_log(log) for log in log_chunk]
+            abis_for_rust = {addr: self._prepare_abi(abi) for addr, abi in pre_loaded_abis.items()}
+            
+            # Call Rust implementation
+            return process_logs_batch(logs_for_rust, abis_for_rust)
+        except Exception as e:
+            self.logger.error(f"Error in Rust log processing: {e}")
+            # Fallback to Python implementation
+            return self._process_logs_batch_python(log_chunk, pre_loaded_abis)
+
+    def _process_logs_batch_python(self, log_chunk, pre_loaded_abis):
+        # This is a good candidate for Rust optimization
         decoded_logs = defaultdict(list)
         
         for log in log_chunk:
