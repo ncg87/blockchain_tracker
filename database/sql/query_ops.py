@@ -219,12 +219,27 @@ class SQLQueryOperations:
         """
         Query an Ethereum event by its signature hash.
         """
+        return self.query_evm_event('Ethereum', signature_hash)
+    
+    
+    
+    def query_ethereum_contract_abi(self, contract_address: str) -> Optional[Dict[str, Any]]:
+        """
+        Query an Ethereum contract ABI by its address.
+        """
+        return self.query_evm_contract_abi('Ethereum', contract_address)
+
+
+    def query_evm_event(self, network: str, signature_hash: str) -> Optional[Dict[str, Any]]:
+        """
+        Query an EVM event by its network and signature hash.
+        """
         try:
             self.db.cursor.execute("""
                 SELECT * 
-                FROM ethereum_known_events 
-                WHERE signature_hash = %s
-            """, (signature_hash,))
+                FROM evm_known_events 
+                WHERE network = %s AND signature_hash = %s
+            """, (network, signature_hash))
             
             result = self.db.cursor.fetchone()
             
@@ -239,24 +254,22 @@ class SQLQueryOperations:
                 )
             return None
         except Exception as e:
-            self.db.logger.error(f"Error querying Ethereum event: {e}")
+            self.db.logger.error(f"Error querying EVM event for network {network}: {e}")
             return None 
-    
-    
-    
-    def query_ethereum_contract_abi(self, contract_address: str) -> Optional[Dict[str, Any]]:
+        
+    def query_evm_contract_abi(self, network: str, contract_address: str) -> Optional[Dict[str, Any]]:
         """
-        Query an Ethereum contract ABI by its address.
+        Query an EVM contract ABI by its network and address.
         """
         try:
             self.db.cursor.execute("""
                 SELECT * 
-                FROM ethereum_contract_abis 
-                WHERE contract_address = %s
-            """, (contract_address,))
+                FROM evm_contract_abis 
+                WHERE network = %s AND contract_address = %s
+            """, (network, contract_address))
             return self.db.cursor.fetchone()
         except Exception as e:
-            #self.db.logger.error(f"Error querying Ethereum contract ABI: {e}")
+            self.db.logger.error(f"Error querying EVM contract ABI for network {network}: {e}")
             return None
 
 @dataclass

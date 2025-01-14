@@ -155,8 +155,9 @@ class SQLInsertOperations:
                 json.dumps(event_signature.inputs)
             ))
             self.db.conn.commit()
+            self.db.logger.info(f"Ethereum event {event_signature} inserted successfully")
         except Exception as e:
-            self.db.logger.error(f"Error inserting Ethereum event: {e} - {event_signature}")
+            #self.db.logger.error(f"Error inserting Ethereum event: {e} - {event_signature}")
             self.db.conn.rollback()
         
     def insert_ethereum_contract_abi(self, contract_address: str, abi: str):
@@ -172,11 +173,65 @@ class SQLInsertOperations:
             """
             self.db.cursor.execute(insert_query, (contract_address, json.dumps(abi)))
             self.db.conn.commit()
+            self.db.logger.info(f"Ethereum contract ABI {abi} for contract {contract_address} inserted successfully")
         except Exception as e:
-            self.db.logger.error(f"Error inserting Ethereum contract ABI: {e} - {abi} for contract {contract_address}")
+            #self.db.logger.error(f"Error inserting Ethereum contract ABI: {e} - {abi} for contract {contract_address}")
             self.db.conn.rollback()
 
+    def insert_evm_event(self, network: str, event_object) -> bool:
+        """
+        Insert or update an EVM event signature.
+        """
+        try:
+            query = """
+                INSERT INTO evm_known_events 
+                (network, signature_hash, name, full_signature, input_types, indexed_inputs, inputs)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (network, signature_hash) DO UPDATE SET
+                    name = EXCLUDED.name,
+                    full_signature = EXCLUDED.full_signature,
+                    input_types = EXCLUDED.input_types,
+                    indexed_inputs = EXCLUDED.indexed_inputs,
+                    inputs = EXCLUDED.inputs
+            """
+            self.db.cursor.execute(query, (
+                network,
+                event_object.signature_hash,
+                event_object.name,
+                event_object.full_signature,
+                json.dumps(event_object.input_types),
+                json.dumps(event_object.indexed_inputs),
+                json.dumps(event_object.inputs)
+            ))
+            self.db.conn.commit()
+            return True
+        except Exception as e:
+            self.db.logger.error(f"Error inserting EVM event for network {network}: {e}")
+            return False
 
+    def insert_evm_contract_abi(self, network: str, contract_address: str, abi: dict) -> bool:
+        """
+        Insert or update an EVM contract ABI.
+        """
+        try:
+            query = """
+                INSERT INTO evm_contract_abis 
+                (network, contract_address, abi, last_updated)
+                VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (network, contract_address) DO UPDATE SET
+                    abi = EXCLUDED.abi,
+                    last_updated = CURRENT_TIMESTAMP
+            """
+            self.db.cursor.execute(query, (
+                network,
+                contract_address,
+                json.dumps(abi)
+            ))
+            self.db.conn.commit()
+            return True
+        except Exception as e:
+            self.db.logger.error(f"Error inserting EVM contract ABI for network {network}: {e}")
+            return False
 
 
 

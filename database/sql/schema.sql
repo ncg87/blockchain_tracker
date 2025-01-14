@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS blocks_bitcoin PARTITION OF blocks FOR VALUES IN ('Bi
 CREATE TABLE IF NOT EXISTS blocks_xrp PARTITION OF blocks FOR VALUES IN ('XRP');
 CREATE TABLE IF NOT EXISTS blocks_solana PARTITION OF blocks FOR VALUES IN ('Solana');
 CREATE TABLE IF NOT EXISTS blocks_bnb PARTITION OF blocks FOR VALUES IN ('BNB');
+CREATE TABLE IF NOT EXISTS blocks_base PARTITION OF blocks FOR VALUES IN ('Base');
 
 -- Block-specific indexes
 CREATE INDEX IF NOT EXISTS idx_blocks_timestamp ON blocks USING brin (timestamp) WITH (pages_per_range = 128);
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS base_evm_transactions (
 -- Create network partitions
 CREATE TABLE IF NOT EXISTS base_evm_transactions_ethereum PARTITION OF base_evm_transactions FOR VALUES IN ('Ethereum');
 CREATE TABLE IF NOT EXISTS base_evm_transactions_bnb PARTITION OF base_evm_transactions FOR VALUES IN ('BNB');
+CREATE TABLE IF NOT EXISTS base_evm_transactions_base PARTITION OF base_evm_transactions FOR VALUES IN ('Base');
 
 -- EVM transaction indexes
 CREATE INDEX IF NOT EXISTS idx_evm_tx_from ON base_evm_transactions 
@@ -128,3 +130,42 @@ CREATE TABLE IF NOT EXISTS ethereum_contract_abis (
 CREATE INDEX IF NOT EXISTS idx_contract_address ON ethereum_contract_abis
     USING btree (contract_address);
 
+
+-- Create the new partitioned tables
+CREATE TABLE IF NOT EXISTS evm_known_events (
+    network VARCHAR(20) NOT NULL,
+    signature_hash VARCHAR(128) NOT NULL,
+    name TEXT NOT NULL,
+    full_signature VARCHAR(100) NOT NULL,
+    input_types VARCHAR(100) NOT NULL,
+    indexed_inputs VARCHAR(100) NOT NULL,
+    inputs TEXT NOT NULL,
+    CONSTRAINT pk_evm_events PRIMARY KEY (network, signature_hash)
+) PARTITION BY LIST (network);
+
+-- Create partitions for each network
+CREATE TABLE IF NOT EXISTS evm_known_events_ethereum PARTITION OF evm_known_events FOR VALUES IN ('Ethereum');
+CREATE TABLE IF NOT EXISTS evm_known_events_bnb PARTITION OF evm_known_events FOR VALUES IN ('BNB');
+CREATE TABLE IF NOT EXISTS evm_known_events_base PARTITION OF evm_known_events FOR VALUES IN ('Base');
+
+CREATE INDEX IF NOT EXISTS idx_evm_events_signature ON evm_known_events
+    USING btree (network, signature_hash);
+
+-- Create new partitioned contract ABIs table
+CREATE TABLE IF NOT EXISTS evm_contract_abis (
+    network VARCHAR(20) NOT NULL,
+    contract_address VARCHAR(64) NOT NULL,
+    abi TEXT NOT NULL,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_evm_contract_abis PRIMARY KEY (network, contract_address)
+) PARTITION BY LIST (network);
+
+-- Create partitions for each network
+CREATE TABLE IF NOT EXISTS evm_contract_abis_ethereum PARTITION OF evm_contract_abis FOR VALUES IN ('Ethereum');
+CREATE TABLE IF NOT EXISTS evm_contract_abis_bnb PARTITION OF evm_contract_abis FOR VALUES IN ('BNB');
+CREATE TABLE IF NOT EXISTS evm_contract_abis_base PARTITION OF evm_contract_abis FOR VALUES IN ('Base');
+
+-- Recreate indexes
+
+CREATE INDEX IF NOT EXISTS idx_evm_contract_abis_address ON evm_contract_abis
+    USING btree (network, contract_address);

@@ -1,5 +1,5 @@
 import asyncio
-from chains import EthereumPipeline, BNBPipeline, BitcoinPipeline, SolanaPipeline, XRPPipeline
+from chains import EthereumPipeline, BNBPipeline, BitcoinPipeline, SolanaPipeline, XRPPipeline, BaseChainPipeline
 from database import SQLDatabase, MongoDatabase
 import logging
 
@@ -31,13 +31,15 @@ async def main():
         bitcoin_pipeline = BitcoinPipeline(sql_database, mongodb_database)
         solana_pipeline = SolanaPipeline(sql_database, mongodb_database)
         xrp_pipeline = XRPPipeline(sql_database, mongodb_database)
+        base_pipeline = BaseChainPipeline(sql_database, mongodb_database)
 
-        duration = 10
+        duration = 1200
 
         # Run all pipelines concurrently
         await asyncio.gather(
-            ethereum_pipeline.run(duration=duration),
-            bnb_pipeline.run(duration=duration),
+            #ethereum_pipeline.run(duration=duration),
+            #bnb_pipeline.run(duration=duration),
+            base_pipeline.run(duration=duration),
             #bitcoin_pipeline.run(duration=duration),
             #solana_pipeline.run(duration=1200),
             #xrp_pipeline.run(duration=duration),

@@ -1,34 +1,32 @@
-import requests
+from ..evm_models.evm_querier import EVMQuerier
 from config import Settings
-from web3.middleware import ExtraDataToPOAMiddleware
-from ..evm_models import EVMQuerier
+import requests
 import json
 
-
-class BNBQuerier(EVMQuerier):
+class BaseChainQuerier(EVMQuerier):
     """
-    BNB-specific querier.
+    Base-specific querier implementation.
     """
-    
     def __init__(self):
-        super().__init__('BNB', Settings.BNB_ENDPOINT, Settings.BNB_WEBSOCKET_ENDPOINT)
-        
-        # PoA middleware for BNB
-        self.w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
-        
+        super().__init__(
+            network_name="base",
+            http_endpoint=Settings.BASE_ENDPOINT,
+            ws_endpoint=Settings.BASE_WEBSOCKET_ENDPOINT
+        )
+
     def get_contract_abi(self, contract_address):
         """
-        Override to use BSCScan API instead of Etherscan
+        Override to use Basescan API instead of Etherscan
         """
         # Similar to EVMQuerier.get_contract_abi but use Basescan
         self.logger.debug(f"Fetching ABI for contract {contract_address}")
         try:
-            url = "https://api.bscscan.com/api"
+            url = "https://api.basescan.org/api"
             params = {
                 'module': 'contract',
                 'action': 'getabi',
                 'address': contract_address,
-                'apikey': Settings.BSCSCAN_API_KEY
+                'apikey': Settings.BASESCAN_API_KEY
             }
             response = requests.get(url, params=params)
             if response.status_code == 200:

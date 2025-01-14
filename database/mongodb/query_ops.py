@@ -121,12 +121,24 @@ class MongoQueryOperations:
             self.logger.error(f"Error retrieving recent transactions from {network} collection in MongoDB: {e}")
             return []
 
-    def get_recent_ethereum_transactions(self, limit=10):
+    def get_recent_ethereum_transactions(self, limit=10, decompress=True):
         try:
+            self.logger.info(f"Retrieving recent Ethereum transactions from MongoDB")
             collection = self.mongodb.get_collection('EthereumTransactions')
             transactions = collection.find().sort("timestamp", -1).limit(limit)
-            self.logger.info(f"Retrieved {len(transactions)} recent Ethereum transactions from MongoDB")
-            return transactions
+            transaction_list = list(transactions)
+            self.logger.info(f"Retrieved {len(transaction_list)} recent Ethereum transactions from MongoDB")
+            if decompress:
+                decompressed_transactions = []
+                for transaction in transaction_list:
+                    decompressed_transactions.append({
+                        "block_number": transaction["block_number"],
+                        "transaction_hash": transaction["transaction_hash"],
+                        "timestamp": transaction["timestamp"],
+                        "log_data": self._decompress_data(transaction["compressed_logs"])
+                    })
+                return decompressed_transactions
+            return transaction_list
         except Exception as e:
             self.logger.error(f"Error retrieving recent Ethereum transactions from MongoDB: {e}")
             return []

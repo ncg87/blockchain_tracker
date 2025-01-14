@@ -32,7 +32,7 @@ class MongoDatabase:
         """
         try:
             # Make this a .env file variable
-            collections_to_index = ["Solana", "Bitcoin", "Ethereum", "BNB", "XRP"]  # Add network names here
+            collections_to_index = ["Solana", "Bitcoin", "Ethereum", "BNB", "XRP", "Base"]  # Add network names here
             for collection_name in collections_to_index:
                 collection = self.get_collection(collection_name)
                 
