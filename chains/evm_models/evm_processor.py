@@ -14,6 +14,7 @@ import signal
 import time
 import os
 from .cache import BoundedCache
+import asyncio
 
 # Common item getters
 get_hash = itemgetter('hash')
@@ -105,55 +106,139 @@ class EVMProcessor(BaseProcessor):
 
     async def process_block(self, block):
         """
-        Process raw block data and store it in the database.
-        """
-        block_number = decode_hex(get_block_number(block))
-        timestamp = decode_hex(get_block_time(block))
-        
-        self.logger.info(f"Processing block {block_number} on {self.network}")
-        
-        # Insert block into MongoDB
-        self.mongodb_insert_ops.insert_block(block, self.network, block_number, timestamp)
-
-        # Insert block into PostgreSQL
-        self.sql_insert_ops.insert_block(
-            self.network, 
-            block_number, 
-            normalize_hex(get_hash(block)), 
-            normalize_hex(get_parent_hash(block)), 
-            timestamp
-        )
-        
-        self.logger.debug(f"Processed {self.network} block {block_number}")
-        
-        # Process transactions
-        self._process_transactions(block, block_number, timestamp)
-    
-    def _process_transactions(self, block, block_number, timestamp):
-        """
-        Process raw transaction data and store it.
+        Process a block, transactions and logs concurrently.
         """
         try:
-            self.logger.info(f"Processing {len(block['transactions'])} {self.network} transactions for block {block_number}")
-            transactions = [
-                (
+            block_number = decode_hex(get_block_number(block))
+            timestamp = decode_hex(get_block_time(block))
+            
+            self.logger.info(f"Processing block {block_number} on {self.network}")
+            
+            # Insert block into MongoDB
+            self.mongodb_insert_ops.insert_block(block, self.network, block_number, timestamp)
+            self.logger.info(f"Inserted block {block_number} into {self.network} collection in MongoDB.")
+            
+            # Insert block into PostgreSQL
+            self.sql_insert_ops.insert_block(
+                self.network,
+                block_number,
+                normalize_hex(get_hash(block)),
+                normalize_hex(get_parent_hash(block)),
+                timestamp
+            )
+            self.logger.info(f"{self.network} block {block_number} inserted successfully")
+            
+            # Process transactions and logs concurrently
+            await asyncio.gather(
+                asyncio.get_event_loop().run_in_executor(
+                    None, 
+                    self._process_transactions,
+                    block,
                     block_number,
-                    self.network,
-                    normalize_hex(get_hash(transaction)),
-                    self.get_chain_id_with_default(transaction),
-                    get_from(transaction),
-                    get_to(transaction),
-                    decode_hex(get_value(transaction)),
-                    decode_hex(get_gas(transaction)) * decode_hex(get_gas_price(transaction)),
                     timestamp
-                ) for transaction in block['transactions']
+                ),
+                asyncio.get_event_loop().run_in_executor(
+                    None,
+                    self.process_logs,
+                    block_number,
+                    timestamp
+                )
+            )
+            
+            # Process withdrawals if they exist (e.g., for Ethereum post-merge)
+            #if 'withdrawals' in block:
+            #    await asyncio.get_event_loop().run_in_executor(
+            #        None,
+            #        self.process_withdrawals,
+            #        block
+            #    )
+            
+        except Exception as e:
+            self.logger.error(f"Error processing block {block_number}: {e}", exc_info=True)
+            raise
+
+    def _process_transactions(self, block, block_number, timestamp):
+        """
+        Process raw transaction data in parallel batches.
+        """
+        try:
+            transactions = block.get('transactions', [])
+            if not transactions:
+                return
+
+            self.logger.info(f"Processing {len(transactions)} {self.network} transactions for block {block_number}")
+            
+            # Pre-process transactions into batches
+            batch_size = 1000  # Adjust based on your needs
+            transaction_batches = [
+                transactions[i:i + batch_size] 
+                for i in range(0, len(transactions), batch_size)
             ]
             
-            self.sql_insert_ops.insert_bulk_evm_transactions(self.network, transactions, block_number)
-            self.logger.debug(f"Processed {len(block['transactions'])} {self.network} transactions for block {block_number}")
-        
+            # Process batches in parallel
+            with ThreadPoolExecutor(max_workers=8) as executor:
+                futures = []
+                for batch in transaction_batches:
+                    futures.append(
+                        executor.submit(
+                            self._process_transaction_batch,
+                            batch,
+                            block_number,
+                            timestamp
+                        )
+                    )
+                
+                # Collect all processed transactions
+                all_transactions = []
+                for future in futures:
+                    try:
+                        batch_result = future.result()
+                        all_transactions.extend(batch_result)
+                    except Exception as e:
+                        self.logger.error(f"Error processing transaction batch: {e}")
+            
+            # Bulk insert all transactions
+            if all_transactions:
+                self.sql_insert_ops.insert_bulk_evm_transactions(
+                    self.network, 
+                    all_transactions, 
+                    block_number
+                )
+                
+            self.logger.debug(f"Processed {len(transactions)} {self.network} transactions for block {block_number}")
+            
         except Exception as e:
             self.logger.error(f"Error processing transactions for block {block_number}: {e}")
+
+    def _process_transaction_batch(self, transaction_batch, block_number, timestamp):
+        """
+        Process a batch of transactions.
+        """
+        try:
+            processed_transactions = []
+            for transaction in transaction_batch:
+                try:
+                    processed_tx = (
+                        block_number,
+                        self.network,
+                        normalize_hex(get_hash(transaction)),
+                        self.get_chain_id_with_default(transaction),
+                        get_from(transaction),
+                        get_to(transaction),
+                        decode_hex(get_value(transaction)),
+                        decode_hex(get_gas(transaction)) * decode_hex(get_gas_price(transaction)),
+                        timestamp
+                    )
+                    processed_transactions.append(processed_tx)
+                except Exception as e:
+                    self.logger.error(f"Error processing individual transaction: {e}")
+                    continue
+                    
+            return processed_transactions
+            
+        except Exception as e:
+            self.logger.error(f"Error in transaction batch processing: {e}")
+            return []
     
     @ abstractmethod
     def get_chain_id_with_default(self, tx):

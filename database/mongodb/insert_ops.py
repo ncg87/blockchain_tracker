@@ -2,6 +2,7 @@ import gzip
 import logging
 from .base import MongoDatabase
 import json
+from pymongo.errors import BulkWriteError
 
 class MongoInsertOperations:
     def __init__(self, mongodb: MongoDatabase):
@@ -56,16 +57,44 @@ class MongoInsertOperations:
             self.logger.error(f"Error inserting block {block_number} into {network} collection in MongoDB: {e}")
     
     def insert_evm_transactions(self, transactions, network, block_number, timestamp):
+        """
+        Bulk insert for EVM transactions, skipping any that fail compression.
+        """
         collection = self.mongodb.get_collection(f'{network}Transactions')
-        for transaction_hash, logs in transactions.items():
-            compressed_data = self._compress_data(logs)
-            collection.insert_one({
-                "block_number": block_number,
-                "timestamp": timestamp,
-                "network" : network,
-                "transaction_hash": transaction_hash,
-                "compressed_logs": compressed_data
-            })
+        
+        # Filter and prepare documents, skipping any compression failures
+        documents = []
+        for tx_hash, logs in transactions.items():
+            if not logs:
+                continue
+            
+            try:
+                compressed_data = self._compress_data(logs)
+                documents.append({
+                    "block_number": block_number,
+                    "timestamp": timestamp,
+                    "network": network,
+                    "transaction_hash": tx_hash,
+                    "compressed_logs": compressed_data
+                })
+            except Exception:
+                self.logger.debug(f"Error compressing block data: {str(e)}")
+                continue  # Skip any compression failures
+        
+        if not documents:
+            return
+        
+        try:
+            # Bulk insert only the successfully compressed documents
+            result = collection.insert_many(documents, ordered=False)
+            self.logger.info(
+                f"Block {block_number} bulk insert stats: "
+                f"Inserted: {len(result.inserted_ids)}, "
+                f"Total Processed: {len(transactions)}"
+            )
+            
+        except Exception as e:
+            self.logger.debug(f"Error during bulk insert for block {block_number}: {str(e)}")
 
 def decode_hex(value):
     """

@@ -214,21 +214,6 @@ class SQLQueryOperations:
         except Exception as e:
             self.db.logger.error(f"Error querying daily stats: {e}")
             return []
-    
-    def query_ethereum_event(self, signature_hash: str) -> Optional[Dict[str, Any]]:
-        """
-        Query an Ethereum event by its signature hash.
-        """
-        return self.query_evm_event('Ethereum', signature_hash)
-    
-    
-    
-    def query_ethereum_contract_abi(self, contract_address: str) -> Optional[Dict[str, Any]]:
-        """
-        Query an Ethereum contract ABI by its address.
-        """
-        return self.query_evm_contract_abi('Ethereum', contract_address)
-
 
     def query_evm_event(self, network: str, signature_hash: str) -> Optional[Dict[str, Any]]:
         """
@@ -269,7 +254,7 @@ class SQLQueryOperations:
             """, (network, contract_address))
             return self.db.cursor.fetchone()
         except Exception as e:
-            self.db.logger.error(f"Error querying EVM contract ABI for network {network}: {e}")
+            #self.db.logger.error(f"Error querying EVM contract ABI for network {network}: {e}")
             return None
 
 @dataclass
