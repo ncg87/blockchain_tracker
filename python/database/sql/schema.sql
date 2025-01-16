@@ -169,3 +169,33 @@ CREATE TABLE IF NOT EXISTS evm_contract_abis_base PARTITION OF evm_contract_abis
 
 CREATE INDEX IF NOT EXISTS idx_evm_contract_abis_address ON evm_contract_abis
     USING btree (network, contract_address);
+
+-- EVM Contract Info table
+CREATE TABLE IF NOT EXISTS evm_swap (
+    address VARCHAR(64) NOT NULL,
+    factory_address VARCHAR(64) NOT NULL,
+    fee INT,
+    token0_name VARCHAR(100),
+    token1_name VARCHAR(100),
+    name VARCHAR(100),
+    network VARCHAR(20) NOT NULL,
+    CONSTRAINT pk_evm_contract_info PRIMARY KEY (address, network)
+) WITH (fillfactor = 100);
+
+CREATE INDEX IF NOT EXISTS idx_evm_swap_factory_address ON evm_swap
+    USING btree (factory_address, network);
+
+
+-- EVM Token Info table
+CREATE TABLE IF NOT EXISTS evm_token_info (
+    address VARCHAR(64) NOT NULL,
+    name VARCHAR(100),
+    symbol VARCHAR(100),
+    network VARCHAR(20) NOT NULL,
+    CONSTRAINT pk_evm_token_info PRIMARY KEY (address, network)
+) WITH (fillfactor = 100);
+
+CREATE INDEX IF NOT EXISTS idx_evm_token_info_address ON evm_token_info
+    USING btree (address, network);
+
+

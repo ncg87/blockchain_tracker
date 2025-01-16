@@ -19,7 +19,7 @@ class MongoInsertOperations:
             return compressed_data
         except Exception as e:
             self.logger.error(f"Error compressing block data: {e}")
-            raise
+            return None
 
     def insert_block(self, block_data, network, block_number, timestamp):
         """
@@ -43,6 +43,9 @@ class MongoInsertOperations:
 
             # Compress the block data
             compressed_data = self._compress_data(block_data)
+            if compressed_data is None:
+                return
+
 
             # Insert document into MongoDB
             document = {
@@ -70,6 +73,8 @@ class MongoInsertOperations:
             
             try:
                 compressed_data = self._compress_data(logs)
+                if compressed_data is None:
+                    continue
                 documents.append({
                     "block_number": block_number,
                     "timestamp": timestamp,
@@ -77,7 +82,7 @@ class MongoInsertOperations:
                     "transaction_hash": tx_hash,
                     "compressed_logs": compressed_data
                 })
-            except Exception:
+            except Exception as e:
                 self.logger.debug(f"Error compressing block data: {str(e)}")
                 continue  # Skip any compression failures
         
@@ -88,7 +93,7 @@ class MongoInsertOperations:
             # Bulk insert only the successfully compressed documents
             result = collection.insert_many(documents, ordered=False)
             self.logger.info(
-                f"Block {block_number} bulk insert stats: "
+                f"Block {block_number} bulk insert stats for {network}: "
                 f"Inserted: {len(result.inserted_ids)}, "
                 f"Total Processed: {len(transactions)}"
             )

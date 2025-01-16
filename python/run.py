@@ -40,9 +40,9 @@ async def main():
             ethereum_pipeline.run(duration=duration),
             bnb_pipeline.run(duration=duration),
             base_pipeline.run(duration=duration),
-            #bitcoin_pipeline.run(duration=duration),
+            bitcoin_pipeline.run(duration=duration),
             #solana_pipeline.run(duration=1200),
-            #xrp_pipeline.run(duration=duration),
+            xrp_pipeline.run(duration=duration),
         )
     except Exception as e:
         # Log any errors

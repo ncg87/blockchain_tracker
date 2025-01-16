@@ -233,9 +233,56 @@ class SQLInsertOperations:
             self.db.logger.error(f"Error inserting EVM contract ABI for network {network}: {e}")
             return False
 
-
-
-
+    def insert_evm_swap(self, network: str, swap_info) -> bool:
+        """
+        Insert or update an EVM swap.
+        """
+        try:
+            query = """
+                INSERT INTO evm_swap 
+                (address, factory_address, fee, token0_name, token1_name, name, network)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (address, network) DO NOTHING
+            """
+            self.db.cursor.execute(query, (
+                swap_info.address,
+                swap_info.factory,
+                swap_info.fee,
+                swap_info.token0_name,
+                swap_info.token1_name,
+                swap_info.type,
+                network
+            ))
+            self.db.conn.commit()
+            return True
+        except Exception as e:
+            self.db.logger.error(f"Error inserting EVM swap for network {network}: {e}")
+            self.db.conn.rollback()
+            return False
+    
+    def insert_evm_token_info(self, network: str, token_info) -> bool:
+        """
+        Insert or update an EVM token info.
+        """
+        try:
+            query = """
+                INSERT INTO evm_token_info 
+                (address, name, symbol, network)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (address, network) DO NOTHING
+            """
+            self.db.cursor.execute(query, (
+                token_info.address,
+                token_info.name,
+                token_info.symbol,
+                network
+            ))
+            self.db.conn.commit()
+            return True
+        except Exception as e:
+            self.db.logger.error(f"Error inserting EVM token info for network {network}: {e}")
+            self.db.conn.rollback()
+            return False
 
 
 

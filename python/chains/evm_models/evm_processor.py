@@ -88,7 +88,7 @@ class EVMProcessor(BaseProcessor):
                     batch = self.log_queue.get(timeout=1)  # 1 second timeout
                     if batch is None:
                         break
-                    result = self._process_logs_batch_optimized(batch, self.abi_cache)
+                    result = self._process_logs_batch_python(batch, self.abi_cache)
                     self.result_queue.put(result)
                 except Empty:
                     continue  # Keep checking shutdown flag
@@ -305,6 +305,8 @@ class EVMProcessor(BaseProcessor):
         except Exception as e:
             self.logger.error(f"Error processing logs for block {block_number}: {e}", exc_info=True)
 
+
+    # Adjust to use Rust implementation
     def _process_logs_batch_optimized(self, log_chunk, pre_loaded_abis):
         try:
             # Convert to format Rust expects
@@ -312,7 +314,7 @@ class EVMProcessor(BaseProcessor):
             abis_for_rust = {addr: self._prepare_abi(abi) for addr, abi in pre_loaded_abis.items()}
             
             # Call Rust implementation
-            return process_logs_batch(logs_for_rust, abis_for_rust)
+            return self._process_logs_batch_python(log_chunk, pre_loaded_abis)
         except Exception as e:
             self.logger.error(f"Error in Rust log processing: {e}")
             # Fallback to Python implementation

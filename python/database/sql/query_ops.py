@@ -256,6 +256,36 @@ class SQLQueryOperations:
         except Exception as e:
             #self.db.logger.error(f"Error querying EVM contract ABI for network {network}: {e}")
             return None
+        
+    def query_evm_swap(self, network: str, contract_address: str) -> Optional[Dict[str, Any]]:
+        """
+        Query an EVM swap by its network and address.
+        """
+        try:
+            self.db.cursor.execute("""
+                SELECT address, factory_address, fee, token0_name, token1_name, name
+                FROM evm_swap
+                WHERE network = %s AND address = %s
+            """, (network, contract_address))
+            return self.db.cursor.fetchone()
+        except Exception as e:
+            self.db.logger.error(f"Error querying EVM swap for network {network}: {e}")
+            return None
+    
+    def query_evm_token_info(self, network: str, token_address: str) -> Optional[Dict[str, Any]]:
+        """
+        Query an EVM token info by its network and address.
+        """
+        try:
+            self.db.cursor.execute("""
+                SELECT address, name, symbol
+                FROM evm_token_info
+                WHERE network = %s AND address = %s
+            """, (network, token_address))
+            return self.db.cursor.fetchone()
+        except Exception as e:
+            self.db.logger.error(f"Error querying EVM token info for network {network}: {e}")
+            return None
 
 @dataclass
 class EventSignature:

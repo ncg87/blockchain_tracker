@@ -3,5 +3,6 @@ from .evm_querier import EVMQuerier
 from .evm_websocket_handler import EVMWebSocketHandler
 from.evm_pipeline import EVMPipeline
 from .evm_decoder import EVMDecoder
+from .evm_contract_processor import EVMContractProcessor
 
-all = [EVMProcessor, EVMQuerier, EVMWebSocketHandler, EVMPipeline, EVMDecoder]
+all = [EVMProcessor, EVMQuerier, EVMWebSocketHandler, EVMPipeline, EVMDecoder, EVMContractProcessor, EVMContractProcessor]
