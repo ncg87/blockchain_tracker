@@ -250,7 +250,7 @@ class SQLInsertOperations:
                 swap_info.fee,
                 swap_info.token0_name,
                 swap_info.token1_name,
-                swap_info.type,
+                swap_info.name,
                 network
             ))
             self.db.conn.commit()

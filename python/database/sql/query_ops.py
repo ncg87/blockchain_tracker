@@ -267,9 +267,19 @@ class SQLQueryOperations:
                 FROM evm_swap
                 WHERE network = %s AND address = %s
             """, (network, contract_address))
-            return self.db.cursor.fetchone()
+            result = self.db.cursor.fetchone()
+            if result:
+                return ContractInfo(
+                    address=result.get('address'),
+                    factory=result.get('factory_address'),
+                    fee=result.get('fee'),
+                    token0_name=result.get('token0_name'),
+                    token1_name=result.get('token1_name'),
+                    name=result.get('name')
+                )
+            return None
         except Exception as e:
-            self.db.logger.error(f"Error querying EVM swap for network {network}: {e}")
+            #self.db.logger.error(f"Error querying EVM swap for network {network}: {e}")
             return None
     
     def query_evm_token_info(self, network: str, token_address: str) -> Optional[Dict[str, Any]]:
@@ -282,9 +292,16 @@ class SQLQueryOperations:
                 FROM evm_token_info
                 WHERE network = %s AND address = %s
             """, (network, token_address))
-            return self.db.cursor.fetchone()
+            result = self.db.cursor.fetchone()
+            if result:
+                return TokenInfo(
+                    address=result.get('address'),
+                    name=result.get('name'),
+                    symbol=result.get('symbol')
+                )
+            return None
         except Exception as e:
-            self.db.logger.error(f"Error querying EVM token info for network {network}: {e}")
+            #self.db.logger.error(f"Error querying EVM token info for network {network}: {e}", exc_info=True)
             return None
 
 @dataclass
@@ -295,3 +312,18 @@ class EventSignature:
     input_types: List[str]
     indexed_inputs: List[bool]
     inputs: List[dict]
+    
+@dataclass
+class ContractInfo:
+    address: str
+    factory: str
+    fee: int
+    token0_name: str
+    token1_name: str
+    name: str
+    
+@dataclass
+class TokenInfo:
+    address: str
+    name: str
+    symbol: str

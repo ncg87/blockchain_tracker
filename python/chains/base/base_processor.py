@@ -2,6 +2,7 @@ from ..evm_models.evm_processor import EVMProcessor
 from operator import itemgetter
 from ..utils import decode_hex
 from ..base.base_decoder import BaseChainDecoder
+from ..base.base_contract_processor import BaseContractProcessor
 get_chain_id = itemgetter('chainId')
 
 

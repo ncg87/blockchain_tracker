@@ -47,11 +47,11 @@ class ContractInfo:
     type: str
 
 class EVMContractProcessor:
-    def __init__(self, db, network: str):
+    def __init__(self, db, network: str, url):
         self.network = network
         self.sql_insert_ops = SQLInsertOperations(db)
         self.sql_query_ops = SQLQueryOperations(db)
-        self.w3 = Web3(Web3.HTTPProvider(self.db_url))
+        self.w3 = Web3(Web3.HTTPProvider(url))
         self.contract_info = {}
 
     def create_contract(self, address: str, abi: str) -> Optional[Any]:
@@ -67,6 +67,9 @@ class EVMContractProcessor:
     def process_contract(self, contract: Any) -> Optional[ContractInfo]:
         """Process a contract to extract relevant information."""
         try:
+            
+            
+            
             # Check if contract has required methods
             required_methods = ['token0', 'token1', 'factory', 'fee']
             for method in required_methods:
@@ -80,11 +83,11 @@ class EVMContractProcessor:
             # Create token contracts
             token0_contract = self.w3.eth.contract(
                 address=token0_address, 
-                abi=self.ERC20_ABI
+                abi=ERC20_ABI
             )
             token1_contract = self.w3.eth.contract(
                 address=token1_address, 
-                abi=self.ERC20_ABI
+                abi=ERC20_ABI
             )
 
             token0_info = self.sql_query_ops.query_evm_token_info(self.network, token0_address)
@@ -121,4 +124,3 @@ class EVMContractProcessor:
         except Exception as e:
             print(f"Error processing contract {contract.address}: {e}")
             return None
-    

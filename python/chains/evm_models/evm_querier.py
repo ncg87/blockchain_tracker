@@ -78,3 +78,12 @@ class EVMQuerier(BaseQuerier):
         code = self.w3.eth.get_code(address)
         # True for contracts, False for EOAs
         return len(code) > 0 
+    
+    def get_contract(self, address, abi):
+        try:
+            if type(abi) == str:
+                abi = json.loads(abi)
+            return self.w3.eth.contract(address=address, abi=abi)
+        except Exception as e:
+            self.logger.error(f"Failed to get contract {address}: {e}")
+            return None

@@ -43,3 +43,4 @@ class BaseChainQuerier(EVMQuerier):
         except Exception as e:
             #self.logger.error(f"Failed to fetch ABI: {e}")
             return None
+    
