@@ -16,3 +16,6 @@ class BaseChainPipeline(EVMPipeline):
             querier=querier,
             processor=processor
         )
+    async def stop(self):
+        if hasattr(self, 'websocket_handler'):
+            await self.websocket_handler.stop()

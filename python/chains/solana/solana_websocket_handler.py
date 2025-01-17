@@ -14,6 +14,7 @@ class SolanaWebSocketHandler:
         self.retry_attempts = 5
         self.retry_delay = 2
         self.running = False
+        self.shutting_down = False
 
     async def connect(self):
         """
@@ -48,15 +49,16 @@ class SolanaWebSocketHandler:
         Stream slot updates as they arrive, with an optional duration.
         Yields the slot number for each update.
         """
-        await self.connect()
-        await self.subscribe()
-        start_time = asyncio.get_running_loop().time()
-
         try:
-            while True:
+            self.running = True
+            self.shutting_down = False
+            await self.connect()
+            await self.subscribe()
+            start_time = asyncio.get_running_loop().time()
+
+            while self.running and not self.shutting_down:
                 if duration and asyncio.get_running_loop().time() - start_time > duration:
                     self.logger.info("WebSocket stream duration expired.")
-                    await self.stop()
                     break
 
                 message = await self.connection.recv()
@@ -66,29 +68,35 @@ class SolanaWebSocketHandler:
                     if slot is not None:
                         yield slot
         except websockets.ConnectionClosed:
-            if self.running:
+            if self.running and not self.shutting_down:
                 self.logger.error("WebSocket connection closed. Reconnecting...")
                 self.running = False
                 await self.reconnect()
         except Exception as e:
             self.logger.error(f"Error in WebSocket stream: {e}")
+        finally:
+            await self.stop()
 
     async def stop(self):
         """
         Close the WebSocket connection.
         """
+        self.shutting_down = True
         self.running = False
         if self.connection:
-            await self.connection.close()
+            try:
+                await self.connection.close()
+            except Exception as e:
+                self.logger.error(f"Error closing Solana WebSocket connection: {e}")
         self.logger.info("WebSocket connection closed.")
-        
+
     async def reconnect(self):
         """
         Reconnect to the WebSocket.
         """
-        self.connection = None
-        await self.connect()
-        await self.subscribe()
-        self.running = True 
-    
+        if not self.shutting_down:
+            self.connection = None
+            await self.connect()
+            await self.subscribe()
+            self.running = True
 

@@ -2,6 +2,8 @@ import asyncio
 from chains import EthereumPipeline, BNBPipeline, BitcoinPipeline, SolanaPipeline, XRPPipeline, BaseChainPipeline
 from database import SQLDatabase, MongoDatabase
 import logging
+import signal
+import sys
 
 # General logging setup for maintenance.log
 logging.basicConfig(
@@ -20,6 +22,29 @@ error_handler = logging.FileHandler("error.log", mode='w')  # Reset on each run
 error_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 error_logger.addHandler(error_handler)
 
+# Add a list to track active pipelines
+active_pipelines = []
+
+async def cleanup(pipelines):
+    """Cleanup function to properly close all pipeline connections"""
+    print("Starting cleanup...")  # Add debug print
+    cleanup_tasks = []
+    for pipeline in pipelines:
+        if hasattr(pipeline, 'websocket_handler'):
+            cleanup_tasks.append(pipeline.websocket_handler.stop())
+    if cleanup_tasks:
+        await asyncio.gather(*cleanup_tasks)
+    print("Cleanup completed")  # Add debug print
+
+async def signal_handler(sig, frame):
+    """Handle shutdown signals"""
+    print("Received shutdown signal, cleaning up...")
+    await cleanup(active_pipelines)
+    # Force exit after cleanup
+    loop = asyncio.get_running_loop()
+    loop.stop()
+    sys.exit(0)
+
 async def main():
     try:
         sql_database = SQLDatabase()
@@ -33,20 +58,56 @@ async def main():
         xrp_pipeline = XRPPipeline(sql_database, mongodb_database)
         base_pipeline = BaseChainPipeline(sql_database, mongodb_database)
 
-        duration = 6000
+        # Add pipelines to active list
+        active_pipelines.extend([
+            ethereum_pipeline,
+            bnb_pipeline,
+            base_pipeline,
+            bitcoin_pipeline,
+            xrp_pipeline
+        ])
+
+        duration = 21600
 
         # Run all pipelines concurrently
-        await asyncio.gather(
-            ethereum_pipeline.run(duration=duration),
-            bnb_pipeline.run(duration=duration),
-            base_pipeline.run(duration=duration),
-            bitcoin_pipeline.run(duration=duration),
-            #solana_pipeline.run(duration=1200),
-            xrp_pipeline.run(duration=duration),
-        )
+        try:
+            await asyncio.gather(
+                ethereum_pipeline.run(duration=duration),
+                bnb_pipeline.run(duration=duration),
+                base_pipeline.run(duration=duration),
+                bitcoin_pipeline.run(duration=duration),
+                #solana_pipeline.run(duration=1200),
+                xrp_pipeline.run(duration=duration),
+            )
+        finally:
+            # Ensure cleanup happens even if gather fails
+            await cleanup(active_pipelines)
+            
     except Exception as e:
         # Log any errors
         error_logger.error("An error occurred", exc_info=True)
+        # Ensure cleanup happens on error
+        await cleanup(active_pipelines)
 
-# Run the program
-asyncio.run(main())
+if __name__ == "__main__":
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    # Setup signal handlers in a cross-platform way
+    if sys.platform == 'win32':
+        for s in (signal.SIGTERM, signal.SIGINT):
+            signal.signal(s, lambda s, f: asyncio.create_task(signal_handler(s, f)))
+    else:
+        # Unix-like systems can use loop.add_signal_handler
+        for s in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(
+                s, lambda: asyncio.create_task(signal_handler(s, None))
+            )
+    
+    try:
+        loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt received")
+        loop.run_until_complete(cleanup(active_pipelines))
+    finally:
+        loop.close()

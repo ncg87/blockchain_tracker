@@ -17,6 +17,7 @@ class BaseWebSocketHandler(ABC):
         self.connection = None
         self.retry_attempts = 5
         self.retry_delay = 2
+        self.shutting_down = False  # Add flag to track intentional shutdown
         self.logger.info(f"Initializing WebSocketHandler for {network}")
 
     async def connect(self):
@@ -46,7 +47,7 @@ class BaseWebSocketHandler(ABC):
         Receive and parse messages from the WebSocket.
         """
         try:
-            while self.running:
+            while self.running and not self.shutting_down:
                 try:
                     message = await self.connection.recv()
                     parsed_message = self.parse_message(json.loads(message))
@@ -56,9 +57,11 @@ class BaseWebSocketHandler(ABC):
                 except asyncio.TimeoutError:
                     continue
         except websockets.ConnectionClosed:
-            self.logger.info(f"WebSocket connection closed for {self.network}. Attempting to reconnect...")
-            self.running = False
-            await self.reconnect()
+            self.logger.info(f"WebSocket connection closed for {self.network}.")
+            if not self.shutting_down:  # Only attempt reconnect if not shutting down
+                self.logger.info(f"Attempting to reconnect for {self.network}...")
+                self.running = False
+                await self.reconnect()
 
     async def reconnect(self):
         """
@@ -74,16 +77,21 @@ class BaseWebSocketHandler(ABC):
         """
         try:
             self.running = True
+            self.shutting_down = False  # Reset shutdown flag on run
             await self.connect()
             await self.subscribe()
 
             if duration:
                 # Limit the runtime
                 async for message in self._stream_with_timeout(duration):
+                    if self.shutting_down:
+                        break
                     yield message
             else:
                 # Run indefinitely
                 async for message in self.receive():
+                    if self.shutting_down:
+                        break
                     yield message
         finally:
             await self.stop()
@@ -94,6 +102,8 @@ class BaseWebSocketHandler(ABC):
         """
         end_time = asyncio.get_running_loop().time() + duration
         async for message in self.receive():
+            if self.shutting_down:
+                break
             yield message
             if asyncio.get_running_loop().time() >= end_time:
                 break
@@ -102,9 +112,13 @@ class BaseWebSocketHandler(ABC):
         """
         Stop the WebSocket connection.
         """
+        self.shutting_down = True  # Set shutdown flag
         self.running = False
         if self.connection:
-            await self.connection.close()
+            try:
+                await self.connection.close()
+            except Exception as e:
+                self.logger.error(f"Error closing WebSocket connection for {self.network}: {e}")
         self.logger.info(f"WebSocket connection stopped for {self.network}.")
 
     @abstractmethod

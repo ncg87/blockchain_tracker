@@ -9,7 +9,7 @@ class BaseChainQuerier(EVMQuerier):
     """
     def __init__(self):
         super().__init__(
-            network_name="base",
+            network_name="Base",
             http_endpoint=Settings.BASE_ENDPOINT,
             ws_endpoint=Settings.BASE_WEBSOCKET_ENDPOINT
         )

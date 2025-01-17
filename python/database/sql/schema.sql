@@ -207,6 +207,7 @@ CREATE INDEX IF NOT EXISTS idx_evm_token_info_address ON evm_token_info
     USING btree (address, network);
 
 
+-- Change creator to factory
 CREATE TABLE IF NOT EXISTS evm_contract_to_creator (
     contract_address VARCHAR(64) NOT NULL,
     creator_address VARCHAR(64) NOT NULL,
