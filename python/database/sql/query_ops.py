@@ -235,7 +235,8 @@ class SQLQueryOperations:
                     full_signature=result.get('full_signature'),
                     input_types=json.loads(result.get('input_types')),
                     indexed_inputs=json.loads(result.get('indexed_inputs')),
-                    inputs=json.loads(result.get('inputs'))
+                    inputs=json.loads(result.get('inputs')),
+                    contract_address=result.get('contract_address')
                 )
             return None
         except Exception as e:
@@ -312,6 +313,7 @@ class EventSignature:
     input_types: List[str]
     indexed_inputs: List[bool]
     inputs: List[dict]
+    contract_address: str
     
 @dataclass
 class ContractInfo:

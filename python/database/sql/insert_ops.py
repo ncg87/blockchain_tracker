@@ -157,7 +157,7 @@ class SQLInsertOperations:
             self.db.conn.commit()
             self.db.logger.info(f"Ethereum event {event_signature} inserted successfully")
         except Exception as e:
-            #self.db.logger.error(f"Error inserting Ethereum event: {e} - {event_signature}")
+            self.db.logger.error(f"Error inserting Ethereum event: {e} - {event_signature}")
             self.db.conn.rollback()
         
     def insert_ethereum_contract_abi(self, contract_address: str, abi: str):
@@ -175,24 +175,26 @@ class SQLInsertOperations:
             self.db.conn.commit()
             self.db.logger.info(f"Ethereum contract ABI {abi} for contract {contract_address} inserted successfully")
         except Exception as e:
-            #self.db.logger.error(f"Error inserting Ethereum contract ABI: {e} - {abi} for contract {contract_address}")
+            self.db.logger.debug(f"Error inserting Ethereum contract ABI: {e} - {abi} for contract {contract_address}")
             self.db.conn.rollback()
 
     def insert_evm_event(self, network: str, event_object) -> bool:
         """
         Insert or update an EVM event signature.
+        Updates contract_address only if it was previously NULL.
         """
         try:
             query = """
                 INSERT INTO evm_known_events 
-                (network, signature_hash, name, full_signature, input_types, indexed_inputs, inputs)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                (network, signature_hash, name, full_signature, input_types, indexed_inputs, inputs, contract_address)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (network, signature_hash) DO UPDATE SET
                     name = EXCLUDED.name,
                     full_signature = EXCLUDED.full_signature,
                     input_types = EXCLUDED.input_types,
                     indexed_inputs = EXCLUDED.indexed_inputs,
-                    inputs = EXCLUDED.inputs
+                    inputs = EXCLUDED.inputs,
+                    contract_address = COALESCE(evm_known_events.contract_address, EXCLUDED.contract_address)
             """
             self.db.cursor.execute(query, (
                 network,
@@ -201,12 +203,14 @@ class SQLInsertOperations:
                 event_object.full_signature,
                 json.dumps(event_object.input_types),
                 json.dumps(event_object.indexed_inputs),
-                json.dumps(event_object.inputs)
+                json.dumps(event_object.inputs),
+                event_object.contract_address
             ))
             self.db.conn.commit()
             return True
         except Exception as e:
-            self.db.logger.error(f"Error inserting EVM event for network {network}: {e}")
+            self.db.logger.debug(f"Error inserting EVM event for network {network}: {e}")
+            self.db.conn.rollback()
             return False
 
     def insert_evm_contract_abi(self, network: str, contract_address: str, abi: dict) -> bool:
@@ -230,7 +234,8 @@ class SQLInsertOperations:
             self.db.conn.commit()
             return True
         except Exception as e:
-            self.db.logger.error(f"Error inserting EVM contract ABI for network {network}: {e}")
+            self.db.logger.debug(f"Error inserting EVM contract ABI for network {network}: {e}")
+            self.db.conn.rollback()
             return False
 
     def insert_evm_swap(self, network: str, swap_info) -> bool:
@@ -284,7 +289,27 @@ class SQLInsertOperations:
             self.db.conn.rollback()
             return False
 
-
+    def insert_evm_contract_to_creator(self, network: str, contract_address: str, creator_address: str) -> bool:
+        """
+        Insert an EVM contract to creator mapping into the PostgreSQL database.
+        """
+        try:
+            query = """
+                INSERT INTO evm_contract_to_creator (contract_address, creator_address, network)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (contract_address, network) DO NOTHING
+            """
+            self.db.cursor.execute(query, (
+                contract_address,
+                creator_address,
+                network,
+            ))
+            self.db.conn.commit()
+            return True
+        except Exception as e:
+            self.db.logger.error(f"Error inserting EVM contract to creator mapping for network {network}: {e}")
+            self.db.conn.rollback()
+            return False
 
 def convert_timestamp(timestamp):
     """

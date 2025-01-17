@@ -20,6 +20,7 @@ class EventSignature:
     input_types: List[str]
     indexed_inputs: List[bool]
     inputs: List[dict]
+    contract_address: str
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ get_name = itemgetter("name")
 get_topics = itemgetter("topics")
 get_type = itemgetter("type")
 get_inputs = itemgetter("inputs")
+get_address = itemgetter("address")
 
 class EVMDecoder:
     def __init__(self, sql_database, network):
@@ -58,7 +60,7 @@ class EVMDecoder:
                 else:
                     # Search for matching event in ABI
                     for event in (e for e in abi if e["type"] == "event"):
-                        new_sig = self.get_event_signature(event)
+                        new_sig = self.get_event_signature(event, get_address(log))
                         if new_sig.signature_hash == event_signature:
                             event_object = new_sig
                             self.sql_insert_ops.insert_evm_event(self.network, event_object)
@@ -161,7 +163,7 @@ class EVMDecoder:
                 "raw_log": log
             }
     
-    def get_event_signature(self, event_abi: dict) -> EventSignature:
+    def get_event_signature(self, event_abi: dict, contract_address: str) -> EventSignature:
         name = event_abi["name"]
         inputs = event_abi["inputs"]
         input_types = [i["type"] for i in inputs]
@@ -175,7 +177,8 @@ class EVMDecoder:
             full_signature=full_sig,
             input_types=input_types,
             indexed_inputs=indexed_inputs,
-            inputs=inputs
+            inputs=inputs,
+            contract_address=contract_address
         )
     
     def decode_log_without_abi(self, log: dict) -> dict:

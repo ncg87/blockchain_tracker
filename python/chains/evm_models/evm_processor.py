@@ -138,12 +138,7 @@ class EVMProcessor(BaseProcessor):
                     block_number,
                     timestamp
                 ),
-                asyncio.get_event_loop().run_in_executor(
-                    None,
-                    self.process_logs,
-                    block_number,
-                    timestamp
-                )
+                self.process_logs(block_number, timestamp)
             )
             
             # Process withdrawals if they exist (e.g., for Ethereum post-merge)
@@ -360,7 +355,8 @@ class EVMProcessor(BaseProcessor):
         # First try to get ABI from DB
         result = self.sql_query_ops.query_evm_contract_abi(self.network, address)
         if result:
-            return json.loads(result.get('abi'))
+            abi = json.loads(result.get('abi'))
+            return abi
         
         # If not found, try to get it from Etherscan
         abi = self.querier.get_contract_abi(address)
@@ -368,7 +364,7 @@ class EVMProcessor(BaseProcessor):
             # Store it in DB first
             self.sql_insert_ops.insert_evm_contract_abi(self.network, address, abi)
             
-            # Schedule the contract processing asynchronously
+            # Schedule the contract processing asynchronously, to try to get the factory and info
             asyncio.create_task(self._process_contract(address, abi))
             
         return abi
@@ -389,6 +385,10 @@ class EVMProcessor(BaseProcessor):
             
             if not contract:
                 return None
+            # Get the factory of the contract
+            factory = contract.functions.factory().call(),
+            
+            self.sql_insert_ops.insert_evm_contract_to_creator(self.network, address, factory)
             
             swap_methods = ['token0', 'token1', 'factory']
             for method in swap_methods:
@@ -428,7 +428,7 @@ class EVMProcessor(BaseProcessor):
             # Create contract info after obtaining all necessary info
             contract_info = ContractInfo(
                 address=contract.address,
-                factory=contract.functions.factory().call(),
+                factory=factory,
                 fee=fee,
                 token0_name=token0_info.name,
                 token1_name=token1_info.name,
@@ -438,7 +438,7 @@ class EVMProcessor(BaseProcessor):
             self.sql_insert_ops.insert_evm_swap(self.network, contract_info)
             return contract_info
         except Exception as e:
-            #self.logger.error(f"Error processing contract {contract}: {e}")
+            self.logger.debug(f"Error processing contract {contract}: {e}")
             return None
         
     def process_withdrawals(self, block):

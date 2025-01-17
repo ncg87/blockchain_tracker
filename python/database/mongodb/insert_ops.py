@@ -18,7 +18,7 @@ class MongoInsertOperations:
             compressed_data = gzip.compress(json_str.encode('utf-8'))
             return compressed_data
         except Exception as e:
-            self.logger.error(f"Error compressing block data: {e}")
+            self.logger.debug(f"Error compressing block data: {e}")
             return None
 
     def insert_block(self, block_data, network, block_number, timestamp):

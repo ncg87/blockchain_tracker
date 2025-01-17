@@ -11,13 +11,25 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-async def process_chain_blocks(processor, blocks: List[dict]):
+async def process_chain_blocks(processor, blocks: List[tuple]):
     """Process blocks for a specific chain"""
-    for block in blocks:
+    tasks = []
+    for block_tuple in blocks:
         try:
-            processor.process_logs(block[1], block[2])
+            # Convert tuple to the format process_block expects
+            # block_tuple format is (network, block_number, timestamp)
+            block_dict = {
+                'number': block_tuple[1],  # block_number
+                'timestamp': block_tuple[2],  # timestamp
+                'hash': None,  # Add other required fields
+                'parentHash': None
+            }
+            tasks.append(processor.process_block(block_dict))
         except Exception as e:
-            logging.error(f"Error processing block {block[1]}: {e}")
+            logging.error(f"Error processing block {block_tuple[1]}: {e}")
+    
+    if tasks:
+        await asyncio.gather(*tasks)
 
 async def process_batch(sql_database, eth_processor, base_processor, bnb_processor, last_block=None):
     """Process a batch of blocks"""
@@ -32,29 +44,33 @@ async def process_batch(sql_database, eth_processor, base_processor, bnb_process
     """
     
     # Create a new cursor for this batch
-    cursor = sql_database.conn.cursor()  # Create a new cursor from the connection
+    cursor = sql_database.conn.cursor()
     try:
         cursor.execute(query, (last_block if last_block else float('inf'),))
         all_blocks = cursor.fetchall()
     finally:
-        cursor.close()  # Ensure the cursor is closed after use
+        cursor.close()
     
     if not all_blocks:
         return None  # No more blocks to process
     
     # Separate blocks by network using indices
-    eth_blocks = [b for b in all_blocks if b[0] == 'Ethereum']  # b[0] is network
-    base_blocks = [b for b in all_blocks if b[0] == 'Base']      # b[0] is network
-    bnb_blocks = [b for b in all_blocks if b[0] == 'BNB']        # b[0] is network
+    eth_blocks = [b for b in all_blocks if b[0] == 'Ethereum']
+    base_blocks = [b for b in all_blocks if b[0] == 'Base']
+    bnb_blocks = [b for b in all_blocks if b[0] == 'BNB']
     
-    # Process blocks in parallel
-    tasks = [
-        process_chain_blocks(eth_processor, eth_blocks),
-        process_chain_blocks(base_processor, base_blocks),
-        process_chain_blocks(bnb_processor, bnb_blocks)
-    ]
+    # Process all chains concurrently
+    tasks = []
+    if eth_blocks:
+        tasks.append(process_chain_blocks(eth_processor, eth_blocks))
+    if base_blocks:
+        tasks.append(process_chain_blocks(base_processor, base_blocks))
+    if bnb_blocks:
+        tasks.append(process_chain_blocks(bnb_processor, bnb_blocks))
     
-    await asyncio.gather(*tasks)
+    # Wait for all chains to complete processing
+    if tasks:
+        await asyncio.gather(*tasks)
     
     # Return the lowest block number from this batch for next iteration
     return min(b[1] for b in all_blocks)  # b[1] is block_number

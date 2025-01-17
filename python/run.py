@@ -33,7 +33,7 @@ async def main():
         xrp_pipeline = XRPPipeline(sql_database, mongodb_database)
         base_pipeline = BaseChainPipeline(sql_database, mongodb_database)
 
-        duration = 21600
+        duration = 6000
 
         # Run all pipelines concurrently
         await asyncio.gather(
