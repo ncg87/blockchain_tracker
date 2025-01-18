@@ -2,7 +2,7 @@ from ..evm_models.evm_querier import EVMQuerier
 from config import Settings
 import requests
 import json
-
+from web3 import Web3
 class BaseChainQuerier(EVMQuerier):
     """
     Base-specific querier implementation.
@@ -21,6 +21,7 @@ class BaseChainQuerier(EVMQuerier):
         # Similar to EVMQuerier.get_contract_abi but use Basescan
         self.logger.debug(f"Fetching ABI for contract {contract_address}")
         try:
+            checksum_address = Web3.to_checksum_address(contract_address)
             url = "https://api.basescan.org/api"
             params = {
                 'module': 'contract',

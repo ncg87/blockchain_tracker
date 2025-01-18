@@ -67,7 +67,7 @@ async def main():
             xrp_pipeline
         ])
 
-        duration = 21600
+        duration = 24000
 
         # Run all pipelines concurrently
         try:

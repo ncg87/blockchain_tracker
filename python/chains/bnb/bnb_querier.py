@@ -3,7 +3,7 @@ from config import Settings
 from web3.middleware import ExtraDataToPOAMiddleware
 from ..evm_models import EVMQuerier
 import json
-
+from web3 import Web3
 
 class BNBQuerier(EVMQuerier):
     """
@@ -23,11 +23,12 @@ class BNBQuerier(EVMQuerier):
         # Similar to EVMQuerier.get_contract_abi but use Basescan
         self.logger.debug(f"Fetching ABI for contract {contract_address}")
         try:
+            checksum_address = Web3.to_checksum_address(contract_address)
             url = "https://api.bscscan.com/api"
             params = {
                 'module': 'contract',
                 'action': 'getabi',
-                'address': contract_address,
+                'address': checksum_address,
                 'apikey': Settings.BSCSCAN_API_KEY
             }
             response = requests.get(url, params=params)

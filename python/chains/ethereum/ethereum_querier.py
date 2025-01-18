@@ -2,6 +2,7 @@ from config import Settings
 from ..evm_models import EVMQuerier
 import requests
 import json
+from web3 import Web3
 
 class EthereumQuerier(EVMQuerier):
     """
@@ -16,11 +17,12 @@ class EthereumQuerier(EVMQuerier):
         """
         self.logger.debug(f"Fetching ABI for contract {contract_address}")
         try:
+            checksum_address = Web3.to_checksum_address(contract_address)
             url = "https://api.etherscan.io/api"
             params = {
                 'module': 'contract',
                 'action': 'getabi',
-                'address': contract_address,
+                'address': checksum_address,
                 'apikey': Settings.ETHERSCAN_API_KEY
             }
             response = requests.get(url, params=params)

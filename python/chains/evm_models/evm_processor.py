@@ -16,7 +16,7 @@ import os
 from .cache import BoundedCache
 from dataclasses import dataclass
 import asyncio
-
+from web3 import Web3
 # Common item getters
 get_hash = itemgetter('hash')
 get_from = itemgetter('from')
@@ -352,6 +352,8 @@ class EVMProcessor(BaseProcessor):
         return decoded_logs
 
     def get_contract_abi(self, address):
+        address = Web3.to_checksum_address(address)
+        
         # First try to get ABI from DB
         result = self.sql_query_ops.query_evm_contract_abi(self.network, address)
         if result:
@@ -360,6 +362,7 @@ class EVMProcessor(BaseProcessor):
         
         # If not found, try to get it from Etherscan
         abi = self.querier.get_contract_abi(address)
+        
         if abi:
             # Store it in DB first
             self.sql_insert_ops.insert_evm_contract_abi(self.network, address, abi)
@@ -372,7 +375,7 @@ class EVMProcessor(BaseProcessor):
     # Maybe make a batch version of this, with threading
     async def _process_contract(self, address, abi):
         try:
-            
+            address = Web3.to_checksum_address(address)
             # Check if contract info is already in DB
             contract_info = self.sql_query_ops.query_evm_swap(self.network, address)
             if contract_info:
