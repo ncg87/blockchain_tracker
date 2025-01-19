@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS evm_known_events (
     name TEXT NOT NULL,
     full_signature VARCHAR(128) NOT NULL,
     input_types TEXT NOT NULL,
-    indexed_inputs VARCHAR(100) NOT NULL,
+    indexed_inputs TEXT NOT NULL,
     inputs TEXT NOT NULL,
     contract_address VARCHAR(64) NOT NULL,
     CONSTRAINT pk_evm_events PRIMARY KEY (network, signature_hash)

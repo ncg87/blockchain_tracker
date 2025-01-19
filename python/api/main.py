@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import blocks, transactions, analytics, patterns
+from .routers import blocks, volume
 
 app = FastAPI(
     title="Blockchain Analytics API",
@@ -19,9 +19,10 @@ app.add_middleware(
 
 # Include routers
 app.include_router(blocks.router, prefix="/api/v1/blocks", tags=["blocks"])
-app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["transactions"])
-app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["analytics"])
-app.include_router(patterns.router, prefix="/api/v1/patterns", tags=["patterns"])
+#app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["transactions"])
+#app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["analytics"])
+#app.include_router(patterns.router, prefix="/api/v1/patterns", tags=["patterns"])
+app.include_router(volume.router, prefix="/api/v1/volume", tags=["volume"])
 
 @app.get("/")
 async def root():
