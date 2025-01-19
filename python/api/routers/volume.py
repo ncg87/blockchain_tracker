@@ -1,43 +1,39 @@
 from fastapi import APIRouter, Depends
-from typing import Dict, List
-import asyncpg
-from ..database import get_db_pool
-from ...database.queries.volume_queries import get_all_networks_volume_query
+from typing import Dict
+from python.api.dependencies import get_db
+from ...database.sql.operations.api import APIQueryOperations
 
 router = APIRouter()
 
 INTERVALS = {
-    "5m": 300,        # 5 minutes
-    "1h": 3600,       # 1 hour
-    "24h": 86400,     # 24 hours
-    "1w": 604800,     # 1 week
+    "5m": 300,
+    "1h": 3600,
+    "24h": 86400,
+    "1w": 604800,
 }
 
-@router.get("/all")
-async def get_all_volumes(
-    db_pool: asyncpg.Pool = Depends(get_db_pool)
-) -> Dict[str, Dict[str, str]]:
-    """Get trading volume for all networks across different time intervals"""
+@router.get("/volume/all")
+async def get_all_volumes(db = Depends(get_db)) -> Dict[str, Dict[str, str]]:
+    api_ops = APIQueryOperations(db)
     result = {}
     
-    async with db_pool.acquire() as conn:
-        for interval_name, seconds in INTERVALS.items():
-            query = get_all_networks_volume_query(seconds)
-            rows = await conn.fetch(query)
-            
-            if not interval_name in result:
-                result[interval_name] = {}
-            
-            for row in rows:
-                network = row['network']
-                volume = row['volume']
-                
-                # Convert to appropriate units (ETH, BTC, etc.)
-                if network == 'Bitcoin':
-                    volume = float(volume) / 100000000  # Convert satoshis to BTC
-                else:
-                    volume = float(volume) / 1e18  # Convert wei to ETH
-                
-                result[interval_name][network] = f"{volume:.4f}"
+    for interval_name, seconds in INTERVALS.items():
+        volumes = api_ops.get_all_networks_volume(seconds)
+        result[interval_name] = {
+            network: f"{volume:.4f}" 
+            for network, volume in volumes.items()
+        }
     
-    return result 
+    return result
+
+@router.get("/stats/{network}")
+async def get_network_stats(
+    network: str, 
+    interval: str = "24h", 
+    db = Depends(get_db)
+) -> Dict[str, float]:
+    if interval not in INTERVALS:
+        raise HTTPException(status_code=400, detail="Invalid interval")
+    
+    api_ops = APIQueryOperations(db)
+    return api_ops.get_network_stats(network, INTERVALS[interval])

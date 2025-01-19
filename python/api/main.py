@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import blocks, volume
+from .routers import volume_router, blocks_router
 
 app = FastAPI(
     title="Blockchain Analytics API",
@@ -8,10 +8,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configure CORS
+# Configure CORS for local development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust this in production
+    allow_origins=["http://localhost:3000", "http://localhost:8000"], # TODO: change to production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
