@@ -3,6 +3,7 @@ from .evm import EVMInsertOperations, EVMQueryOperations
 from .bitcoin import BitcoinInsertOperations, BitcoinQueryOperations
 from .solana import SolanaInsertOperations, SolanaQueryOperations
 from .xrp import XRPInsertOperations, XRPQueryOperations
+from .api import APIQueryOperations
 __all__ = [
     # Block Operations
     BlockInsertOperations, BlockQueryOperations,
@@ -13,5 +14,7 @@ __all__ = [
     # Solana Operations
     SolanaInsertOperations, SolanaQueryOperations,
     # XRP Operations
-    XRPInsertOperations, XRPQueryOperations
+    XRPInsertOperations, XRPQueryOperations,
+    # API Operations
+    APIQueryOperations
 ]

@@ -26,11 +26,11 @@ class EVMPipeline(BasePipeline):
         self.logger.info(f"Received signal {signum}. Starting graceful shutdown...")
         self.shutdown()
 
-    def schedule_shutdown(self, delay_hours=24):
+    def schedule_shutdown(self, delay_seconds=86400):
         """Schedule an automatic shutdown after specified hours"""
         def shutdown_timer():
-            time.sleep(delay_hours * 3600)  # Convert hours to seconds
-            self.logger.info(f"Automatic shutdown triggered after {delay_hours} hours")
+            time.sleep(delay_seconds)  # Convert hours to seconds
+            self.logger.info(f"Automatic shutdown triggered after {delay_seconds} seconds")
             self.shutdown()
 
         shutdown_thread = threading.Thread(target=shutdown_timer, daemon=True)
@@ -46,7 +46,7 @@ class EVMPipeline(BasePipeline):
 
             # Schedule shutdown if duration is specified
             if duration:
-                self.schedule_shutdown(delay_hours=duration)
+                self.schedule_shutdown(delay_seconds=duration)
 
             async for full_block in self.querier.stream_blocks(duration):
                 if self._shutdown_flag.is_set():

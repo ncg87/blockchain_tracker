@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import volume_router, blocks_router
+from .routers import volume, blocks
 
 app = FastAPI(
     title="Blockchain Analytics API",

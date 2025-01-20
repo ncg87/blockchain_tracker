@@ -54,28 +54,62 @@ class SolanaWebSocketHandler:
             self.shutting_down = False
             await self.connect()
             await self.subscribe()
-            start_time = asyncio.get_running_loop().time()
 
-            while self.running and not self.shutting_down:
-                if duration and asyncio.get_running_loop().time() - start_time > duration:
-                    self.logger.info("WebSocket stream duration expired.")
-                    break
-
-                message = await self.connection.recv()
-                data = json.loads(message)
-                if "params" in data and "result" in data["params"]:
-                    slot = data["params"]["result"].get("slot")
-                    if slot is not None:
-                        yield slot
-        except websockets.ConnectionClosed:
-            if self.running and not self.shutting_down:
-                self.logger.error("WebSocket connection closed. Reconnecting...")
-                self.running = False
-                await self.reconnect()
-        except Exception as e:
-            self.logger.error(f"Error in WebSocket stream: {e}")
+            if duration:
+                # Limit the runtime
+                async for message in self._stream_with_timeout(duration):
+                    if self.shutting_down:
+                        break
+                    yield message
+            else:
+                # Run indefinitely
+                async for message in self.receive():
+                    if self.shutting_down:
+                        break
+                    yield message
         finally:
             await self.stop()
+
+    async def receive(self):
+        """
+        Receive and parse messages from the WebSocket.
+        """
+        while not self.shutting_down:  # Keep trying as long as we're not shutting down
+            try:
+                while self.running and not self.shutting_down:
+                    try:
+                        message = await self.connection.recv()
+                        data = json.loads(message)
+                        if "params" in data and "result" in data["params"]:
+                            slot = data["params"]["result"].get("slot")
+                            if slot is not None:
+                                yield slot
+                    except asyncio.TimeoutError:
+                        continue
+            except websockets.ConnectionClosed:
+                self.logger.info("Solana WebSocket connection closed.")
+                if not self.shutting_down:
+                    self.logger.info("Attempting to reconnect to Solana WebSocket...")
+                    await self.reconnect()
+                    continue
+            except Exception as e:
+                self.logger.error(f"Unexpected error in receive loop: {e}")
+                if not self.shutting_down:
+                    await asyncio.sleep(self.retry_delay)
+                    await self.reconnect()
+                    continue
+
+    async def _stream_with_timeout(self, duration):
+        """
+        Helper function to stream data for a limited time.
+        """
+        end_time = asyncio.get_running_loop().time() + duration
+        async for message in self.receive():
+            if self.shutting_down:
+                break
+            yield message
+            if asyncio.get_running_loop().time() >= end_time:
+                break
 
     async def stop(self):
         """

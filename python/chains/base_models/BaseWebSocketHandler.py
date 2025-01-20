@@ -16,7 +16,7 @@ class BaseWebSocketHandler(ABC):
         self.running = False
         self.connection = None
         self.retry_attempts = 5
-        self.retry_delay = 2
+        self.retry_delay = 5
         self.shutting_down = False  # Add flag to track intentional shutdown
         self.logger.info(f"Initializing WebSocketHandler for {network}")
 
@@ -46,22 +46,30 @@ class BaseWebSocketHandler(ABC):
         """
         Receive and parse messages from the WebSocket.
         """
-        try:
-            while self.running and not self.shutting_down:
-                try:
-                    message = await self.connection.recv()
-                    parsed_message = self.parse_message(json.loads(message))
-                    if parsed_message:
-                        full_data = await self.fetch_full_data(parsed_message)
-                        yield full_data
-                except asyncio.TimeoutError:
+        while not self.shutting_down:  # Keep trying as long as we're not shutting down
+            try:
+                while self.running and not self.shutting_down:
+                    try:
+                        message = await self.connection.recv()
+                        parsed_message = self.parse_message(json.loads(message))
+                        if parsed_message:
+                            full_data = await self.fetch_full_data(parsed_message)
+                            yield full_data
+                    except asyncio.TimeoutError:
+                        continue
+            except websockets.ConnectionClosed:
+                self.logger.info(f"WebSocket connection closed for {self.network}.")
+                if not self.shutting_down:
+                    self.logger.info(f"Attempting to reconnect for {self.network}...")
+                    await self.reconnect()
+                    # Continue the loop after reconnection
                     continue
-        except websockets.ConnectionClosed:
-            self.logger.info(f"WebSocket connection closed for {self.network}.")
-            if not self.shutting_down:  # Only attempt reconnect if not shutting down
-                self.logger.info(f"Attempting to reconnect for {self.network}...")
-                self.running = False
-                await self.reconnect()
+            except Exception as e:
+                self.logger.error(f"Unexpected error in receive loop for {self.network}: {e}")
+                if not self.shutting_down:
+                    await asyncio.sleep(self.retry_delay)
+                    await self.reconnect()
+                    continue
 
     async def reconnect(self):
         """

@@ -3,7 +3,7 @@ from .evm import INSERT_EVM_TRANSACTIONS, INSERT_EVM_EVENTS, INSERT_EVM_CONTRACT
 from .bitcoin import INSERT_BITCOIN_TRANSACTIONS, QUERY_BITCOIN_TRANSACTIONS, QUERY_RECENT_BITCOIN_TRANSACTIONS
 from .solana import INSERT_SOLANA_TRANSACTIONS, QUERY_SOLANA_TRANSACTIONS, QUERY_RECENT_SOLANA_TRANSACTIONS
 from .xrp import INSERT_XRP_TRANSACTIONS, QUERY_XRP_TRANSACTIONS, QUERY_RECENT_XRP_TRANSACTIONS
-from .api import get_network_volume_query, get_all_networks_volume_query
+from .api import get_network_volume_query, get_all_networks_volume_query, get_all_networks_fees_query, get_network_fees_query, get_all_networks_tx_count_query, get_network_tx_count_query, get_network_historical_data_query
 
 __all__ = [
     # Block Queries
@@ -22,6 +22,9 @@ __all__ = [
     INSERT_XRP_TRANSACTIONS,
     QUERY_XRP_TRANSACTIONS, QUERY_RECENT_XRP_TRANSACTIONS,
     # API Queries
-    get_network_volume_query, get_all_networks_volume_query
+    get_network_volume_query, get_all_networks_volume_query, 
+    get_all_networks_fees_query, get_network_fees_query, 
+    get_all_networks_tx_count_query, get_network_tx_count_query,
+    get_network_historical_data_query
 ]
 

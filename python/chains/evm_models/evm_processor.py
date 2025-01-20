@@ -71,11 +71,11 @@ class EVMProcessor(BaseProcessor):
         self.logger.info(f"Received signal {signum}. Starting graceful shutdown...")
         self.shutdown()
 
-    def schedule_shutdown(self, delay_hours=24):
-        """Schedule an automatic shutdown after specified hours"""
+    def schedule_shutdown(self, delay_seconds=86400):  # Default 24 hours in seconds
+        """Schedule an automatic shutdown after specified seconds"""
         def shutdown_timer():
-            time.sleep(delay_hours * 3600)  # Convert hours to seconds
-            self.logger.info(f"Automatic shutdown triggered after {delay_hours} hours")
+            time.sleep(delay_seconds)
+            self.logger.info(f"Automatic shutdown triggered after {delay_seconds} seconds")
             self.shutdown()
 
         shutdown_thread = threading.Thread(target=shutdown_timer, daemon=True)

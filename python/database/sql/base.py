@@ -1,5 +1,5 @@
 import psycopg2
-from psycopg2 import sql
+from psycopg2 import sql, pool
 import logging
 import os
 from config.settings import Settings
@@ -21,6 +21,12 @@ class SQLDatabase:
         self.port = port
 
         self.conn = psycopg2.connect(
+            **Settings.POSTGRES_CONFIG
+        )
+        
+        self.pool = psycopg2.pool.SimpleConnectionPool(
+            minconn=1,
+            maxconn=10,
             **Settings.POSTGRES_CONFIG
         )
         
@@ -50,3 +56,13 @@ class SQLDatabase:
         Close the database connection.
         """
         self.conn.close()
+        
+    def get_connection(self):
+        return self.pool.getconn()
+
+    def return_connection(self, conn):
+        self.pool.putconn(conn)
+
+    def __del__(self):
+        if hasattr(self, 'pool'):
+            self.pool.closeall()

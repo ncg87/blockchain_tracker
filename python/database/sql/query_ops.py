@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 from psycopg2.extras import RealDictCursor
 
-from .operations import BlockQueryOperations, EVMQueryOperations, BitcoinQueryOperations, SolanaQueryOperations, XRPQueryOperations
+from .operations import BlockQueryOperations, EVMQueryOperations, BitcoinQueryOperations, SolanaQueryOperations, XRPQueryOperations, APIQueryOperations
 
 class SQLQueryOperations:
     """
@@ -19,6 +19,7 @@ class SQLQueryOperations:
         self.bitcoin = BitcoinQueryOperations(self.db)
         self.solana = SolanaQueryOperations(self.db)
         self.xrp = XRPQueryOperations(self.db)
+        self.api = APIQueryOperations(self.db)
 
     def query_blocks_by_time(self, start_time: int, end_time: int) -> List[Dict[str, Any]]:
         return self.block.query_by_time(start_time, end_time)

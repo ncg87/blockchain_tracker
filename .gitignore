@@ -18,3 +18,5 @@ block_examples
 *.db.*
 *.db-journal
 run.bat
+
+target/*

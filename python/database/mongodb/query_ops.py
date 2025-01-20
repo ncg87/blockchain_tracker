@@ -98,16 +98,31 @@ class MongoQueryOperations:
         except Exception as e:
             self.logger.error(f"Error retrieving recent blocks from {network} collection in MongoDB: {e}")
             return []
-        
-    def get_evm_transactions(self, network, block_number):
+    
+    # Fix for it decompress
+    def get_evm_transactions(self, network, block_number, decompress = True):
         try:
             self.logger.info(f"Retrieving transactions from {network} collection in MongoDB for block {block_number}")
-            collection = self.mongodb.get_collection(network)
+            collection = self.mongodb.get_collection(f"{network}Transactions")
             transactions = collection.find({"block_number": block_number})
             transaction_list = list(transactions)
-            if transaction_list:
+            
+            if not transaction_list:
+                self.logger.warning(f"No transactions found in {network} collection for block {block_number}")
+                return []
+            self.logger.info(f"Retrieved {len(transaction_list)} transactions from {network} collection in MongoDB for block {block_number}")
+            
+            if decompress:
+                decompressed_transactions = []
+                for transaction in transaction_list:
+                    decompressed_transactions.append({
+                        "block_number": transaction["block_number"],
+                        "transaction_hash": transaction.get("transaction_hash"),
+                        "timestamp": transaction["timestamp"],
+                        "raw_data": self._decompress_data(transaction["compressed_logs"])
+                    })
                 self.logger.info(f"Retrieved {len(transaction_list)} transactions from {network} collection in MongoDB for block {block_number}")
-                return transaction_list
+                return decompressed_transactions
             else:
                 self.logger.warning(f"No transactions found in {network} collection for block {block_number}")
                 return []
