@@ -53,3 +53,26 @@ QUERY_EVM_FACTORY_CONTRACT = """
     FROM evm_contract_to_creator
     WHERE network = %s AND contract_address = %s;
 """
+
+QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS = """
+    SELECT *
+    FROM evm_known_events
+    WHERE network = %s AND contract_address = %s;
+"""
+
+QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS_ALL_NETWORKS = """
+    SELECT *
+    FROM evm_known_events
+    WHERE contract_address = %s;
+"""
+
+QUERY_ALL_EVM_SWAPS = """
+    SELECT *
+    FROM evm_swap;
+"""
+
+QUERY_ALL_EVM_SWAPS_BY_NETWORK = """
+    SELECT *
+    FROM evm_swap
+    WHERE network = %s;
+"""

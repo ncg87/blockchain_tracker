@@ -383,7 +383,6 @@ class EVMProcessor(BaseProcessor):
             
             if type(abi) == str:
                 abi = json.loads(abi)
-                
             contract = self.querier.get_contract(address, abi)
             
             if not contract:
@@ -400,6 +399,7 @@ class EVMProcessor(BaseProcessor):
             
             token0_address = contract.functions.token0().call()
             token1_address = contract.functions.token1().call()
+
             # Check for token0 info in DB
             token0_info = self.sql_query_ops.query_evm_token_info(self.network, token0_address)
             if not token0_info:
@@ -412,8 +412,8 @@ class EVMProcessor(BaseProcessor):
                 )
                 self.sql_insert_ops.insert_evm_token_info(self.network, token0_info)
             # Same thing for token1
-            token1_contract = self.sql_query_ops.query_evm_token_info(self.network, token1_address)
-            if not token1_contract:
+            token1_info = self.sql_query_ops.query_evm_token_info(self.network, token1_address)
+            if not token1_info:
                 token1_contract = self.querier.get_contract(token1_address, ERC20_ABI)
                 token1_info = TokenInfo(
                     address=token1_address,
@@ -421,7 +421,7 @@ class EVMProcessor(BaseProcessor):
                     symbol=token1_contract.functions.symbol().call()
                 )
                 self.sql_insert_ops.insert_evm_token_info(self.network, token1_info)
-            
+
             # Try to get fee from contract, not crucial so well continue if it fails
             try:
                 fee = contract.functions.fee().call()
@@ -430,20 +430,45 @@ class EVMProcessor(BaseProcessor):
             
             # Create contract info after obtaining all necessary info
             contract_info = ContractInfo(
-                address=contract.address,
+                address=address,
                 factory=factory,
                 fee=fee,
                 token0_name=token0_info.name,
                 token1_name=token1_info.name,
                 name=None # Exchange/Factory contract name
             )
+
             # Insert contract info into DB
             self.sql_insert_ops.insert_evm_swap(self.network, contract_info)
             return contract_info
         except Exception as e:
             self.logger.debug(f"Error processing contract {contract}: {e}")
             return None
-        
+    
+    def _process_coin(self, address):
+        try:
+            coin = self.sql_query_ops.query_evm_token_info(self.network, address)
+            if coin is None:
+                coin = self.querier.get_contract(address, ERC20_ABI)
+            
+            coin = TokenInfo(
+                address=address,
+                name=coin.functions.name().call(),
+                symbol=coin.functions.symbol().call()
+            )
+            self.sql_insert_ops.insert_evm_token_info(self.network, coin)
+            return coin
+        except Exception as e:
+            self.logger.debug(f"Error processing coin {address}: {e}")
+            return None
+    
+    async def _process_swaps(self, address):
+        contract_abi = self.sql_query_ops.query_evm_contract_abi('Ethereum', address)
+        return await self._process_contract(address, contract_abi['abi'])
+    
+    def process_syncs(self, address):
+        pass
+    
     def process_withdrawals(self, block):
         """
         Process raw withdrawal data and store it.

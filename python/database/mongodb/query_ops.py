@@ -99,7 +99,6 @@ class MongoQueryOperations:
             self.logger.error(f"Error retrieving recent blocks from {network} collection in MongoDB: {e}")
             return []
     
-    # Fix for it decompress
     def get_evm_transactions(self, network, block_number, decompress = True):
         try:
             self.logger.info(f"Retrieving transactions from {network} collection in MongoDB for block {block_number}")
@@ -123,9 +122,7 @@ class MongoQueryOperations:
                     })
                 self.logger.info(f"Retrieved {len(transaction_list)} transactions from {network} collection in MongoDB for block {block_number}")
                 return decompressed_transactions
-            else:
-                self.logger.warning(f"No transactions found in {network} collection for block {block_number}")
-                return []
+            return transaction_list
         except Exception as e:
             self.logger.error(f"Error retrieving transactions from {network} collection in MongoDB: {e}")
             return []
@@ -152,26 +149,4 @@ class MongoQueryOperations:
                 return []
         except Exception as e:
             self.logger.error(f"Error retrieving recent transactions from {network} collection in MongoDB: {e}")
-            return []
-
-    def get_recent_ethereum_transactions(self, limit=10, decompress=True):
-        try:
-            self.logger.info(f"Retrieving recent Ethereum transactions from MongoDB")
-            collection = self.mongodb.get_collection('EthereumTransactions')
-            transactions = collection.find().sort("timestamp", -1).limit(limit)
-            transaction_list = list(transactions)
-            self.logger.info(f"Retrieved {len(transaction_list)} recent Ethereum transactions from MongoDB")
-            if decompress:
-                decompressed_transactions = []
-                for transaction in transaction_list:
-                    decompressed_transactions.append({
-                        "block_number": transaction["block_number"],
-                        "transaction_hash": transaction["transaction_hash"],
-                        "timestamp": transaction["timestamp"],
-                        "log_data": self._decompress_data(transaction["compressed_logs"])
-                    })
-                return decompressed_transactions
-            return transaction_list
-        except Exception as e:
-            self.logger.error(f"Error retrieving recent Ethereum transactions from MongoDB: {e}")
             return []

@@ -1,6 +1,7 @@
 from ..base import BaseOperations
 from typing import List, Dict, Any, Optional
 from ...queries import QUERY_EVM_FACTORY_CONTRACT, QUERY_EVM_TRANSACTIONS, QUERY_ADDRESS_HISTORY, QUERY_EVM_EVENT, QUERY_EVM_CONTRACT_ABI, QUERY_EVM_SWAP, QUERY_EVM_TOKEN_INFO, QUERY_EVM_FACTORY_CONTRACT, QUERY_RECENT_EVM_TRANSACTIONS
+from ...queries import QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS, QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS_ALL_NETWORKS, QUERY_ALL_EVM_SWAPS, QUERY_ALL_EVM_SWAPS_BY_NETWORK
 from ..models import EventSignature, ContractInfo, TokenInfo
 import json
 
@@ -153,3 +154,71 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying EVM factory contract for network {network}: {e}")
             return None
 
+    def query_event_by_contract_address(self, network: str, contract_address: str) -> List[Dict[str, Any]]:
+        """
+        Query EVM events by network and contract address.
+        Returns a list of events associated with the contract address on the specified network.
+        """
+        try:
+            self.db.cursor.execute(QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS, (
+                network,
+                contract_address
+            ))
+            results = self.db.cursor.fetchall()
+            return [EventSignature(
+                signature_hash=result.get('signature_hash'),
+                name=result.get('name'),
+                full_signature=result.get('full_signature'),
+                input_types=json.loads(result.get('input_types')),
+                indexed_inputs=json.loads(result.get('indexed_inputs')),
+                inputs=json.loads(result.get('inputs')),
+                contract_address=result.get('contract_address')
+            ) for result in results] if results else []
+        except Exception as e:
+            self.db.logger.error(f"Error querying EVM events by contract address for network {network}: {e}")
+            return []
+
+    def query_event_by_contract_address_all_networks(self, contract_address: str) -> List[Dict[str, Any]]:
+        """
+        Query EVM events by contract address across all networks.
+        Returns a list of events associated with the contract address regardless of network.
+        """
+        try:
+            self.db.cursor.execute(QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS_ALL_NETWORKS, (contract_address,))
+            results = self.db.cursor.fetchall()
+            return [EventSignature(
+                signature_hash=result.get('signature_hash'),
+                name=result.get('name'),
+                full_signature=result.get('full_signature'),
+                input_types=json.loads(result.get('input_types')),
+                indexed_inputs=json.loads(result.get('indexed_inputs')),
+                inputs=json.loads(result.get('inputs')),
+                contract_address=result.get('contract_address')
+            ) for result in results] if results else []
+        except Exception as e:
+            self.db.logger.error(f"Error querying EVM events by contract address across all networks: {e}")
+            return []
+    
+    def query_all_evm_swaps_by_network(self, network: str) -> List[Dict[str, Any]]:
+        """
+        Query all EVM swaps by network.
+        """
+        try:
+            self.db.cursor.execute(QUERY_ALL_EVM_SWAPS_BY_NETWORK, (network,))
+            results = self.db.cursor.fetchall()
+            return results
+        except Exception as e:
+            self.db.logger.error(f"Error querying all EVM swaps by network {network}: {e}")
+            return []
+        
+    def query_all_evm_swaps(self) -> List[Dict[str, Any]]:
+        """
+        Query all EVM swaps.
+        """
+        try:
+            self.db.cursor.execute(QUERY_ALL_EVM_SWAPS)
+            results = self.db.cursor.fetchall()
+            return results
+        except Exception as e:
+            self.db.logger.error(f"Error querying all EVM swaps: {e}")
+            return []
