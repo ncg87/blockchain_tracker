@@ -18,5 +18,6 @@ block_examples
 *.db.*
 *.db-journal
 run.bat
-
+python/notebooks/*
 target/*
+rust/target/*
