@@ -22,3 +22,29 @@ python/notebooks/*
 target/*
 rust/target/*
 *.ipynb
+# Python package build artifacts
+*.egg
+*.egg-info/
+dist/
+build/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Development/Environment
+.env
+.venv/
+env/
+venv/
+.python-version
+.coverage
+.pytest_cache/
+.tox/
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
