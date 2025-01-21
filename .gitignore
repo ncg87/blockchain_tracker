@@ -21,3 +21,4 @@ run.bat
 python/notebooks/*
 target/*
 rust/target/*
+*.ipynb
