@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=64.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "blockchain"
+version = "0.1.0"
+authors = [
+    {name = "Nicko G"},
+]
+description = "A blockchain tracking and analysis package"
+requires-python = ">=3.6"
+dependencies = [
+    "pymongo",
+    "neo4j",
+    "psycopg2",
+    "web3",
+    "requests",
+    "eth-abi",
+    "websockets",
+    "fastapi",
+    "uvicorn",
+]
+
+[tool.setuptools]
+package-dir = {"" = "python"} 

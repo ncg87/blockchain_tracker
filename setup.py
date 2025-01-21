@@ -41,7 +41,7 @@ def get_requirements():
         ]
 
 setup(
-    name="blockchain_tracker",
+    name="blockchain",
     version="0.1.0",
     package_dir={"": "python"},  # This tells setuptools that packages are under python directory
     packages=find_namespace_packages(where="python"),  # This finds all packages under python/
