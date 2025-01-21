@@ -5,9 +5,6 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "blockchain"
 version = "0.1.0"
-authors = [
-    {name = "Nicko G"},
-]
 description = "A blockchain tracking and analysis package"
 requires-python = ">=3.10"
 dependencies = [
@@ -22,10 +19,13 @@ dependencies = [
     "uvicorn",
 ]
 
+[tool.setuptools]
+package-dir = {"" = "python"}
+
+[tool.setuptools.packages.find]
+where = ["python"]
+include = ["*"]
+
 [project.scripts]
 run-tracker = "run:main"
 run-api = "run_api:main"
-
-[tool.setuptools]
-package-dir = {"" = "python"}
-packages = {find = {where = ["python"]}}
