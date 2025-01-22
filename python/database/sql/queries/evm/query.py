@@ -37,15 +37,15 @@ QUERY_EVM_CONTRACT_ABI = """
 """
 
 QUERY_EVM_SWAP = """
-    SELECT address, factory_address, fee, token0_name, token1_name, name
+    SELECT contract_address, factory_address, fee, token0_name, token1_name, name
     FROM evm_swap
-    WHERE network = %s AND address = %s;
+    WHERE network = %s AND contract_address = %s;
 """
 
 QUERY_EVM_TOKEN_INFO = """
-    SELECT address, name, symbol
+    SELECT contract_address, name, symbol
     FROM evm_token_info
-    WHERE network = %s AND address = %s;
+    WHERE network = %s AND contract_address = %s;
 """
 
 QUERY_EVM_FACTORY_CONTRACT = """

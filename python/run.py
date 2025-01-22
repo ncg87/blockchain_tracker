@@ -15,13 +15,6 @@ logging.basicConfig(
     ]
 )
 
-# Setup error-specific logger for error.log
-error_logger = logging.getLogger("error_logger")
-error_logger.setLevel(logging.ERROR)
-error_handler = logging.FileHandler("error.log", mode='w')  # Reset on each run
-error_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-error_logger.addHandler(error_handler)
-
 # Add a list to track active pipelines
 active_pipelines = []
 

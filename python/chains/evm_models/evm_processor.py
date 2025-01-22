@@ -442,7 +442,7 @@ class EVMProcessor(BaseProcessor):
             self.sql_insert_ops.insert_evm_swap(self.network, contract_info)
             return contract_info
         except Exception as e:
-            self.logger.debug(f"Error processing contract {contract}: {e}")
+            self.logger.error(f"Error processing contract {contract}: {e}")
             return None
     
     def _process_coin(self, address):

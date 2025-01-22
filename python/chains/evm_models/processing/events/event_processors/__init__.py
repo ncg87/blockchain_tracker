@@ -1,2 +1,3 @@
-from .transfer import TransferEventProcessor
-from .swap import SwapEventProcessor
+from .swap import SwapProcessor
+
+__all__ = ['SwapProcessor']

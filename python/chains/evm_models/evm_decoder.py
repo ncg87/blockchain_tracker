@@ -144,7 +144,7 @@ class EVMDecoder:
                         [t for t, _, _ in non_indexed_info],
                         bytes.fromhex(data.hex())
                     )
-                    for (_, name, description), value in zip(non_indexed_info, values):
+                    for (input_type, name, description), value in zip(non_indexed_info, values):
                         result["parameters"][name] = {
                             "value": value,
                             "type": input_type,
@@ -167,6 +167,7 @@ class EVMDecoder:
         name = event_abi["name"]
         inputs = event_abi["inputs"]
         input_types = [i["type"] for i in inputs]
+        input_names = [i["name"] for i in inputs]
         full_sig = f"{name}({','.join(input_types)})"
         sig_hash = Web3.keccak(text=full_sig).hex()
         indexed_inputs = [i.get("indexed", False) for i in inputs]

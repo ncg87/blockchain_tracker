@@ -141,6 +141,7 @@ CREATE TABLE IF NOT EXISTS evm_known_events (
     indexed_inputs TEXT NOT NULL,
     inputs TEXT NOT NULL,
     contract_address VARCHAR(64) NOT NULL,
+    factory_address VARCHAR(64),
     CONSTRAINT pk_evm_events PRIMARY KEY (network, signature_hash)
 ) PARTITION BY LIST (network);
 
@@ -174,14 +175,14 @@ CREATE INDEX IF NOT EXISTS idx_evm_contract_abis_address ON evm_contract_abis
 
 -- EVM Contract Info table
 CREATE TABLE IF NOT EXISTS evm_swap (
-    address VARCHAR(64) NOT NULL,
+    contract_address VARCHAR(64) NOT NULL,
     factory_address VARCHAR(64) NOT NULL,
     fee INT,
     token0_name VARCHAR(100),
     token1_name VARCHAR(100),
     name VARCHAR(100),
     network VARCHAR(20) NOT NULL,
-    CONSTRAINT pk_evm_contract_info PRIMARY KEY (address, network)
+    CONSTRAINT pk_evm_contract_info PRIMARY KEY (contract_address, network)
 ) PARTITION BY LIST (network);
 
 CREATE TABLE IF NOT EXISTS evm_swap_ethereum PARTITION OF evm_swap FOR VALUES IN ('Ethereum');
@@ -189,14 +190,17 @@ CREATE TABLE IF NOT EXISTS evm_swap_bnb PARTITION OF evm_swap FOR VALUES IN ('BN
 CREATE TABLE IF NOT EXISTS evm_swap_base PARTITION OF evm_swap FOR VALUES IN ('Base');
 
 CREATE INDEX IF NOT EXISTS idx_evm_swap_factory_address ON evm_swap
-    USING btree (factory_address, network);
+    USING btree (factory_address, network, contract_address);
+
+
 -- EVM Token Info table
+
 CREATE TABLE IF NOT EXISTS evm_token_info (
-    address VARCHAR(64) NOT NULL,
+    contract_address VARCHAR(64) NOT NULL,
     name VARCHAR(100),
     symbol VARCHAR(100),
     network VARCHAR(20) NOT NULL,
-    CONSTRAINT pk_evm_token_info PRIMARY KEY (address, network)
+    CONSTRAINT pk_evm_token_info PRIMARY KEY (contract_address, network)
 ) PARTITION BY LIST (network);
 
 CREATE TABLE IF NOT EXISTS evm_token_info_ethereum PARTITION OF evm_token_info FOR VALUES IN ('Ethereum');
@@ -204,13 +208,13 @@ CREATE TABLE IF NOT EXISTS evm_token_info_bnb PARTITION OF evm_token_info FOR VA
 CREATE TABLE IF NOT EXISTS evm_token_info_base PARTITION OF evm_token_info FOR VALUES IN ('Base');
 
 CREATE INDEX IF NOT EXISTS idx_evm_token_info_address ON evm_token_info
-    USING btree (address, network);
+    USING btree (contract_address, network);
 
 
 -- Change creator to factory
 CREATE TABLE IF NOT EXISTS evm_contract_to_creator (
     contract_address VARCHAR(64) NOT NULL,
-    creator_address VARCHAR(64) NOT NULL,
+    factory_address VARCHAR(64) NOT NULL,
     network VARCHAR(20) NOT NULL,
     CONSTRAINT pk_evm_contract_to_creator PRIMARY KEY (contract_address, network)
 ) PARTITION BY LIST (network);
@@ -220,7 +224,7 @@ CREATE TABLE IF NOT EXISTS evm_contract_to_creator_bnb PARTITION OF evm_contract
 CREATE TABLE IF NOT EXISTS evm_contract_to_creator_base PARTITION OF evm_contract_to_creator FOR VALUES IN ('Base');
 
 CREATE INDEX IF NOT EXISTS idx_evm_contract_to_creator_contract_address ON evm_contract_to_creator
-    USING btree (creator_address, network);
+    USING btree (factory_address, network);
 
 CREATE TABLE IF NOT EXISTS evm_event_patterns (
     network VARCHAR(20) NOT NULL,

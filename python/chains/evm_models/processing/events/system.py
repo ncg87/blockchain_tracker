@@ -1,35 +1,43 @@
+# Look to migrate this into Rust first, since it is simple but loads of data
+
 from typing import Dict, List, Optional
-from .models import BaseEvent
-from .registry import EventProcessorRegistry
+from .event_processors import SwapProcessor
+from operator import itemgetter
+import logging
+from web3 import Web3
 
+get_event = itemgetter('event')
+get_parameters = itemgetter('parameters')
+get_type = itemgetter('type')
+
+
+logger = logging.getLogger(__name__)
 class EventProcessingSystem:
-    def __init__(self, sql_query_ops=None):
-        self.sql_query_ops = sql_query_ops
-        self.registry = EventProcessorRegistry.create_default_registry(sql_query_ops)
+    def __init__(self, sql_db, mongodb):
+        self.sql_db = sql_db
+        self.mongodb = mongodb
+        self.event_mapping = self.load_event_mapping()
+        self.logger = logger
+        self.logger.info("EventProcessingSystem initialized")
+    def load_event_mapping(self):
+        return {
+            "Swap": SwapProcessor(),
+        }
 
-    def process_event(self, event: Dict, network: str) -> Optional[BaseEvent]:
-        event_name = event['event']
-        event_signature = event.get('event_signature')
+    def process_event(self, event: Dict):
+        event_name = get_event(event)
         
-        if not event_signature:
-            return None
+        try:
+            signature = self.get_signature(event)
+            processor = self.event_mapping[event_name]
             
-        processor = self.registry.get_processor(event_name, event_signature)
-        if processor is None:
+            return processor.process_event(event, signature)
+        except Exception as e:
+            #self.logger.error(f"Error processing event: {e}", exc_info=True)
             return None
-            
-        return processor.process(event, network)
-
-    def process_transaction_events(self, transaction_data: List[Dict], network: str) -> Dict[str, List[BaseEvent]]:
-        processed_events = {}
         
-        for item in transaction_data:
-            tx_hash = item['transaction_hash']
-            processed_events[tx_hash] = []
-            
-            for event in item['log_data']:
-                processed_event = self.process_event(event, network)
-                if processed_event:
-                    processed_events[tx_hash].append(processed_event)
-                    
-        return processed_events
+    # pass the function so it doesn't have to look up
+    def get_signature(self, event, _keccak=Web3.keccak, _join=','.join):
+        name = get_event(event)
+        types = tuple(get_type(v) for v in get_parameters(event).values())
+        return _keccak(text=name + '(' + _join(types) + ')').hex()

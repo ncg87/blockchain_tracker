@@ -29,21 +29,21 @@ INSERT_EVM_CONTRACT_ABI = """
 
 INSERT_EVM_SWAP = """
     INSERT INTO evm_swap
-    (address, factory_address, fee, token0_name, token1_name, name, network)
+    (contract_address, factory_address, fee, token0_name, token1_name, name, network)
     VALUES (%s, %s, %s, %s, %s, %s, %s)
-    ON CONFLICT (address, network) DO NOTHING
+    ON CONFLICT (contract_address, network) DO NOTHING
 """
 
 INSERT_EVM_TOKEN_INFO = """
     INSERT INTO evm_token_info
-    (address, name, symbol, network)
+    (contract_address, name, symbol, network)
     VALUES (%s, %s, %s, %s)
-    ON CONFLICT (address, network) DO NOTHING
+    ON CONFLICT (contract_address, network) DO NOTHING
 """
 
 INSERT_EVM_CONTRACT_TO_FACTORY = """
     INSERT INTO evm_contract_to_creator
-    (contract_address, creator_address, network)
+    (contract_address, factory_address, network)
     VALUES (%s, %s, %s)
     ON CONFLICT (contract_address, network) DO NOTHING
 """
