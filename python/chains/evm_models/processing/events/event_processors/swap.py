@@ -33,7 +33,13 @@ get_assetIn = itemgetter('assetIn')
 get_assetOut = itemgetter('assetOut')
 get_receiver = itemgetter('receiver')
 get_referralCode = itemgetter('referralCode')
+get_parameters = itemgetter('parameters')
+get_protocolFeesToken0 = itemgetter('protocolFeesToken0')
+get_protocolFeesToken1 = itemgetter('protocolFeesToken1')
 
+
+# TODO: Add more protocol mappings
+# TODO: Determine the type of the protocol so we can map to DEX or Aggregator, etc.
 
 class SwapProcessor(EventProcessor):
     def __init__(self):
@@ -48,7 +54,8 @@ class SwapProcessor(EventProcessor):
         try:
             protocol_info = self.protocol_map[signature]
             
-            swap_info = protocol_info(event)
+            parameters = get_parameters(event)
+            swap_info = protocol_info(parameters)
             
             return swap_info
         
@@ -68,63 +75,64 @@ class SwapProcessor(EventProcessor):
             #"2ad8739d64c070ab4ae9d9c0743d56550b22c3c8c96e7a6045fac37b5b8e89e3" : self.sender_recipient_baseIn_quoteIn_baseOut_quoteOut_fee_adminFee_oraclePrice
             "fa2dda1cc1b86e41239702756b13effbc1a092b5c57e3ad320fbe4f3b13fe235" : self.tokenIn_tokenOut_amountIn_amountOut,
             #"d78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822" : self.sender_amount0In_amount1In_amount0Out_amount1Out_to,
-            "dba43ee9916cb156cc32a5d3406e87341e568126a46815294073ba25c9400246": self.assetIn_assetOut_sender_receiver_amountIn_amountOut_referralCode,
-            
+            "dba43ee9916cb156cc32a5d3406e87341e568126a46815294073ba25c9400246" : self.assetIn_assetOut_sender_receiver_amountIn_amountOut_referralCode,
+            "19b47279256b2a23a1665c810c8d55a1758940ee09377d4f8d26497a3577dc83" : self.sender_recipient_amount0_amount1_sqrtPriceX96_liquidity_tick_protocolFeesToken0_protocolFeesToken1
             
             
         }
         
     # Check if correct
-    def sender_to_amount0_amount1(self, event) -> ArbitarySwap:
+    def sender_to_amount0_amount1(self, parameters) -> ArbitarySwap:
+        sender = get_value(get_sender(parameters))
+        to = get_value(get_to(parameters))
+        amount0 = get_value(get_amount0(parameters))
+        amount1 = get_value(get_amount1(parameters))
         
-        sender = get_value(get_sender(event))
-        to = get_value(get_to(event))
-        amount0 = get_value(get_amount0(event))
-        amount1 = get_value(get_amount1(event))
+        isAmount0In = amount0 < 0
         
         return ArbitarySwap (
             amount0 = amount0,
             amount1 = amount1,
-            isAmount0In = True
+            isAmount0In = isAmount0In
         )
 
     # Uniswap V2
-    def sender_to_amount0In_amount1In_amount0Out_amount1Out(self, event) -> ArbitarySwap:
+    def sender_to_amount0In_amount1In_amount0Out_amount1Out(self, parameters) -> ArbitarySwap:
         
         
-        sender = get_value(get_sender(event))
-        to = get_value(get_to(event))
-        amount0In = get_value(get_amount0In(event))
+        sender = get_value(get_sender(parameters))
+        to = get_value(get_to(parameters))
+        amount0In = get_value(get_amount0In(parameters))
         
         if amount0In > 0:
-            amount1 = get_value(get_amount1Out(event))
+            amount1 = get_value(get_amount1Out(parameters))
             return ArbitarySwap (
                 amount0 = amount0In,
                 amount1 = amount1,
                 isAmount0In = True
             )
         else:
-            amount0 = get_value(get_amount0Out(event))
-            amount1 = get_value(get_amount1In(event))
+            amount0 = get_value(get_amount0Out(parameters))
+            amount1 = get_value(get_amount1In(parameters))
             return ArbitarySwap (
                 amount0 = amount0,
                 amount1 = amount1,
                 isAmount0In = False
             )
     # Uniswap V3 type swap
-    def sender_recipient_amount0_amount1_sqrtPriceX96_liquidity_tick(self, event) -> ArbitarySwap:
+    def sender_recipient_amount0_amount1_sqrtPriceX96_liquidity_tick(self, parameters) -> ArbitarySwap:
         
         
 
-        sender = get_value(get_sender(event))
-        recipient = get_value(get_recipient(event))
-        amount0 = get_value(get_amount0(event))
-        amount1 = get_value(get_amount1(event))
-        sqrtPriceX96 = get_value(get_sqrtPriceX96(event))         # Can use this to determine price of tokens in the future
-        liquidity = get_value(get_liquidity(event))
-        tick = get_value(get_tick(event))
+        sender = get_value(get_sender(parameters))
+        recipient = get_value(get_recipient(parameters))
+        amount0 = get_value(get_amount0(parameters))
+        amount1 = get_value(get_amount1(parameters))
+        sqrtPriceX96 = get_value(get_sqrtPriceX96(parameters))         # Can use this to determine price of tokens in the future
+        liquidity = get_value(get_liquidity(parameters))
+        tick = get_value(get_tick(parameters))
 
-        isAmount0In = amount0 > 0
+        isAmount0In = amount0 < 0
 
         return ArbitarySwap (
             amount0 = amount0,
@@ -133,19 +141,19 @@ class SwapProcessor(EventProcessor):
         )
     
     # Uniswap V2 fork
-    def amount0In_amount0Out_amount1In_amount1Out(self, event) -> ArbitarySwap:
-        amount0In = get_value(get_amount0In(event))
+    def amount0In_amount0Out_amount1In_amount1Out(self, parameters) -> ArbitarySwap:
+        amount0In = get_value(get_amount0In(parameters))
 
         if amount0In > 0:
-            amount1 = get_value(get_amount1Out(event))
+            amount1 = get_value(get_amount1Out(parameters))
             return ArbitarySwap (
                 amount0 = amount0In,
                 amount1 = amount1,
                 isAmount0In = True
             )
         else:
-            amount0 = get_value(get_amount0Out(event))
-            amount1 = get_value(get_amount1In(event))
+            amount0 = get_value(get_amount0Out(parameters))
+            amount1 = get_value(get_amount1In(parameters))
             
             return ArbitarySwap (
                 amount0 = amount0,
@@ -153,30 +161,14 @@ class SwapProcessor(EventProcessor):
                 isAmount0In = False
             )
     
-    def poolId_tokenIn_tokenOut_amountIn_amountOut(self, event) -> ArbitarySwap:
+    def poolId_tokenIn_tokenOut_amountIn_amountOut(self, parameters) -> ArbitarySwap:
         
-        poolId = get_value(get_poolId(event))
-        tokenIn = get_value(get_tokenIn(event))
-        tokenOut = get_value(get_tokenOut(event))
+        poolId = get_value(get_poolId(parameters))
+        tokenIn = get_value(get_tokenIn(parameters))
+        tokenOut = get_value(get_tokenOut(parameters))
         
-        amountIn = get_value(get_amountIn(event))
-        amountOut = get_value(get_amountOut(event))
-        
-        return ArbitarySwap (
-            amount0 = amountIn,
-            amount1 = amountOut,
-            isAmount0In = True
-        )
-    
-    def poolId_tokenIn_tokenOut_amountIn_amountOut_user(self, event) -> ArbitarySwap:
-
-        poolId = get_value(get_poolId(event))
-        tokenIn = get_value(get_tokenIn(event))
-        tokenOut = get_value(get_tokenOut(event))
-        user = get_value(get_user(event))
-
-        amountIn = get_value(get_amountIn(event))
-        amountOut = get_value(get_amountOut(event))
+        amountIn = get_value(get_amountIn(parameters))
+        amountOut = get_value(get_amountOut(parameters))
         
         return ArbitarySwap (
             amount0 = amountIn,
@@ -184,64 +176,98 @@ class SwapProcessor(EventProcessor):
             isAmount0In = True
         )
     
-    def sender_recipient_baseIn_quoteIn_baseOut_quoteOut_fee_adminFee_oraclePrice(self, event) -> ArbitarySwap:
-        sender = get_value(get_sender(event))
-        recipient = get_value(get_recipient(event))
-        baseIn = get_value(get_baseIn(event))
-        quoteIn = get_value(get_quoteIn(event))
-        baseOut = get_value(get_baseOut(event))
-        quoteOut = get_value(get_quoteOut(event))
-        fee = get_value(get_fee(event))
-        adminFee = get_value(get_adminFee(event))
-        oraclePrice = get_value(get_oraclePrice(event))
+    def poolId_tokenIn_tokenOut_amountIn_amountOut_user(self, parameters) -> ArbitarySwap:
+
+        poolId = get_value(get_poolId(parameters))
+        tokenIn = get_value(get_tokenIn(parameters))
+        tokenOut = get_value(get_tokenOut(parameters))
+        user = get_value(get_user(parameters))
+
+        amountIn = get_value(get_amountIn(parameters))
+        amountOut = get_value(get_amountOut(parameters))
+        
+        return ArbitarySwap (
+            amount0 = amountIn,
+            amount1 = amountOut,
+            isAmount0In = True
+        )
+    
+    def sender_recipient_baseIn_quoteIn_baseOut_quoteOut_fee_adminFee_oraclePrice(self, parameters) -> ArbitarySwap:
+        sender = get_value(get_sender(parameters))
+        recipient = get_value(get_recipient(parameters))
+        baseIn = get_value(get_baseIn(parameters))
+        quoteIn = get_value(get_quoteIn(parameters))
+        baseOut = get_value(get_baseOut(parameters))
+        quoteOut = get_value(get_quoteOut(parameters))
+        fee = get_value(get_fee(parameters))
+        adminFee = get_value(get_adminFee(parameters))
+        oraclePrice = get_value(get_oraclePrice(parameters))
         
         raise Exception("Not implemented")
 
-    def tokenIn_tokenOut_amountIn_amountOut(self, event) -> ArbitarySwap:
+    def tokenIn_tokenOut_amountIn_amountOut(self, parameters) -> ArbitarySwap:
         
-        tokenIn = get_value(get_tokenIn(event))
-        tokenOut = get_value(get_tokenOut(event))
-        amountIn = get_value(get_amountIn(event))
-        amountOut = get_value(get_amountOut(event))
+        tokenIn = get_value(get_tokenIn(parameters))
+        tokenOut = get_value(get_tokenOut(parameters))
+        amountIn = get_value(get_amountIn(parameters))
+        amountOut = get_value(get_amountOut(parameters))
         
         return ArbitarySwap(
             amount0=amountIn, 
             amount1=amountOut, 
             isAmount0In=True)
 
-    def sender_amount0In_amount1In_amount0Out_amount1Out_to(self, event) -> ArbitarySwap:
-        sender = get_value(get_sender(event))
-        to = get_value(get_to(event))
-        amount0In = get_value(get_amount0In(event))
+    def sender_amount0In_amount1In_amount0Out_amount1Out_to(self, parameters) -> ArbitarySwap:
+        sender = get_value(get_sender(parameters))
+        to = get_value(get_to(parameters))
+        amount0In = get_value(get_amount0In(parameters))
         
         if amount0In > 0:
-            amount1 = get_value(get_amount1Out(event))
+            amount1 = get_value(get_amount1Out(parameters))
             return ArbitarySwap (
                 amount0 = amount0In,
                 amount1 = amount1,
                 isAmount0In = True
             )
         else:
-            amount0 = get_value(get_amount0Out(event))
-            amount1 = get_value(get_amount1In(event))
+            amount0 = get_value(get_amount0Out(parameters))
+            amount1 = get_value(get_amount1In(parameters))
             return ArbitarySwap (
                 amount0 = amount0,
                 amount1 = amount1,
                 isAmount0In = False
             )
 
-    def assetIn_assetOut_sender_receiver_amountIn_amountOut_referralCode(self, event) -> ArbitarySwap:
-        assetIn = get_value(get_assetIn(event))
-        assetOut = get_value(get_assetOut(event))
-        sender = get_value(get_sender(event))
-        receiver = get_value(get_receiver(event))
-        amountIn = get_value(get_amountIn(event))
-        amountOut = get_value(get_amountOut(event))
-        referralCode = get_value(get_referralCode(event))
+    def assetIn_assetOut_sender_receiver_amountIn_amountOut_referralCode(self, parameters) -> ArbitarySwap:
+        assetIn = get_value(get_assetIn(parameters))
+        assetOut = get_value(get_assetOut(parameters))
+        sender = get_value(get_sender(parameters))
+        receiver = get_value(get_receiver(parameters))
+        amountIn = get_value(get_amountIn(parameters))
+        amountOut = get_value(get_amountOut(parameters))
+        referralCode = get_value(get_referralCode(parameters))
         
         return ArbitarySwap(
             amount0 = amountIn,
             amount1 = amountOut,
             isAmount0In = True
         )
+    
+    def sender_recipient_amount0_amount1_sqrtPriceX96_liquidity_tick_protocolFeesToken0_protocolFeesToken1(self, parameters) -> ArbitarySwap:
+        sender = get_value(get_sender(parameters))
+        recipient = get_value(get_recipient(parameters))
+        amount0 = get_value(get_amount0(parameters))
+        amount1 = get_value(get_amount1(parameters))
+        sqrtPriceX96 = get_value(get_sqrtPriceX96(parameters))
+        liquidity = get_value(get_liquidity(parameters))
+        tick = get_value(get_tick(parameters))
+        protocolFeesToken0 = get_value(get_protocolFeesToken0(parameters))
+        protocolFeesToken1 = get_value(get_protocolFeesToken1(parameters))
 
+        isAmount0In = amount0 < 0
+
+        return ArbitarySwap(
+            amount0 = amount0,
+            amount1 = amount1,
+            isAmount0In = isAmount0In
+        )

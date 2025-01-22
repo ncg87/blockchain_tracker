@@ -77,8 +77,7 @@ async def main():
             await cleanup(active_pipelines)
             
     except Exception as e:
-        # Log any errors
-        error_logger.error("An error occurred", exc_info=True)
+        logging.error(f"An error occurred: {e}")
         # Ensure cleanup happens on error
         await cleanup(active_pipelines)
 
