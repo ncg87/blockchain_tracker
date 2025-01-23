@@ -1,7 +1,7 @@
 from ..base import BaseOperations
 from typing import List, Dict, Any, Optional
 from ...queries import QUERY_EVM_FACTORY_CONTRACT, QUERY_EVM_TRANSACTIONS, QUERY_ADDRESS_HISTORY, QUERY_EVM_EVENT, QUERY_EVM_CONTRACT_ABI, QUERY_EVM_SWAP, QUERY_EVM_TOKEN_INFO, QUERY_EVM_FACTORY_CONTRACT, QUERY_RECENT_EVM_TRANSACTIONS
-from ...queries import QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS, QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS_ALL_NETWORKS, QUERY_ALL_EVM_SWAPS, QUERY_ALL_EVM_SWAPS_BY_NETWORK
+from ...queries import QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS, QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS_ALL_NETWORKS, QUERY_ALL_EVM_SWAPS, QUERY_ALL_EVM_SWAPS_BY_NETWORK, QUERY_EVM_SWAP_ALL_NETWORKS
 from ..models import EventSignature, ContractInfo, TokenInfo
 import json
 
@@ -107,7 +107,7 @@ class EVMQueryOperations(BaseOperations):
             result = self.db.cursor.fetchone()
             if result:
                 return ContractInfo(
-                    address=result.get('address'),
+                    address=result.get('contract_address'),
                     factory=result.get('factory_address'),
                     fee=result.get('fee', None),
                     token0_name=result.get('token0_name', None),
@@ -117,6 +117,29 @@ class EVMQueryOperations(BaseOperations):
             return None
         except Exception as e:
             self.db.logger.error(f"Error querying EVM swap for network {network}: {e}")
+            return None
+    
+    def query_swap_all_networks(self, contract_address: str) -> Optional[Dict[str, Any]]:
+        """
+        Query an EVM swap by its contract address across all networks.
+        """
+        try:
+            self.db.cursor.execute(QUERY_EVM_SWAP_ALL_NETWORKS, (
+                contract_address,
+            ))
+            result =  self.db.cursor.fetchone()
+            if result:
+                return ContractInfo(
+                    address=result.get('contract_address'),
+                    factory=result.get('factory_address'),
+                    fee=result.get('fee', None),
+                    token0_name=result.get('token0_name', None),
+                    token1_name=result.get('token1_name', None),
+                    name=result.get('name', None)
+                )
+            return None
+        except Exception as e:
+            self.db.logger.error(f"Error querying EVM swap for contract address {contract_address}: {e}")
             return None
         
     def query_token_info(self, network: str, token_address: str) -> Optional[Dict[str, Any]]:
@@ -131,9 +154,10 @@ class EVMQueryOperations(BaseOperations):
             result = self.db.cursor.fetchone()
             if result:
                 return TokenInfo(
-                    address=result.get('address'),
+                    address=result.get('contract_address'),
                     name=result.get('name'),
-                    symbol=result.get('symbol')
+                    symbol=result.get('symbol'),
+                    decimals=result.get('decimals')
                 )
             return None
         except Exception as e:

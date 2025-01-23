@@ -1,6 +1,10 @@
 from typing import List, Dict, Any
 from ..base import BaseOperations
-from ...queries import INSERT_EVM_TRANSACTIONS, INSERT_EVM_EVENTS, INSERT_EVM_CONTRACT_ABI, INSERT_EVM_SWAP, INSERT_EVM_TOKEN_INFO, INSERT_EVM_CONTRACT_TO_FACTORY
+from ...queries import (
+    INSERT_EVM_TRANSACTIONS, INSERT_EVM_EVENTS, INSERT_EVM_CONTRACT_ABI,
+    INSERT_EVM_SWAP, INSERT_EVM_TOKEN_INFO, INSERT_EVM_CONTRACT_TO_FACTORY,
+    INSERT_EVM_TRANSACTION_SWAP
+)
 from psycopg2.extras import execute_values
 import json
 class EVMInsertOperations(BaseOperations):
@@ -98,7 +102,8 @@ class EVMInsertOperations(BaseOperations):
                 token_info.address,
                 token_info.name,
                 token_info.symbol,
-                network
+                network,
+                token_info.decimals
             ))
             self.db.conn.commit()
             return True
@@ -124,3 +129,27 @@ class EVMInsertOperations(BaseOperations):
             self.db.conn.rollback()
             return False
     
+    def insert_transaction_swap(self, network: str, swap_info, address: str, tx_hash: str, index: int, timestamp: int) -> bool:
+        """
+        Insert or update an EVM transaction swap.
+        """
+        try:
+            self.db.cursor.execute(INSERT_EVM_TRANSACTION_SWAP, (
+                network,
+                address,
+                tx_hash,
+                index,
+                timestamp,
+                swap_info.amount0,
+                swap_info.amount1,
+                swap_info.token0,
+                swap_info.token1,
+                swap_info.isAmount0In
+            ))
+            self.db.conn.commit()
+            return True
+        except Exception as e:
+            self.db.logger.error(f"Error inserting EVM transaction swap for network {network}: {e}")
+            self.db.conn.rollback()
+            return False
+

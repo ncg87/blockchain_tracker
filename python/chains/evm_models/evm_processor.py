@@ -17,6 +17,7 @@ from .cache import BoundedCache
 from dataclasses import dataclass
 import asyncio
 from web3 import Web3
+from .processing import EventProcessingSystem, TokenSwap
 # Common item getters
 get_hash = itemgetter('hash')
 get_from = itemgetter('from')
@@ -41,6 +42,7 @@ class EVMProcessor(BaseProcessor):
         super().__init__(sql_database, mongodb_database, network_name)
         self.querier = querier
         self.decoder = decoder
+        self.event_processor = EventProcessingSystem(sql_database, mongodb_database, network_name)
         
         # Initialize connection pool
         self.db_pool = ThreadedConnectionPool(
@@ -83,13 +85,14 @@ class EVMProcessor(BaseProcessor):
 
     def _start_processing_workers(self):
         """Start background workers for continuous processing"""
-        def process_worker():
+        async def process_worker():
             while not self._shutdown_flag.is_set():
                 try:
-                    batch = self.log_queue.get(timeout=1)  # 1 second timeout
-                    if batch is None:
+                    batch_data = self.log_queue.get(timeout=1)  # 1 second timeout
+                    if batch_data is None:
                         break
-                    result = self._process_logs_batch_python(batch, self.abi_cache)
+                    batch, timestamp = batch_data  # Unpack the tuple
+                    result = await self._process_logs_batch_python(batch, self.abi_cache, timestamp)
                     self.result_queue.put(result)
                 except Empty:
                     continue  # Keep checking shutdown flag
@@ -99,7 +102,7 @@ class EVMProcessor(BaseProcessor):
         self.workers = []
         for _ in range(8):  # Number of worker threads
             worker = threading.Thread(
-                target=process_worker, 
+                target=lambda: asyncio.run(process_worker()), 
                 daemon=True
             )
             worker.start()
@@ -278,9 +281,9 @@ class EVMProcessor(BaseProcessor):
             # Process in parallel with pre-loaded data
             batches = [logs[i:i + batch_size] for i in range(0, len(logs), batch_size)]
             
-            # Submit batches to worker queue
+            # Submit batches to worker queue with timestamp
             for batch in batches:
-                self.log_queue.put(batch)
+                self.log_queue.put((batch, timestamp))  # Modified to include timestamp
             
             # Collect results
             decoder_logs = defaultdict(list)
@@ -297,6 +300,17 @@ class EVMProcessor(BaseProcessor):
                     block_number, 
                     timestamp
                 )
+            
+            # Process events
+            # Create tasks for all transaction events processing
+            tasks = [
+                self._process_transaction_events(tx_hash, decoded_logs, timestamp)
+                for tx_hash, decoded_logs in decoder_logs.items()
+            ]
+            
+            # Run all tasks concurrently and wait for completion
+            if tasks:
+                await asyncio.gather(*tasks)
             
         except Exception as e:
             self.logger.error(f"Error processing logs for block {block_number}: {e}", exc_info=True)
@@ -316,10 +330,12 @@ class EVMProcessor(BaseProcessor):
             # Fallback to Python implementation
             return self._process_logs_batch_python(log_chunk, pre_loaded_abis)
 
-    def _process_logs_batch_python(self, log_chunk, pre_loaded_abis):
+    async def _process_logs_batch_python(self, log_chunk, pre_loaded_abis, timestamp):
         # This is a good candidate for Rust optimization
         decoded_logs = defaultdict(list)
         
+        # Process logs concurrently
+        tasks = []
         for log in log_chunk:
             log = dict(log)
             try:
@@ -335,7 +351,13 @@ class EVMProcessor(BaseProcessor):
                     decoded_log = self.decoder.decode_log(log, abi)
                     decoded_log['contract'] = address
                     decoded_logs[tx_hash].append(decoded_log)
-                
+                    
+                    # Create task for event processing
+                    #task = asyncio.create_task(
+                    #    self._process_transaction_event(decoded_log, tx_hash, timestamp)
+                    #)
+                    #tasks.append(task)
+                    
             except Exception as e:
                 error_log = {
                     "event": "DecodingError",
@@ -348,6 +370,10 @@ class EVMProcessor(BaseProcessor):
                     decoded_logs[tx_hash].append(error_log)
                 except:
                     continue
+        
+        # Wait for all event processing to complete
+        if tasks:
+            await asyncio.gather(*tasks)
                     
         return decoded_logs
 
@@ -372,13 +398,17 @@ class EVMProcessor(BaseProcessor):
             
         return abi
     
+    async def process_contract(self, address: str, update=True):
+        abi = self.get_contract_abi(address)
+        return await self._process_contract(address, abi, update)
+    
     # Maybe make a batch version of this, with threading
-    async def _process_contract(self, address, abi):
+    async def _process_contract(self, address, abi, update=False):
         try:
             address = Web3.to_checksum_address(address)
             # Check if contract info is already in DB
             contract_info = self.sql_query_ops.query_evm_swap(self.network, address)
-            if contract_info:
+            if contract_info and not update:
                 return contract_info
             
             if type(abi) == str:
@@ -408,7 +438,8 @@ class EVMProcessor(BaseProcessor):
                 token0_info = TokenInfo(
                     address=token0_address,
                     name=token0_contract.functions.name().call(),
-                    symbol=token0_contract.functions.symbol().call()
+                    symbol=token0_contract.functions.symbol().call(),
+                    decimals=token0_contract.functions.decimals().call()
                 )
                 self.sql_insert_ops.insert_evm_token_info(self.network, token0_info)
             # Same thing for token1
@@ -418,10 +449,11 @@ class EVMProcessor(BaseProcessor):
                 token1_info = TokenInfo(
                     address=token1_address,
                     name=token1_contract.functions.name().call(),
-                    symbol=token1_contract.functions.symbol().call()
+                    symbol=token1_contract.functions.symbol().call(),
+                    decimals=token1_contract.functions.decimals().call()
                 )
                 self.sql_insert_ops.insert_evm_token_info(self.network, token1_info)
-
+            
             # Try to get fee from contract, not crucial so well continue if it fails
             try:
                 fee = contract.functions.fee().call()
@@ -445,22 +477,44 @@ class EVMProcessor(BaseProcessor):
             self.logger.error(f"Error processing contract {contract}: {e}")
             return None
     
-    def _process_coin(self, address):
+    async def _process_token(self, address):
         try:
             coin = self.sql_query_ops.query_evm_token_info(self.network, address)
-            if coin is None:
-                coin = self.querier.get_contract(address, ERC20_ABI)
+            
+            coin = self.querier.get_contract(address, ERC20_ABI)
+            
+            address = Web3.to_checksum_address(address)
             
             coin = TokenInfo(
                 address=address,
                 name=coin.functions.name().call(),
-                symbol=coin.functions.symbol().call()
+                symbol=coin.functions.symbol().call(),
+                decimals=coin.functions.decimals().call()
             )
             self.sql_insert_ops.insert_evm_token_info(self.network, coin)
             return coin
         except Exception as e:
             self.logger.debug(f"Error processing coin {address}: {e}")
             return None
+    
+    
+    async def _process_transaction_event(self, decoded_event, tx_hash, index, timestamp):
+        try:
+            return self.event_processor.process_event(decoded_event, tx_hash, index, timestamp)
+        except Exception as e:
+            self.logger.error(f"Error processing transaction event: {e}", exc_info=True)
+            return None
+    
+    async def _process_transaction_events(self, tx_hash, decoded_logs, timestamp):
+        try:
+            events = []
+            for i, event in enumerate(decoded_logs):
+                event_info = await self._process_transaction_event(event, tx_hash, i, timestamp)
+                if event_info:
+                    events.append(event_info)
+            return events
+        except Exception as e:
+            self.logger.error(f"Error processing transaction events: {e} - {decoded_logs}", exc_info=True)
     
     async def _process_swaps(self, address):
         contract_abi = self.sql_query_ops.query_evm_contract_abi('Ethereum', address)
@@ -549,6 +603,7 @@ class TokenInfo:
     address: str
     name: str
     symbol: str
+    decimals: int
 
 @dataclass
 class ContractInfo:

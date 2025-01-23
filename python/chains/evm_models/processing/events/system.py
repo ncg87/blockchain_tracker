@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Optional
 from .event_processors import SwapProcessor
+from database import SQLDatabase, SQLQueryOperations
 from operator import itemgetter
 import logging
 from web3 import Web3
@@ -13,25 +14,26 @@ get_type = itemgetter('type')
 
 logger = logging.getLogger(__name__)
 class EventProcessingSystem:
-    def __init__(self, sql_db, mongodb):
+    def __init__(self, sql_db: SQLDatabase, mongodb, network):
         self.sql_db = sql_db
         self.mongodb = mongodb
+        self.network = network
         self.event_mapping = self.load_event_mapping()
         self.logger = logger
         self.logger.info("EventProcessingSystem initialized")
     def load_event_mapping(self):
         return {
-            "Swap": SwapProcessor(),
+            "Swap": SwapProcessor(self.sql_db, self.network),
         }
 
-    def process_event(self, event: Dict):
+    def process_event(self, event: Dict, tx_hash: str, index: int, timestamp: int):
         event_name = get_event(event)
         
         try:
             signature = self.get_signature(event)
             processor = self.event_mapping[event_name]
             
-            return processor.process_event(event, signature)
+            return processor.process_event(event, signature, tx_hash, index, timestamp)
         except Exception as e:
             #self.logger.error(f"Error processing event: {e}", exc_info=True)
             return None

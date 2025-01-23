@@ -41,7 +41,7 @@ async def process_all_contracts(processor, contract_abis):
     tasks = [
         loop.run_in_executor(
             thread_pool,
-            partial(asyncio.run, processor._process_contract(contract[1], json.loads(contract[2])))
+            partial(asyncio.run, processor._process_contract(contract[1], json.loads(contract[2], update=True)))
         )
         for contract in contract_abis
     ]

@@ -200,6 +200,7 @@ CREATE TABLE IF NOT EXISTS evm_token_info (
     name VARCHAR(100),
     symbol VARCHAR(100),
     network VARCHAR(20) NOT NULL,
+    decimals INT,
     CONSTRAINT pk_evm_token_info PRIMARY KEY (contract_address, network)
 ) PARTITION BY LIST (network);
 
@@ -226,19 +227,29 @@ CREATE TABLE IF NOT EXISTS evm_contract_to_creator_base PARTITION OF evm_contrac
 CREATE INDEX IF NOT EXISTS idx_evm_contract_to_creator_contract_address ON evm_contract_to_creator
     USING btree (factory_address, network);
 
-CREATE TABLE IF NOT EXISTS evm_event_patterns (
+CREATE TABLE IF NOT EXISTS evm_transaction_swap (
     network VARCHAR(20) NOT NULL,
-    event_name VARCHAR(20) NOT NULL,
     contract_address VARCHAR(64) NOT NULL,
-    factory_address VARCHAR(64) NOT NULL,
-    CONSTRAINT pk_evm_event_patterns PRIMARY KEY (network, event_name, contract_address)
+    tx_hash VARCHAR(128) NOT NULL,
+    log_index INT NOT NULL,
+    timestamp BIGINT NOT NULL,
+    amount0 NUMERIC(78, 0) NOT NULL,
+    amount1 NUMERIC(78, 0) NOT NULL,
+    token0 VARCHAR(64) NOT NULL,
+    token1 VARCHAR(64) NOT NULL,
+    amount0_in BOOLEAN NOT NULL,
+    CONSTRAINT pk_evm_transaction_swap PRIMARY KEY (network, tx_hash, log_index)
 ) PARTITION BY LIST (network);
 
-CREATE TABLE IF NOT EXISTS evm_event_patterns_ethereum PARTITION OF evm_event_patterns FOR VALUES IN ('Ethereum');
-CREATE TABLE IF NOT EXISTS evm_event_patterns_bnb PARTITION OF evm_event_patterns FOR VALUES IN ('BNB');
-CREATE TABLE IF NOT EXISTS evm_event_patterns_base PARTITION OF evm_event_patterns FOR VALUES IN ('Base');
+CREATE TABLE IF NOT EXISTS evm_transaction_swap_ethereum PARTITION OF evm_transaction_swap FOR VALUES IN ('Ethereum');
+CREATE TABLE IF NOT EXISTS evm_transaction_swap_bnb PARTITION OF evm_transaction_swap FOR VALUES IN ('BNB');
+CREATE TABLE IF NOT EXISTS evm_transaction_swap_base PARTITION OF evm_transaction_swap FOR VALUES IN ('Base');
 
-CREATE INDEX IF NOT EXISTS idx_evm_event_patterns_event_name ON evm_event_patterns
-    USING btree (event_name, network);
+CREATE INDEX IF NOT EXISTS idx_evm_transaction_swap_tx_hash ON evm_transaction_swap
+    USING btree (tx_hash, network);
+
+
+
+
 
 

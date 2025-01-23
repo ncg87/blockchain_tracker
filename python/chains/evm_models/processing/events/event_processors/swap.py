@@ -1,7 +1,8 @@
-from ..models import ArbitarySwap
+from ..models import ArbitarySwap, TokenSwap
 from typing import Optional
 from operator import itemgetter
 from .processors import EventProcessor
+from database import SQLDatabase, SQLQueryOperations, SQLInsertOperations
 
 get_to = itemgetter('to')
 get_sender = itemgetter('sender')
@@ -36,18 +37,21 @@ get_referralCode = itemgetter('referralCode')
 get_parameters = itemgetter('parameters')
 get_protocolFeesToken0 = itemgetter('protocolFeesToken0')
 get_protocolFeesToken1 = itemgetter('protocolFeesToken1')
+get_contract = itemgetter('contract')
 
 
 # TODO: Add more protocol mappings
 # TODO: Determine the type of the protocol so we can map to DEX or Aggregator, etc.
 
 class SwapProcessor(EventProcessor):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, sql_db, network):
+        super().__init__(sql_db, network)
         self.logger.info("SwapProcessor initialized")
+        self.unknown_protocols = {}
+
         
 
-    def process_event(self, event : dict, signature: str) -> Optional[ArbitarySwap]:
+    def process_event(self, event : dict, signature: str, tx_hash: str, index: int, timestamp: int):
         
         # Check if signature is provided, if not, get it from the event
         
@@ -57,10 +61,27 @@ class SwapProcessor(EventProcessor):
             parameters = get_parameters(event)
             swap_info = protocol_info(parameters)
             
+            address = get_contract(event)
+            
+            contract_info = self.sql_query_ops.evm.query_swap_all_networks(address)
+            
+            if contract_info is None:
+                return None
+            
+            if isinstance(swap_info, ArbitarySwap):
+                swap_info = TokenSwap.from_swap_info(swap_info, contract_info)
+            
+            self.sql_insert_ops.evm.insert_transaction_swap(self.network, swap_info, address, tx_hash, index, timestamp)
+            
             return swap_info
         
         except Exception as e:
-            self.logger.error(f"Error processing event {event} - signature: {signature} - {e}", exc_info=True)
+            
+            if signature not in self.unknown_protocols:
+                self.unknown_protocols[signature] = 1
+            else:
+                self.unknown_protocols[signature] += 1
+            #self.logger.error(f"Error processing event {event} - signature: {signature} - {e}", exc_info=True)
             return None
 
     # Create a better way of loading and updating it in a custom protocol file
@@ -107,7 +128,7 @@ class SwapProcessor(EventProcessor):
         if amount0In > 0:
             amount1 = get_value(get_amount1Out(parameters))
             return ArbitarySwap (
-                amount0 = amount0In,
+                amount0 =  amount0In,
                 amount1 = amount1,
                 isAmount0In = True
             )
@@ -161,7 +182,7 @@ class SwapProcessor(EventProcessor):
                 isAmount0In = False
             )
     
-    def poolId_tokenIn_tokenOut_amountIn_amountOut(self, parameters) -> ArbitarySwap:
+    def poolId_tokenIn_tokenOut_amountIn_amountOut(self, parameters) -> TokenSwap:
         
         poolId = get_value(get_poolId(parameters))
         tokenIn = get_value(get_tokenIn(parameters))
@@ -170,13 +191,15 @@ class SwapProcessor(EventProcessor):
         amountIn = get_value(get_amountIn(parameters))
         amountOut = get_value(get_amountOut(parameters))
         
-        return ArbitarySwap (
+        return TokenSwap (
             amount0 = amountIn,
             amount1 = amountOut,
-            isAmount0In = True
+            isAmount0In = True,
+            token0 = tokenIn,
+            token1 = tokenOut
         )
     
-    def poolId_tokenIn_tokenOut_amountIn_amountOut_user(self, parameters) -> ArbitarySwap:
+    def poolId_tokenIn_tokenOut_amountIn_amountOut_user(self, parameters) -> TokenSwap:
 
         poolId = get_value(get_poolId(parameters))
         tokenIn = get_value(get_tokenIn(parameters))
@@ -186,10 +209,12 @@ class SwapProcessor(EventProcessor):
         amountIn = get_value(get_amountIn(parameters))
         amountOut = get_value(get_amountOut(parameters))
         
-        return ArbitarySwap (
+        return TokenSwap (
             amount0 = amountIn,
             amount1 = amountOut,
-            isAmount0In = True
+            isAmount0In = True,
+            token0 = tokenIn,
+            token1 = tokenOut
         )
     
     def sender_recipient_baseIn_quoteIn_baseOut_quoteOut_fee_adminFee_oraclePrice(self, parameters) -> ArbitarySwap:
@@ -205,17 +230,22 @@ class SwapProcessor(EventProcessor):
         
         raise Exception("Not implemented")
 
-    def tokenIn_tokenOut_amountIn_amountOut(self, parameters) -> ArbitarySwap:
+    def tokenIn_tokenOut_amountIn_amountOut(self, parameters) -> TokenSwap:
         
         tokenIn = get_value(get_tokenIn(parameters))
         tokenOut = get_value(get_tokenOut(parameters))
         amountIn = get_value(get_amountIn(parameters))
         amountOut = get_value(get_amountOut(parameters))
         
-        return ArbitarySwap(
+        
+        
+        return TokenSwap(
             amount0=amountIn, 
             amount1=amountOut, 
-            isAmount0In=True)
+            isAmount0In=True,
+            token0 = tokenIn,
+            token1 = tokenOut
+            )
 
     def sender_amount0In_amount1In_amount0Out_amount1Out_to(self, parameters) -> ArbitarySwap:
         sender = get_value(get_sender(parameters))
@@ -238,7 +268,7 @@ class SwapProcessor(EventProcessor):
                 isAmount0In = False
             )
 
-    def assetIn_assetOut_sender_receiver_amountIn_amountOut_referralCode(self, parameters) -> ArbitarySwap:
+    def assetIn_assetOut_sender_receiver_amountIn_amountOut_referralCode(self, parameters) -> TokenSwap:
         assetIn = get_value(get_assetIn(parameters))
         assetOut = get_value(get_assetOut(parameters))
         sender = get_value(get_sender(parameters))
@@ -247,10 +277,12 @@ class SwapProcessor(EventProcessor):
         amountOut = get_value(get_amountOut(parameters))
         referralCode = get_value(get_referralCode(parameters))
         
-        return ArbitarySwap(
+        return TokenSwap(
             amount0 = amountIn,
             amount1 = amountOut,
-            isAmount0In = True
+            isAmount0In = True,
+            token0 = assetIn,
+            token1 = assetOut
         )
     
     def sender_recipient_amount0_amount1_sqrtPriceX96_liquidity_tick_protocolFeesToken0_protocolFeesToken1(self, parameters) -> ArbitarySwap:
