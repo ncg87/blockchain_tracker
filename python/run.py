@@ -4,7 +4,6 @@ from database import SQLDatabase, MongoDatabase
 import logging
 import signal
 import sys
-
 # General logging setup for maintenance.log
 logging.basicConfig(
     level=logging.INFO,
