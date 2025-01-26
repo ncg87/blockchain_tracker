@@ -83,6 +83,8 @@ class EVMInsertOperations(BaseOperations):
                 swap_info.fee,
                 swap_info.token0_name,
                 swap_info.token1_name,
+                swap_info.token0_address,
+                swap_info.token1_address,
                 swap_info.name,
                 network
             ))

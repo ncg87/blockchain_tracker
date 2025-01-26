@@ -201,9 +201,9 @@ def get_network_historical_data_query(network: str, interval_seconds: int, point
         return f"""
             WITH time_series AS (
                 SELECT generate_series(
-                    date_trunc('hour', now()) - interval '{points} hours',
-                    date_trunc('hour', now()),
-                    interval '1 hour'
+                    date_trunc('second', now()) - interval '{interval_seconds * points} seconds',
+                    date_trunc('second', now()),
+                    interval '{interval_seconds} seconds'
                 ) AS interval_start
             )
             SELECT 
@@ -214,7 +214,7 @@ def get_network_historical_data_query(network: str, interval_seconds: int, point
             FROM time_series ts
             LEFT JOIN base_evm_transactions tx ON 
                 tx.timestamp >= EXTRACT(EPOCH FROM ts.interval_start) AND
-                tx.timestamp < EXTRACT(EPOCH FROM ts.interval_start + interval '1 hour') AND
+                tx.timestamp < EXTRACT(EPOCH FROM ts.interval_start + interval '{interval_seconds} seconds') AND
                 tx.network = '{network}'
             GROUP BY ts.interval_start
             ORDER BY ts.interval_start DESC
@@ -223,9 +223,9 @@ def get_network_historical_data_query(network: str, interval_seconds: int, point
         return f"""
             WITH time_series AS (
                 SELECT generate_series(
-                    date_trunc('hour', now()) - interval '{points} hours',
-                    date_trunc('hour', now()),
-                    interval '1 hour'
+                    date_trunc('second', now()) - interval '{interval_seconds * points} seconds',
+                    date_trunc('second', now()),
+                    interval '{interval_seconds} seconds'
                 ) AS interval_start
             )
             SELECT 
@@ -236,7 +236,7 @@ def get_network_historical_data_query(network: str, interval_seconds: int, point
             FROM time_series ts
             LEFT JOIN base_bitcoin_transactions tx ON 
                 tx.timestamp >= EXTRACT(EPOCH FROM ts.interval_start) AND
-                tx.timestamp < EXTRACT(EPOCH FROM ts.interval_start + interval '1 hour')
+                tx.timestamp < EXTRACT(EPOCH FROM ts.interval_start + interval '{interval_seconds} seconds')
             GROUP BY ts.interval_start
             ORDER BY ts.interval_start DESC
         """
@@ -244,9 +244,9 @@ def get_network_historical_data_query(network: str, interval_seconds: int, point
         return f"""
             WITH time_series AS (
                 SELECT generate_series(
-                    date_trunc('hour', now()) - interval '{points} hours',
-                    date_trunc('hour', now()),
-                    interval '1 hour'
+                    date_trunc('second', now()) - interval '{interval_seconds * points} seconds',
+                    date_trunc('second', now()),
+                    interval '{interval_seconds} seconds'
                 ) AS interval_start
             )
             SELECT 
@@ -257,8 +257,103 @@ def get_network_historical_data_query(network: str, interval_seconds: int, point
             FROM time_series ts
             LEFT JOIN base_solana_transactions tx ON 
                 tx.timestamp >= EXTRACT(EPOCH FROM ts.interval_start) AND
-                tx.timestamp < EXTRACT(EPOCH FROM ts.interval_start + interval '1 hour')
+                tx.timestamp < EXTRACT(EPOCH FROM ts.interval_start + interval '{interval_seconds} seconds')
             GROUP BY ts.interval_start
             ORDER BY ts.interval_start DESC
         """
     return ""
+
+def get_volume_of_all_tokens(network: str, interval_seconds: int, points: int) -> str:
+    """Generate SQL query for historical token volume data with specified intervals
+    
+    Args:
+        network (str): The blockchain network to query (e.g., 'Ethereum', 'BNB', etc.)
+        interval_seconds (int): The interval size in seconds
+        points (int): Number of data points to return
+        
+    Returns:
+        str: SQL query for fetching historical token volume data
+    """
+    return f"""
+    WITH token_volumes AS (
+        SELECT 
+            ets.network,
+            FLOOR(timestamp / {interval_seconds}) * {interval_seconds} as interval_start,
+            token0,
+            token1,
+            ABS(amount0) as volume0,
+            ABS(amount1) as volume1,
+            ti0.decimals as decimals0,
+            ti1.decimals as decimals1
+        FROM evm_transaction_swap ets
+        LEFT JOIN evm_token_info ti0 ON ets.token0 = ti0.name AND ets.network = ti0.network
+        LEFT JOIN evm_token_info ti1 ON ets.token1 = ti1.name AND ets.network = ti1.network
+        WHERE 
+            ets.network = '{network}' AND
+            timestamp >= EXTRACT(EPOCH FROM NOW() - INTERVAL '{points} hours') AND
+            timestamp <= EXTRACT(EPOCH FROM NOW())
+    ),
+    combined_volumes AS (
+        SELECT tv.network, interval_start as timestamp, token0 as token, decimals0 as decimals, volume0 as volume
+        FROM token_volumes tv
+        UNION ALL
+        SELECT tv.network, interval_start, token1, decimals1, volume1
+        FROM token_volumes tv
+    )
+    SELECT cv.network, timestamp, token, decimals, COALESCE(SUM(volume), 0) as total_volume
+    FROM combined_volumes cv
+    GROUP BY cv.network, timestamp, token, decimals
+    ORDER BY timestamp DESC, total_volume DESC;
+    """
+    
+def get_volume_for_interval(network: str, seconds_ago: int) -> str:
+    """Generate SQL query for token volume data within a specific past interval"""
+    return f"""
+    WITH token_volumes AS (
+        SELECT 
+            ets.network,
+            token0,
+            token1,
+            ABS(amount0) as volume0,
+            ABS(amount1) as volume1,
+            ti0.decimals as decimals0,
+            ti1.decimals as decimals1
+        FROM evm_transaction_swap ets
+        LEFT JOIN evm_token_info ti0 ON ets.token0 = ti0.name AND ets.network = ti0.network
+        LEFT JOIN evm_token_info ti1 ON ets.token1 = ti1.name AND ets.network = ti1.network
+        WHERE 
+            ets.network = '{network}' AND
+            timestamp >= extract(epoch from now()) - {seconds_ago}
+    ),
+    combined_volumes AS (
+        SELECT tv.network, token0 as token, decimals0 as decimals, volume0 as volume
+        FROM token_volumes tv
+        UNION ALL
+        SELECT tv.network, token1, decimals1, volume1
+        FROM token_volumes tv
+    )
+    SELECT cv.network, token, decimals, COALESCE(SUM(volume), 0) as total_volume
+    FROM combined_volumes cv
+    GROUP BY cv.network, token, decimals
+    ORDER BY total_volume DESC;
+    """
+    
+def get_swaps(network: str, seconds_ago: int) -> str:
+   return f"""
+   SELECT *
+   FROM evm_transaction_swap
+   WHERE 
+       network = '{network}' AND
+       timestamp >= (EXTRACT(EPOCH FROM NOW())::integer - {seconds_ago}) AND
+       timestamp <= EXTRACT(EPOCH FROM NOW())::integer;
+   """
+   
+def get_swaps_all_networks(seconds_ago: int) -> str:
+    return f"""
+    SELECT *
+    FROM evm_transaction_swap
+    WHERE 
+        timestamp >= (EXTRACT(EPOCH FROM NOW())::integer - {seconds_ago}) AND
+        timestamp <= EXTRACT(EPOCH FROM NOW())::integer;
+    """
+

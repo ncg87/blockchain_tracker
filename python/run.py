@@ -1,5 +1,5 @@
 import asyncio
-from chains import EthereumPipeline, BNBPipeline, BitcoinPipeline, SolanaPipeline, XRPPipeline, BaseChainPipeline
+from chains import EthereumPipeline, BNBPipeline, BitcoinPipeline, SolanaPipeline, XRPPipeline, BaseChainPipeline, ArbitrumPipeline
 from database import SQLDatabase, MongoDatabase
 import logging
 import signal
@@ -50,6 +50,8 @@ async def main():
         solana_pipeline = SolanaPipeline(sql_database, mongodb_database)
         xrp_pipeline = XRPPipeline(sql_database, mongodb_database)
         base_pipeline = BaseChainPipeline(sql_database, mongodb_database)
+        arbitrum_pipeline = ArbitrumPipeline(sql_database, mongodb_database)
+
 
         # Add pipelines to active list
         active_pipelines.extend([
@@ -57,7 +59,8 @@ async def main():
             bnb_pipeline,
             base_pipeline,
             bitcoin_pipeline,
-            xrp_pipeline
+            xrp_pipeline,
+            arbitrum_pipeline
         ])
 
         duration = 100000
@@ -71,6 +74,7 @@ async def main():
                 bitcoin_pipeline.run(duration=duration),
                 #solana_pipeline.run(duration=1200),
                 xrp_pipeline.run(duration=duration),
+                arbitrum_pipeline.run(duration=duration)
             )
         finally:
             # Ensure cleanup happens even if gather fails

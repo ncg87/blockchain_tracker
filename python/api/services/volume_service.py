@@ -1,8 +1,11 @@
 from ..core.base_service import BaseService
 from ..utils.logging import log_execution_time
-from typing import Dict
+from typing import Dict, List, Any
 from database import SQLQueryOperations, SQLDatabase
 import time
+import logging
+
+VALID_NETWORKS = {'Ethereum', 'Arbitrum', 'BNB', 'Base'}  # Add your valid networks here
 
 class VolumeService(BaseService):
     def __init__(self):
@@ -10,6 +13,7 @@ class VolumeService(BaseService):
         self.db = SQLDatabase()
         self._cache = {}
         self._cache_ttl = 60  # Cache TTL in seconds
+        self.logger = logging.getLogger(__name__)
         self.logger.info("VolumeService initialized")
 
     async def initialize(self) -> None:
@@ -41,6 +45,15 @@ class VolumeService(BaseService):
                 del self._cache[cache_key]
         return None
 
+    def validate_network(self, network: str):
+        """Validate network name"""
+        # Create a case-sensitive set of valid networks
+        VALID_NETWORKS = {'Ethereum', 'Arbitrum', 'BNB', 'Base'}
+        
+        if network not in VALID_NETWORKS:
+            raise ValueError(f"Invalid network: {network}. Valid networks are: {', '.join(sorted(VALID_NETWORKS))}")
+        return network
+
     @log_execution_time(lambda self: self.logger)
     async def get_all_volumes(self) -> Dict[str, Dict[str, str]]:
         """Get volumes for all networks across different time intervals"""
@@ -57,7 +70,14 @@ class VolumeService(BaseService):
             }
         
         return result
-
+    
+    @log_execution_time(lambda self: self.logger)
+    async def get_volume_of_all_tokens(self, network: str, interval: str, points: int) -> Dict[str, float]:
+        """Get volume of all tokens for a specific network"""
+        ops = SQLQueryOperations(self.db)
+        return ops.api.get_historical_token_volume(network, self.INTERVALS[interval], points)
+    
+    @log_execution_time(lambda self: self.logger)
     async def get_network_stats(self, network: str, interval: str) -> Dict[str, float]:
         """Get comprehensive stats for a specific network"""
         if interval not in self.INTERVALS:
@@ -65,7 +85,8 @@ class VolumeService(BaseService):
         
         ops = SQLQueryOperations(self.db)
         return ops.api.get_network_stats(network, self.INTERVALS[interval])
-
+    
+    @log_execution_time(lambda self: self.logger)
     async def get_all_fees(self) -> Dict[str, Dict[str, str]]:
         """Get fees for all networks across different time intervals"""
         ops = SQLQueryOperations(self.db)
@@ -80,6 +101,7 @@ class VolumeService(BaseService):
         
         return result
 
+    @log_execution_time(lambda self: self.logger)
     async def get_all_tx_counts(self) -> Dict[str, Dict[str, int]]:
         """Get transaction counts for all networks across different time intervals"""
         ops = SQLQueryOperations(self.db)
@@ -92,25 +114,15 @@ class VolumeService(BaseService):
         return result
 
     @log_execution_time(lambda self: self.logger)
-    async def get_network_historical_data(self, network: str, interval: str, points: int = 24) -> Dict:
+    async def get_network_historical_data(self, network: str, interval: str, points: int = 24) -> Dict[str, Any]:
         """Get historical data for a specific network with caching"""
         if interval not in self.INTERVALS:
             self.logger.error(f"Invalid interval requested: {interval}")
             raise ValueError(f"Invalid interval. Must be one of: {list(self.INTERVALS.keys())}")
         
-        if network not in ['Ethereum', 'Bitcoin', 'Solana', 'BNB', 'Base']:
-            self.logger.error(f"Invalid network requested: {network}")
-            raise ValueError(f"Invalid network: {network}")
-        
-        # Check cache
-        cache_key = self._get_cache_key(network, interval, points)
-        cached_data = self._get_cached_data(cache_key)
-        if cached_data is not None:
-            self.logger.info(f"Cache hit for {cache_key}")
-            return cached_data
-        
-        self.logger.info(f"Cache miss for {cache_key}")
         try:
+            self.validate_network(network)
+            self.logger.info(f"Cache miss for {self._get_cache_key(network, interval, points)}")
             ops = SQLQueryOperations(self.db)
             data = ops.api.get_network_historical_data(
                 network, 
@@ -137,7 +149,7 @@ class VolumeService(BaseService):
             }
             
             # Cache the result
-            self._cache[cache_key] = (result, time.time())
+            self._cache[self._get_cache_key(network, interval, points)] = (result, time.time())
             
             return result
         except Exception as e:

@@ -29,13 +29,15 @@ INSERT_EVM_CONTRACT_ABI = """
 
 INSERT_EVM_SWAP = """
     INSERT INTO evm_swap
-    (contract_address, factory_address, fee, token0_name, token1_name, name, network)
-    VALUES (%s, %s, %s, %s, %s, %s, %s)
+    (contract_address, factory_address, fee, token0_name, token1_name, token0_address, token1_address, name, network)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     ON CONFLICT (contract_address, network) DO UPDATE SET
         factory_address = EXCLUDED.factory_address,
         fee = EXCLUDED.fee,
         token0_name = EXCLUDED.token0_name,
         token1_name = EXCLUDED.token1_name,
+        token0_address = EXCLUDED.token0_address,
+        token1_address = EXCLUDED.token1_address,
         name = EXCLUDED.name
 """
 

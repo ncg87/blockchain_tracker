@@ -467,6 +467,8 @@ class EVMProcessor(BaseProcessor):
                 fee=fee,
                 token0_name=token0_info.name,
                 token1_name=token1_info.name,
+                token0_address=token0_info.address,
+                token1_address=token1_info.address,
                 name=None # Exchange/Factory contract name
             )
 
@@ -612,4 +614,6 @@ class ContractInfo:
     fee: int
     token0_name: str
     token1_name: str
+    token0_address: str
+    token1_address: str
     name: str

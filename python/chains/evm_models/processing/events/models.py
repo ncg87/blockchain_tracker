@@ -17,8 +17,8 @@ class TokenSwap(ArbitarySwap):
         return cls(swap_info.amount0, 
                    swap_info.amount1, 
                    swap_info.isAmount0In, 
-                   contract_info.token0_name, 
-                   contract_info.token1_name)
+                   contract_info.token0_address, 
+                   contract_info.token1_address)
 
 @dataclass
 class ArbitaryTransfer:

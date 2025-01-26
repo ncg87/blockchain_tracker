@@ -1,7 +1,10 @@
 from ..base import BaseOperations
 from typing import List, Dict, Any, Optional
-from ...queries import QUERY_EVM_FACTORY_CONTRACT, QUERY_EVM_TRANSACTIONS, QUERY_ADDRESS_HISTORY, QUERY_EVM_EVENT, QUERY_EVM_CONTRACT_ABI, QUERY_EVM_SWAP, QUERY_EVM_TOKEN_INFO, QUERY_EVM_FACTORY_CONTRACT, QUERY_RECENT_EVM_TRANSACTIONS
-from ...queries import QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS, QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS_ALL_NETWORKS, QUERY_ALL_EVM_SWAPS, QUERY_ALL_EVM_SWAPS_BY_NETWORK, QUERY_EVM_SWAP_ALL_NETWORKS
+from ...queries import (QUERY_EVM_FACTORY_CONTRACT, QUERY_EVM_TRANSACTIONS, QUERY_ADDRESS_HISTORY, 
+                        QUERY_EVM_EVENT, QUERY_EVM_CONTRACT_ABI, QUERY_EVM_SWAP, QUERY_EVM_TOKEN_INFO, 
+                        QUERY_EVM_FACTORY_CONTRACT, QUERY_RECENT_EVM_TRANSACTIONS, QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS, 
+                        QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS_ALL_NETWORKS, QUERY_ALL_EVM_SWAPS, QUERY_ALL_EVM_SWAPS_BY_NETWORK, 
+                        QUERY_EVM_SWAP_ALL_NETWORKS, QUERY_EVM_TOKEN_INFO_ALL_NETWORKS)
 from ..models import EventSignature, ContractInfo, TokenInfo
 import json
 
@@ -112,6 +115,8 @@ class EVMQueryOperations(BaseOperations):
                     fee=result.get('fee', None),
                     token0_name=result.get('token0_name', None),
                     token1_name=result.get('token1_name', None),
+                    token0_address=result.get('token0_address', None),
+                    token1_address=result.get('token1_address', None),
                     name=result.get('name', None)
                 )
             return None
@@ -135,6 +140,8 @@ class EVMQueryOperations(BaseOperations):
                     fee=result.get('fee', None),
                     token0_name=result.get('token0_name', None),
                     token1_name=result.get('token1_name', None),
+                    token0_address=result.get('token0_address', None),
+                    token1_address=result.get('token1_address', None),
                     name=result.get('name', None)
                 )
             return None
@@ -164,6 +171,17 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying EVM token info for network {network}: {e}")
             return None
 
+    def query_token_info_all_networks(self, token_address: str) -> Optional[Dict[str, Any]]:
+        """
+        Query an EVM token info by its address across all networks.
+        """
+        try:
+            self.db.cursor.execute(QUERY_EVM_TOKEN_INFO_ALL_NETWORKS, (token_address,))
+            return self.db.cursor.fetchone()
+        except Exception as e:
+            self.db.logger.error(f"Error querying EVM token info for address {token_address}: {e}")
+            return None
+    
     def query_factory_contract(self, network: str, contract_address: str) -> Optional[Dict[str, Any]]:
         """
         Query an EVM factory contract by its network and address.

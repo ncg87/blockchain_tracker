@@ -1,5 +1,5 @@
 from ..base import BaseOperations
-from typing import Dict
+from typing import Dict, List, Any
 from decimal import Decimal
 from ...queries import (
     get_all_networks_volume_query, 
@@ -8,7 +8,11 @@ from ...queries import (
     get_all_networks_fees_query,
     get_network_tx_count_query,
     get_all_networks_tx_count_query,
-    get_network_historical_data_query
+    get_network_historical_data_query,
+    get_volume_of_all_tokens,
+    get_volume_for_interval,
+    get_swaps,
+    get_swaps_all_networks
 )
 
 class APIQueryOperations(BaseOperations):
@@ -165,4 +169,62 @@ class APIQueryOperations(BaseOperations):
             return [dict(row) for row in results]
         except Exception as e:
             self.db.logger.error(f"Error getting historical data for {network}: {e}")
+            return []
+
+    def get_historical_token_volume(self, network: str, interval_seconds: int = 3600, points: int = 24) -> List[Dict[str, Any]]:
+        """Get historical token volume data with specified intervals
+        
+        Args:
+            network (str): The blockchain network to query
+            interval_seconds (int): The interval size in seconds (default: 3600 for hourly)
+            points (int): Number of data points to return (default: 24)
+            
+        Returns:
+            List[Dict[str, Any]]: List of dictionaries containing token volume data with fields:
+                - network (str): The blockchain network
+                - timestamp (int): Unix timestamp for the interval
+                - symbol (str): Token symbol
+                - total_volume (float): Total volume for the token in the interval
+        """
+        try:
+            query = get_volume_of_all_tokens(network, interval_seconds, points)
+            self.db.cursor.execute(query)
+            results = self.db.cursor.fetchall()
+            return [dict(row) for row in results]
+        except Exception as e:
+            self.db.logger.error(f"Error fetching historical token volume data for network {network}: {e}", exc_info=True)
+            return []
+        
+    def get_volume_for_interval(self, network: str, seconds_ago: int = 3600) -> List[Dict[str, Any]]:
+        """Get volume for a specific network within a specific past interval"""
+        try:
+            query = get_volume_for_interval(network, seconds_ago)
+            self.db.cursor.execute(query)
+            results = self.db.cursor.fetchall()
+            print(results)
+            return [dict(row) for row in results]
+        except Exception as e:
+            self.db.logger.error(f"Error fetching volume for interval {network} {seconds_ago}: {e}", exc_info=True)
+            return []
+        
+    def get_swaps(self, network: str, seconds_ago: int) -> List[Dict[str, Any]]:
+        """Get swaps for a specific network within a specific past interval"""
+        try:
+            query = get_swaps(network, seconds_ago)
+            self.db.cursor.execute(query)
+            results = self.db.cursor.fetchall()
+            return [dict(row) for row in results]
+        except Exception as e:
+            self.db.logger.error(f"Error fetching swaps for interval {network} {seconds_ago}: {e}", exc_info=True)
+            return []
+    
+    def get_swaps_all_networks(self, seconds_ago: int) -> List[Dict[str, Any]]:
+        """Get swaps for all networks within a specific past interval"""
+        try:
+            query = get_swaps_all_networks(seconds_ago)
+            self.db.cursor.execute(query)
+            results = self.db.cursor.fetchall()
+            return [dict(row) for row in results]
+        except Exception as e:
+            self.db.logger.error(f"Error fetching swaps for all networks for a {seconds_ago} second interval: {e}", exc_info=True)
             return []
