@@ -42,10 +42,10 @@ class SolanaProcessor(BaseProcessor):
             self.logger.info(f"Processing {self.network} block {block_height}")
             
             # Insert block into MongoDB
-            self.mongodb_insert_ops.insert_block(block, self.network, block_height, block_time)
+            self.mongodb_operator.insert.block.insert_block(block, self.network, block_height, block_time)
             
             # Insert block into PostgreSQL
-            self.sql_insert_ops.insert_block(self.network, block_height, get_block_hash(block), get_previous_block_hash(block), block_time)
+            self.sql_operator.insert.block.insert_block(self.network, block_height, get_block_hash(block), get_previous_block_hash(block), block_time)
             self.logger.debug(f"{self.network} block {block_height} stored successfully.")
             
             # Process transactions
@@ -77,7 +77,7 @@ class SolanaProcessor(BaseProcessor):
                     )
                 )
             
-            self.sql_insert_ops.insert_bulk_solana_transactions(transacations_data, block_height)
+            self.sql_operator.insert.solana.insert_transactions(transacations_data, block_height)
             self.logger.debug(f"Processed {len(transactions)} {self.network} transactions for block {block_height}")
         except Exception as e:
             self.logger.error(f"Error processing transactions for block {block_height}: {e}")

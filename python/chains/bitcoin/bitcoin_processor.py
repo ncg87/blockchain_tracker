@@ -30,10 +30,10 @@ class BitcoinProcessor(BaseProcessor):
         self.logger.info(f"Processing block {block_number} on {self.network}")
         
         # Insert block into MongoDB
-        self.mongodb_insert_ops.insert_block(block, self.network, block_number, timestamp)
+        self.mongodb_operator.insert.insert_block(block, self.network, block_number, timestamp)
         
         # Insert block into PostgreSQL
-        self.sql_insert_ops.insert_block(self.network, block_number, get_hash(block), get_parent_hash(block), timestamp)
+        self.sql_operator.insert.block.insert_block(self.network, block_number, get_hash(block), get_parent_hash(block), timestamp)
         self.logger.debug(f"Processed {self.network} block {block_number}")
         
         # Process transactions
@@ -57,7 +57,7 @@ class BitcoinProcessor(BaseProcessor):
                 ) for tx in block["tx"]
             ]
             
-            self.sql_insert_ops.insert_bulk_bitcoin_transactions(transactions, block_number)
+            self.sql_operator.insert.bitcoin.insert_transactions(transactions, block_number)
             self.logger.debug(f"Inserted {len(block['tx'])} transactions in block {block_number} on {self.network}")
         except Exception as e:
             self.logger.error(f"Failed to process transactions in block {block_number}: {e}")
