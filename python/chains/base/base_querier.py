@@ -14,7 +14,7 @@ class BaseChainQuerier(EVMQuerier):
             ws_endpoint=Settings.BASE_WEBSOCKET_ENDPOINT
         )
 
-    def get_contract_abi(self, contract_address):
+    async def get_contract_abi(self, contract_address):
         """
         Override to use Basescan API instead of Etherscan
         """
