@@ -10,7 +10,7 @@ class BitcoinPipeline(BasePipeline):
     """
 
     def __init__(self, sql_database, mongodb_database):
-        super().__init__(sql_database, mongodb_database, 'Bitcoin')
+        super().__init__(sql_database, mongodb_database, 'bitcoin')
         self.querier = BitcoinQuerier()
         self.processor = BitcoinProcessor(self.sql_database, self.mongodb_database, self.querier)
 

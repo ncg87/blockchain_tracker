@@ -24,34 +24,37 @@ CREATE INDEX IF NOT EXISTS idx_blocks_hash
     ON blocks USING btree (block_hash, chain);
 
 -- EVM Transactions - Partitioned by network
-CREATE TABLE IF NOT EXISTS base_evm_transactions (
+CREATE TABLE IF NOT EXISTS evm_transactions (
     block_number BIGINT NOT NULL,
-    network VARCHAR(20) NOT NULL,
+    chain VARCHAR(20) NOT NULL,
     transaction_hash VARCHAR(128) NOT NULL,
     chain_id BIGINT NOT NULL,
     from_address VARCHAR(64) NOT NULL,
     to_address VARCHAR(64),
-    value_wei NUMERIC(78, 0) NOT NULL,
+    amount NUMERIC(78, 0) NOT NULL,
     total_gas BIGINT NOT NULL,
     timestamp BIGINT NOT NULL,
-    CONSTRAINT pk_evm_transactions PRIMARY KEY (network, timestamp, transaction_hash)
-) PARTITION BY LIST (network);
+    PRIMARY KEY (chain, timestamp, transaction_hash)
+) PARTITION BY LIST (chain);
 
 -- Create network partitions
-CREATE TABLE IF NOT EXISTS base_evm_transactions_ethereum PARTITION OF base_evm_transactions FOR VALUES IN ('ethereum');
-CREATE TABLE IF NOT EXISTS base_evm_transactions_bnb PARTITION OF base_evm_transactions FOR VALUES IN ('bnb');
-CREATE TABLE IF NOT EXISTS base_evm_transactions_base PARTITION OF base_evm_transactions FOR VALUES IN ('base');
-CREATE TABLE IF NOT EXISTS base_evm_transactions_arbitrum PARTITION OF base_evm_transactions FOR VALUES IN ('arbitrum');
+CREATE TABLE IF NOT EXISTS evm_transactions_ethereum PARTITION OF evm_transactions FOR VALUES IN ('ethereum');
+CREATE TABLE IF NOT EXISTS evm_transactions_bnb PARTITION OF evm_transactions FOR VALUES IN ('bnb');
+CREATE TABLE IF NOT EXISTS evm_transactions_base PARTITION OF evm_transactions FOR VALUES IN ('base');
+CREATE TABLE IF NOT EXISTS evm_transactions_arbitrum PARTITION OF evm_transactions FOR VALUES IN ('arbitrum');
 
 -- EVM transaction indexes
-CREATE INDEX IF NOT EXISTS idx_evm_tx_from ON base_evm_transactions 
-    USING btree (from_address, timestamp DESC) 
-    INCLUDE (network, block_number, value_wei);
-CREATE INDEX IF NOT EXISTS idx_evm_tx_to ON base_evm_transactions 
-    USING btree (to_address, timestamp DESC) 
-    INCLUDE (network, block_number, value_wei);
-CREATE INDEX IF NOT EXISTS idx_evm_tx_block ON base_evm_transactions 
-    USING btree (network, block_number);
+CREATE INDEX IF NOT EXISTS idx_evm_tx_timestamp 
+    ON evm_transactions USING brin (timestamp) WITH (pages_per_range = 128);
+CREATE INDEX IF NOT EXISTS idx_evm_tx_from 
+    ON evm_transactions USING btree (from_address, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_evm_tx_to 
+    ON evm_transactions USING btree (to_address, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_evm_tx_hash 
+    ON evm_transactions USING btree (transaction_hash);
+CREATE INDEX IF NOT EXISTS idx_evm_tx_chain 
+    ON evm_transactions USING btree (chain, timestamp DESC);
+
 
 -- Bitcoin Transactions
 CREATE TABLE IF NOT EXISTS base_bitcoin_transactions (

@@ -1,24 +1,24 @@
 QUERY_EVM_TRANSACTIONS = """
-    SELECT block_number, network, transaction_hash, chain_id, 
-           from_address, to_address, value_wei, total_gas, timestamp
-    FROM base_evm_transactions 
-    WHERE network = %s AND block_number = %s;
+    SELECT block_number, chain, transaction_hash, chain_id, 
+           from_address, to_address, amount, total_gas, timestamp
+    FROM evm_transactions 
+    WHERE chain = %s AND block_number = %s;
 """
 
 QUERY_RECENT_EVM_TRANSACTIONS = """
     SELECT block_number, network, transaction_hash, chain_id, 
-           from_address, to_address, value_wei, total_gas, timestamp
-    FROM base_evm_transactions 
-    WHERE network = %s
+           from_address, to_address, amount, total_gas, timestamp
+    FROM evm_transactions 
+    WHERE chain = %s
     ORDER BY timestamp DESC
     LIMIT %s;
 """
 
 QUERY_ADDRESS_HISTORY = """
     SELECT block_number, transaction_hash, from_address, to_address, 
-           value_wei, timestamp
-    FROM base_evm_transactions 
-    WHERE network = %s
+           amount, timestamp
+    FROM evm_transactions 
+    WHERE chain = %s
     AND timestamp BETWEEN %s AND %s
     AND (from_address = %s OR to_address = %s)
     ORDER BY timestamp DESC;

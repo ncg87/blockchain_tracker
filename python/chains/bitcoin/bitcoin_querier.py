@@ -12,7 +12,7 @@ class BitcoinQuerier(BaseQuerier):
     """
 
     def __init__(self):
-        super().__init__('Bitcoin')
+        super().__init__('bitcoin')
         self.endpoint_url = Settings.BITCOIN_ENDPOINT
         self.headers = {
             "Content-Type": "application/json"

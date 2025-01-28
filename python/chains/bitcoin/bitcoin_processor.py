@@ -17,7 +17,7 @@ class BitcoinProcessor(BaseProcessor):
     Bitcoin processor class.
     """
     def __init__(self, sql_database, mongodb_database, querier):
-        super().__init__(sql_database, mongodb_database, 'Bitcoin')
+        super().__init__(sql_database, mongodb_database, 'bitcoin')
         self.querier = querier
         
     async def process_block(self, block):

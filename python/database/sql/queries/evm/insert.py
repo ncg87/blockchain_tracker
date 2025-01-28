@@ -1,8 +1,8 @@
 INSERT_EVM_TRANSACTIONS = """
-    INSERT INTO base_evm_transactions
-    (block_number, network, transaction_hash, chain_id, from_address, to_address, value_wei, total_gas, timestamp)
+    INSERT INTO evm_transactions
+    (block_number, chain, transaction_hash, chain_id, from_address, to_address, amount, total_gas, timestamp)
     VALUES %s
-    ON CONFLICT (network, timestamp, transaction_hash) DO NOTHING
+    ON CONFLICT (chain, timestamp, transaction_hash) DO NOTHING
 """
 
 INSERT_EVM_EVENTS = """
