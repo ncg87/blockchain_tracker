@@ -63,7 +63,7 @@ class MongoInsertOperations:
         """
         Bulk insert for EVM transactions, skipping any that fail compression.
         """
-        collection = self.mongodb.get_collection(f'{network}Transactions')
+        collection = self.mongodb.get_collection(f'{network}_transactions')
         
         # Filter and prepare documents, skipping any compression failures
         documents = []

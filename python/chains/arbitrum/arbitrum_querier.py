@@ -9,7 +9,7 @@ class ArbitrumQuerier(EVMQuerier):
     Arbitrum-specific querier.
     """
     def __init__(self):
-        super().__init__('Arbitrum', Settings.ARBITRUM_ENDPOINT, Settings.ARBITRUM_WEBSOCKET_ENDPOINT)
+        super().__init__('arbitrum', Settings.ARBITRUM_ENDPOINT, Settings.ARBITRUM_WEBSOCKET_ENDPOINT)
 
     def get_contract_abi(self, contract_address):
         """

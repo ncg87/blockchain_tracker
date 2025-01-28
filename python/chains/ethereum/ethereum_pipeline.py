@@ -11,4 +11,4 @@ class EthereumPipeline(EVMPipeline):
         querier = EthereumQuerier()
         processor = EthereumProcessor(sql_database, mongodb_database, querier)
         # Initialize pipeline
-        super().__init__(sql_database, mongodb_database, 'Ethereum', querier, processor)
+        super().__init__(sql_database, mongodb_database, 'ethereum', querier, processor)

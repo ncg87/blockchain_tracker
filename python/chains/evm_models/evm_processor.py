@@ -209,10 +209,6 @@ class EVMProcessor(BaseProcessor):
             self.logger.error(f"Error in transaction batch processing: {e}")
             return []
     
-    @ abstractmethod
-    def get_chain_id_with_default(self, tx):
-        pass
-    
     async def process_logs(self, block_number, timestamp, batch_size=1000, max_workers=8):
         """Optimized log processing with parallel execution"""
         block_number = decode_hex(block_number)

@@ -12,7 +12,7 @@ class BaseChainPipeline(EVMPipeline):
         super().__init__(
             sql_database=sql_database,
             mongodb_database=mongodb_database,
-            network_name="Base",
+            network_name="base",
             querier=querier,
             processor=processor
         )

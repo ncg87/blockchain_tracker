@@ -11,7 +11,7 @@ class BNBQuerier(EVMQuerier):
     """
     
     def __init__(self):
-        super().__init__('BNB', Settings.BNB_ENDPOINT, Settings.BNB_WEBSOCKET_ENDPOINT)
+        super().__init__('bnb', Settings.BNB_ENDPOINT, Settings.BNB_WEBSOCKET_ENDPOINT)
         
         # PoA middleware for BNB
         self.w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)

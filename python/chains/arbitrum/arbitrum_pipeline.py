@@ -14,7 +14,7 @@ class ArbitrumPipeline(EVMPipeline):
         super().__init__(
             sql_database=sql_database,
             mongodb_database=mongodb_database,
-            network_name="Arbitrum",
+            network_name="arbitrum",
             querier=querier,
             processor=processor
         )

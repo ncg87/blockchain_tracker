@@ -22,14 +22,10 @@ class EthereumProcessor(EVMProcessor):
         super().__init__(
             sql_database=sql_database,
             mongodb_database=mongodb_database,
-            network_name='Ethereum',
+            network_name='ethereum',
             querier=querier
         )
         
-    
-    def get_chain_id_with_default(self, tx):
-        return decode_hex(get_chain_id(tx)) if 'chainId' in tx else 1
-    
     def _process_native_transfer(self, transaction, timestamp):
         """
         Process native transfer transaction data.

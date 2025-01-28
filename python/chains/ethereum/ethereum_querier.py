@@ -9,7 +9,7 @@ class EthereumQuerier(EVMQuerier):
     Ethereum-specific querier.
     """
     def __init__(self):
-        super().__init__('Ethereum', Settings.ETHEREUM_ENDPOINT, Settings.ETHEREUM_WEBSOCKET_ENDPOINT)
+        super().__init__('ethereum', Settings.ETHEREUM_ENDPOINT, Settings.ETHEREUM_WEBSOCKET_ENDPOINT)
 
     def get_contract_abi(self, contract_address):
         """

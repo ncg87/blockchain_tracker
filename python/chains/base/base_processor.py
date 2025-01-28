@@ -1,8 +1,4 @@
 from ..evm_models.evm_processor import EVMProcessor
-from operator import itemgetter
-from ..utils import decode_hex
-get_chain_id = itemgetter('chainId')
-
 
 class BaseChainProcessor(EVMProcessor):
     """
@@ -12,9 +8,6 @@ class BaseChainProcessor(EVMProcessor):
         super().__init__(
             sql_database=sql_database,
             mongodb_database=mongodb_database,
-            network_name="Base",
+            network_name="base",
             querier=querier
         )
-    
-    def get_chain_id_with_default(self, tx):
-        return decode_hex(get_chain_id(tx)) if 'chainId' in tx else 8453

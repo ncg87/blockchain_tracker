@@ -3,6 +3,7 @@ from database import DatabaseOperator
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from ....utils import decode_hex, normalize_hex
+from ...evm_data import CHAIN_IDS
 
 
 # Block item getters
@@ -21,23 +22,13 @@ get_chain_id = itemgetter('chainId')
 
 
 class BlockProcessor:
-    # Chain ID mapping for common EVM chains
-    CHAIN_IDS = {
-        'Ethereum': 1,
-        'Polygon': 137,
-        'Arbitrum': 42161,
-        'Optimism': 10,
-        'Avalanche': 43114,
-        'BNB': 56,
-        'Base': 8453,
-    }
 
     def __init__(self, db_operator: DatabaseOperator, chain: str):
         self.chain = chain  # Normalize chain name
         self.db_operator = db_operator
         self.logger = logging.getLogger(__name__)
         self.batch_size = 1000
-        self.chain_id = self.CHAIN_IDS.get(self.chain)
+        self.chain_id = CHAIN_IDS.get(self.chain)
         if self.chain_id is None:
             self.logger.warning(f"No default chain ID found for {self.chain}")
         self._transaction_executor = ThreadPoolExecutor(max_workers=8)

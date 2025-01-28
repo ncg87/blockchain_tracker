@@ -9,4 +9,4 @@ class BNBPipeline(EVMPipeline):
     def __init__(self, sql_database, mongodb_database):
         querier = BNBQuerier()
         processor = BNBProcessor(sql_database, mongodb_database, querier)
-        super().__init__(sql_database, mongodb_database, 'BNB', querier, processor)
+        super().__init__(sql_database, mongodb_database, 'bnb', querier, processor)
