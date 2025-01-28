@@ -1,14 +1,15 @@
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 import logging
+from config import Settings
 
 logger = logging.getLogger(__name__)
 
 class MongoDatabase:
-    def __init__(self, db_name="blockchain", host="localhost", port=27017):
-        self.client = MongoClient(host, port)
-        self.db = self.client[db_name]
-        logger.info(f"Connected to MongoDB database: {db_name}")
+    def __init__(self):
+        self.client = MongoClient(Settings.MONGO_URI, 27017)
+        self.db = self.client[Settings.MONGO_DB_NAME]
+        logger.info(f"Connected to MongoDB database: {Settings.MONGO_DB_NAME}")
         
         # Ensure indexes are created
         self._create_indexes()

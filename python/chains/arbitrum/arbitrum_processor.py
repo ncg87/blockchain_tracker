@@ -1,6 +1,5 @@
 from ..utils import decode_hex, normalize_hex
 from operator import itemgetter
-from ..arbitrum.arbitrum_decoder import ArbitrumDecoder
 from ..evm_models import EVMProcessor
 
 # Item getters
@@ -22,8 +21,7 @@ class ArbitrumProcessor(EVMProcessor):
             sql_database=sql_database,
             mongodb_database=mongodb_database,
             network_name="Arbitrum",
-            querier=querier,
-            decoder=ArbitrumDecoder(sql_database)
+            querier=querier
         )
     
     def get_chain_id_with_default(self, tx):

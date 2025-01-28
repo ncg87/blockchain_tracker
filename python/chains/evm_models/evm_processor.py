@@ -17,6 +17,7 @@ from dataclasses import dataclass
 import asyncio
 from web3 import Web3
 from .processing import EventProcessingSystem, TokenSwap
+from .evm_decoder import EVMDecoder
 # Common item getters
 get_hash = itemgetter('hash')
 get_from = itemgetter('from')
@@ -37,10 +38,10 @@ class EVMProcessor(BaseProcessor):
     """
     Abstract EVM processor class with common functionality.
     """
-    def __init__(self, sql_database, mongodb_database, network_name: str, querier, decoder):
+    def __init__(self, sql_database, mongodb_database, network_name: str, querier):
         super().__init__(sql_database, mongodb_database, network_name)
         self.querier = querier
-        self.decoder = decoder
+        self.decoder = EVMDecoder(sql_database, network_name)
         self.event_processor = EventProcessingSystem(sql_database, mongodb_database, network_name)
         
         # Initialize connection pool
