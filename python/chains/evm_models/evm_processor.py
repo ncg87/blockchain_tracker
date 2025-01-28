@@ -2,7 +2,6 @@ from ..base_models import BaseProcessor
 from ..utils import decode_hex, normalize_hex
 from operator import itemgetter
 from abc import abstractmethod
-from operator import itemgetter
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 import json
@@ -119,11 +118,11 @@ class EVMProcessor(BaseProcessor):
             self.logger.info(f"Processing block {block_number} on {self.network}")
             
             # Insert block into MongoDB
-            self.mongodb_operator.insert.insert_block(block, self.network, block_number, timestamp)
+            self.db_operator.mongodb.insert.insert_block(block, self.network, block_number, timestamp)
             self.logger.info(f"Inserted block {block_number} into {self.network} collection in MongoDB.")
             
             # Insert block into PostgreSQL
-            self.sql_operator.insert.block.insert_block(
+            self.db_operator.sql.insert.block.insert_block(
                 self.network,
                 block_number,
                 normalize_hex(get_hash(block)),
@@ -198,7 +197,7 @@ class EVMProcessor(BaseProcessor):
             
             # Bulk insert all transactions
             if all_transactions:
-                self.sql_operator.insert.evm.insert_transactions(
+                self.db_operator.sql.insert.evm.insert_transactions(
                     self.network, 
                     all_transactions, 
                     block_number
@@ -294,7 +293,7 @@ class EVMProcessor(BaseProcessor):
             
             # Bulk insert into MongoDB
             if decoder_logs:
-                self.mongodb_operator.insert.insert_evm_transactions(
+                self.db_operator.mongodb.insert.insert_evm_transactions(
                     dict(decoder_logs), 
                     self.network, 
                     block_number, 
@@ -391,7 +390,7 @@ class EVMProcessor(BaseProcessor):
         
         if abi:
             # Store it in DB first
-            self.sql_operator.insert.evm.insert_contract_abi(self.network, address, abi)
+            self.db_operator.sql.insert.evm.insert_contract_abi(self.network, address, abi)
             
             # Schedule the contract processing asynchronously, to try to get the factory and info
             asyncio.create_task(self._process_contract(address, abi))
@@ -420,7 +419,7 @@ class EVMProcessor(BaseProcessor):
             # Get the factory of the contract
             factory = contract.functions.factory().call(),
             
-            self.sql_operator.insert.evm.insert_contract_to_factory(self.network, address, factory)
+            self.db_operator.sql.insert.evm.insert_contract_to_factory(self.network, address, factory)
             
             swap_methods = ['token0', 'token1', 'factory']
             for method in swap_methods:
@@ -441,7 +440,7 @@ class EVMProcessor(BaseProcessor):
                     symbol=token0_contract.functions.symbol().call(),
                     decimals=token0_contract.functions.decimals().call()
                 )
-                self.sql_operator.insert.evm.insert_token_info(self.network, token0_info)
+                self.db_operator.sql.insert.evm.insert_token_info(self.network, token0_info)
             # Same thing for token1
             token1_info = self.sql_query_ops.query_evm_token_info(self.network, token1_address)
             if not token1_info:
@@ -452,7 +451,7 @@ class EVMProcessor(BaseProcessor):
                     symbol=token1_contract.functions.symbol().call(),
                     decimals=token1_contract.functions.decimals().call()
                 )
-                self.sql_operator.insert.evm.insert_token_info(self.network, token1_info)
+                self.db_operator.sql.insert.evm.insert_token_info(self.network, token1_info)
             
             # Try to get fee from contract, not crucial so well continue if it fails
             try:
@@ -473,30 +472,32 @@ class EVMProcessor(BaseProcessor):
             )
 
             # Insert contract info into DB
-            self.sql_operator.insert.evm.insert_swap(self.network, contract_info)
+            self.db_operator.sql.insert.evm.insert_swap(self.network, contract_info)
             return contract_info
         except Exception as e:
             self.logger.error(f"Error processing contract {contract}: {e}")
             return None
     
-    async def _process_token(self, address):
+    async def _process_token(self, contract_address, update=False):
         try:
-            coin = self.sql_query_ops.query_evm_token_info(self.network, address)
+            token_info = self.sql_query_ops.query_evm_token_info(self.network, contract_address)
+            if token_info and not update:
+                return token_info
             
-            coin = self.querier.get_contract(address, ERC20_ABI)
+            token_contract = self.querier.get_contract(contract_address, ERC20_ABI)
             
-            address = Web3.to_checksum_address(address)
+            contract_address = Web3.to_checksum_address(contract_address)
             
-            coin = TokenInfo(
-                address=address,
-                name=coin.functions.name().call(),
-                symbol=coin.functions.symbol().call(),
-                decimals=coin.functions.decimals().call()
+            token_info = TokenInfo(
+                address=contract_address,
+                name=token_contract.functions.name().call(),
+                symbol=token_contract.functions.symbol().call(),
+                decimals=token_contract.functions.decimals().call()
             )
-            self.sql_operator.insert.evm.insert_token_info(self.network, coin)
-            return coin
+            self.db_operator.sql.insert.evm.insert_token_info(self.network, token_info)
+            return token_info
         except Exception as e:
-            self.logger.debug(f"Error processing coin {address}: {e}")
+            self.logger.debug(f"Error processing token {contract_address}: {e}")
             return None
     
     

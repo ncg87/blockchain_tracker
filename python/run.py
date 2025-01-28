@@ -68,13 +68,13 @@ async def main():
         # Run all pipelines concurrently
         try:
             await asyncio.gather(
-                #ethereum_pipeline.run(duration=duration),
-                #bnb_pipeline.run(duration=duration),
-                #base_pipeline.run(duration=duration),
-                #bitcoin_pipeline.run(duration=duration),
+                ethereum_pipeline.run(duration=duration),
+                bnb_pipeline.run(duration=duration),
+                base_pipeline.run(duration=duration),
+                bitcoin_pipeline.run(duration=duration),
                 #solana_pipeline.run(duration=1200),
                 xrp_pipeline.run(duration=duration),
-                #arbitrum_pipeline.run(duration=duration)
+                arbitrum_pipeline.run(duration=duration)
             )
         finally:
             # Ensure cleanup happens even if gather fails
