@@ -16,7 +16,7 @@ class BNBQuerier(EVMQuerier):
         # PoA middleware for BNB
         self.w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
         
-    async def get_contract_abi(self, contract_address):
+    def get_contract_abi(self, contract_address):
         """
         Override to use BSCScan API instead of Etherscan
         """

@@ -62,7 +62,7 @@ class EVMQuerier(BaseQuerier):
                 yield full_block
                 
     @ abstractmethod
-    async def get_contract_abi(self, contract_address):
+    def get_contract_abi(self, contract_address):
         """
         Get the ABI of a contract.
         """

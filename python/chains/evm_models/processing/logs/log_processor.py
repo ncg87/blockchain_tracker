@@ -1,4 +1,7 @@
+from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
+from queue import Queue, Empty
+import threading
 import asyncio
 import logging
 from operator import itemgetter
@@ -7,11 +10,11 @@ from ....utils import normalize_hex
 from .cache import BoundedCache
 from .decoder import EVMDecoder
 import json
+import time
 from database import DatabaseOperator
 from .models import ContractInfo, TokenInfo
 
 from ...evm_data import ERC20_ABI
-
 # Log item getters
 get_address = itemgetter('address')
 get_topics = itemgetter('topics')
@@ -28,8 +31,44 @@ class LogProcessor:
         # Initialize decoder
         self.decoder = EVMDecoder(self.db_operator, self.chain)
         
+        # Initialize processing queues
+        self.log_queue = Queue(maxsize=10000)
+        self.result_queue = Queue(maxsize=10000)
+        
         # Initialize cache
         self.abi_cache = BoundedCache(max_size=1000, ttl_hours=24)
+        
+        # Initialize thread pool
+        self._executor = ThreadPoolExecutor(max_workers=8)
+        self._shutdown_flag = threading.Event()
+        
+        # Start background workers
+        self._start_processing_workers()
+
+    def _start_processing_workers(self):
+        """Start background workers for continuous processing"""
+        async def process_worker():
+            while not self._shutdown_flag.is_set():
+                try:
+                    batch_data = self.log_queue.get(timeout=1)
+                    if batch_data is None:
+                        break
+                    batch, timestamp = batch_data
+                    result = await self._process_logs_batch(batch, timestamp)
+                    self.result_queue.put(result)
+                except Empty:
+                    continue
+                except Exception as e:
+                    self.logger.error(f"Worker error: {e}")
+
+        self.workers = []
+        for _ in range(8):
+            worker = threading.Thread(
+                target=lambda: asyncio.run(process_worker()),
+                daemon=True
+            )
+            worker.start()
+            self.workers.append(worker)
 
     async def process(self, block_number: int, timestamp: int, logs: list):
         """Process logs for a given block"""
@@ -40,24 +79,24 @@ class LogProcessor:
             # Pre-fetch all unique contract addresses
             addresses = {log['address'] for log in logs if log.get('address')}
             
-            # Bulk load ABIs concurrently
-            abi_tasks = []
+            # Bulk load ABIs
             for addr in addresses:
                 if self.abi_cache.get(addr) is None:
-                    abi_tasks.append(self._fetch_and_cache_abi(addr))
-            if abi_tasks:
-                await asyncio.gather(*abi_tasks)
+                    abi = self.get_contract_abi(addr)
+                    if abi:
+                        self.abi_cache.set(addr, abi)
             
             # Process in parallel with pre-loaded data
             batches = [logs[i:i + self.batch_size] for i in range(0, len(logs), self.batch_size)]
             
-            # Create tasks for each batch
-            tasks = [self._process_logs_batch(batch, timestamp) for batch in batches]
-            batch_results = await asyncio.gather(*tasks)
+            # Submit batches to worker queue with timestamp
+            for batch in batches:
+                self.log_queue.put((batch, timestamp))
             
-            # Combine results
+            # Collect results
             decoder_logs = defaultdict(list)
-            for batch_result in batch_results:
+            for _ in range(len(batches)):
+                batch_result = self.result_queue.get()
                 for tx_hash, decoded_logs in batch_result.items():
                     decoder_logs[tx_hash].extend(decoded_logs)
             
@@ -70,68 +109,50 @@ class LogProcessor:
                     timestamp
                 )
             
+            # Return decoded logs for event processing
             return decoder_logs
             
         except Exception as e:
             self.logger.error(f"Error processing logs for block {block_number}: {e}")
             raise
 
-    async def _fetch_and_cache_abi(self, address):
-        """Fetch and cache ABI for a contract address"""
-        abi = await self.get_contract_abi(address)
-        if abi:
-            self.abi_cache.set(address, abi)
-
     async def _process_logs_batch(self, log_chunk: list, timestamp: int):
-        """Process a batch of logs concurrently"""
+        """Process a batch of logs"""
         decoded_logs = defaultdict(list)
         
-        # Process logs concurrently within the batch
-        tasks = [self._process_single_log(log) for log in log_chunk]
-        results = await asyncio.gather(*tasks)
-        
-        # Combine results
-        for log_result in results:
-            if log_result:
-                tx_hash, decoded_log = log_result
-                decoded_logs[tx_hash].append(decoded_log)
+        for log in log_chunk:
+            try:
+                tx_hash = normalize_hex(get_transaction_hash(log))
+                address = get_address(log)
+                
+                if not address or not log.get('topics'):
+                    continue
+                
+                abi = self.abi_cache.get(address)
+                if abi is not None:
+                    decoded_log = self.decoder.decode_log(log, abi)
+                    if decoded_log:
+                        decoded_log['contract'] = address
+                        decoded_logs[tx_hash].append(decoded_log)
+                    
+            except Exception as e:
+                self.logger.error(f"Error processing log: {e}")
+                error_log = {
+                    "event": "DecodingError",
+                    "error": str(e),
+                    "raw_log": log
+                }
+                try:
+                    tx_hash = log["transactionHash"].hex()
+                    error_log["contract"] = log.get("address")
+                    decoded_logs[tx_hash].append(error_log)
+                except:
+                    continue
                 
         return decoded_logs
 
-    async def _process_single_log(self, log):
-        """Process a single log"""
-        try:
-            tx_hash = normalize_hex(get_transaction_hash(log))
-            address = get_address(log)
-            
-            if not address or not log.get('topics'):
-                return None
-            
-            abi = self.abi_cache.get(address)
-            if abi is not None:
-                decoded_log = self.decoder.decode_log(log, abi)
-                if decoded_log:
-                    decoded_log['contract'] = address
-                    return tx_hash, decoded_log
-                    
-        except Exception as e:
-            self.logger.error(f"Error processing log: {e}")
-            error_log = {
-                "event": "DecodingError",
-                "error": str(e),
-                "raw_log": log
-            }
-            try:
-                tx_hash = log["transactionHash"].hex()
-                error_log["contract"] = log.get("address")
-                return tx_hash, error_log
-            except:
-                return None
+    def get_contract_abi(self, address):
         
-        return None
-
-    async def get_contract_abi(self, address):
-        """Get contract ABI with async support"""
         address = Web3.to_checksum_address(address)
         
         # First try to get ABI from DB
@@ -141,21 +162,40 @@ class LogProcessor:
             return abi
         
         # If not found, try to get it from Etherscan
-        abi = await self.querier.get_contract_abi(address)
+        abi = self.querier.get_contract_abi(address)
         
         if abi:
             # Store it in DB first
             self.db_operator.sql.insert.evm.insert_contract_abi(self.chain, address, abi)
             
-            # Schedule the contract processing asynchronously
+            # Schedule the contract processing asynchronously, to try to get the factory and info
             asyncio.create_task(self._process_contract(address, abi))
             
         return abi
 
+    def shutdown(self):
+        """Cleanup method for graceful shutdown"""
+        try:
+            self._shutdown_flag.set()
+            
+            for _ in self.workers:
+                self.log_queue.put(None)
+            
+            shutdown_start = time.time()
+            for worker in self.workers:
+                remaining_time = max(0, 60 - (time.time() - shutdown_start))
+                worker.join(timeout=remaining_time)
+            
+            self._executor.shutdown(wait=True)
+            
+        except Exception as e:
+            self.logger.error(f"Error during shutdown: {e}")
+            
     async def process_contract(self, address: str, update=True):
-        abi = await self.get_contract_abi(address)
+        abi = self.get_contract_abi(address)
         return await self._process_contract(address, abi, update)
     
+    # Maybe make a batch version of this, with threading
     async def _process_contract(self, address, abi, update=False):
         try:
             address = Web3.to_checksum_address(address)
@@ -188,8 +228,8 @@ class LogProcessor:
             token0_info = await self._process_token(token0_address, update=update)
             token1_info = await self._process_token(token1_address, update=update)
             
-            if not token0_info or not token1_info:
-                return None
+            #if not token0_info or not token1_info:
+            #    return None
             
             # Try to get fee from contract, not crucial so continue if it fails
             try:

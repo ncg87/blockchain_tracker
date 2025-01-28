@@ -11,7 +11,7 @@ class ArbitrumQuerier(EVMQuerier):
     def __init__(self):
         super().__init__('arbitrum', Settings.ARBITRUM_ENDPOINT, Settings.ARBITRUM_WEBSOCKET_ENDPOINT)
 
-    async def get_contract_abi(self, contract_address):
+    def get_contract_abi(self, contract_address):
         """
         Get the ABI of a contract.
         """
