@@ -273,7 +273,7 @@ class EVMProcessor(BaseProcessor):
             # Bulk load event signatures
             for sig in event_signatures:
                 if self.decoder._event_signature_cache.get(sig) is None:
-                    event_obj = self.decoder.sql_query_ops.query_evm_event(self.network, sig)
+                    event_obj = self.db_operator.sql.query.evm.query_event(self.network, sig)
                     if event_obj:
                         self.decoder._event_signature_cache.set(sig, event_obj)
             
@@ -380,7 +380,7 @@ class EVMProcessor(BaseProcessor):
         address = Web3.to_checksum_address(address)
         
         # First try to get ABI from DB
-        result = self.sql_query_ops.query_evm_contract_abi(self.network, address)
+        result = self.db_operator.sql.query.evm.query_contract_abi(self.network, address)
         if result:
             abi = json.loads(result.get('abi'))
             return abi
@@ -406,7 +406,7 @@ class EVMProcessor(BaseProcessor):
         try:
             address = Web3.to_checksum_address(address)
             # Check if contract info is already in DB
-            contract_info = self.sql_query_ops.query_evm_swap(self.network, address)
+            contract_info = self.db_operator.sql.query.evm.query_swap(self.network, address)
             if contract_info and not update:
                 return contract_info
             
@@ -426,34 +426,15 @@ class EVMProcessor(BaseProcessor):
                 if not hasattr(contract.functions, method):
                     return None
             
+            # Get the token0 and token1 addresses
             token0_address = contract.functions.token0().call()
             token1_address = contract.functions.token1().call()
-
-            # Check for token0 info in DB
-            token0_info = self.sql_query_ops.query_evm_token_info(self.network, token0_address)
-            if not token0_info:
-                # If not found, get it from the contract address
-                token0_contract = self.querier.get_contract(token0_address, ERC20_ABI)
-                token0_info = TokenInfo(
-                    address=token0_address,
-                    name=token0_contract.functions.name().call(),
-                    symbol=token0_contract.functions.symbol().call(),
-                    decimals=token0_contract.functions.decimals().call()
-                )
-                self.db_operator.sql.insert.evm.insert_token_info(self.network, token0_info)
-            # Same thing for token1
-            token1_info = self.sql_query_ops.query_evm_token_info(self.network, token1_address)
-            if not token1_info:
-                token1_contract = self.querier.get_contract(token1_address, ERC20_ABI)
-                token1_info = TokenInfo(
-                    address=token1_address,
-                    name=token1_contract.functions.name().call(),
-                    symbol=token1_contract.functions.symbol().call(),
-                    decimals=token1_contract.functions.decimals().call()
-                )
-                self.db_operator.sql.insert.evm.insert_token_info(self.network, token1_info)
             
-            # Try to get fee from contract, not crucial so well continue if it fails
+            # Get the token0 and token1 info
+            token0_info = await self._process_token(token0_address, update=update)
+            token1_info = await self._process_token(token1_address, update=update)
+            
+            # Try to get fee from contract, not crucial so continue if it fails
             try:
                 fee = contract.functions.fee().call()
             except Exception as e:
@@ -473,6 +454,7 @@ class EVMProcessor(BaseProcessor):
 
             # Insert contract info into DB
             self.db_operator.sql.insert.evm.insert_swap(self.network, contract_info)
+            
             return contract_info
         except Exception as e:
             self.logger.error(f"Error processing contract {contract}: {e}")
@@ -480,21 +462,27 @@ class EVMProcessor(BaseProcessor):
     
     async def _process_token(self, contract_address, update=False):
         try:
-            token_info = self.sql_query_ops.query_evm_token_info(self.network, contract_address)
-            if token_info and not update:
-                return token_info
-            
-            token_contract = self.querier.get_contract(contract_address, ERC20_ABI)
             
             contract_address = Web3.to_checksum_address(contract_address)
             
+            # Check the database for the token info
+            token_info = self.db_operator.sql.query.evm.query_token_info(self.network, contract_address)
+            if token_info and not update:
+                return token_info
+            
+            # If not found, get it from the contract address
+            token_contract = self.querier.get_contract(contract_address, ERC20_ABI)
+            
+            # Package it nicely into a TokenInfo object
             token_info = TokenInfo(
                 address=contract_address,
                 name=token_contract.functions.name().call(),
                 symbol=token_contract.functions.symbol().call(),
                 decimals=token_contract.functions.decimals().call()
             )
+            # Insert or update the token info into the database
             self.db_operator.sql.insert.evm.insert_token_info(self.network, token_info)
+            
             return token_info
         except Exception as e:
             self.logger.debug(f"Error processing token {contract_address}: {e}")
@@ -520,7 +508,7 @@ class EVMProcessor(BaseProcessor):
             self.logger.error(f"Error processing transaction events: {e} - {decoded_logs}", exc_info=True)
     
     async def _process_swaps(self, address):
-        contract_abi = self.sql_query_ops.query_evm_contract_abi('Ethereum', address)
+        contract_abi = self.db_operator.sql.query.evm.query_contract_abi('Ethereum', address)
         return await self._process_contract(address, contract_abi['abi'])
     
     def process_syncs(self, address):
