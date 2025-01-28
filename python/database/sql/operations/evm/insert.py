@@ -22,7 +22,7 @@ class EVMInsertOperations(BaseOperations):
             insert_query = INSERT_EVM_TRANSACTIONS
             execute_values(self.db.cursor, insert_query, transactions, page_size=1000)
             self.db.conn.commit()
-            self.db.logger.info(f"Inserted {len(transactions)} {network} transactions into PostgreSQL database from block {block_number}.")
+            self.db.logger.info(f"Successfully inserted {len(transactions)} {network} transactions into PostgreSQL database from block {block_number}.")
             return True
         except Exception as e:
             self.db.logger.error(f"Error inserting {network} transactions into PostgreSQL database: {e}")

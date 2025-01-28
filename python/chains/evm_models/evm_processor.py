@@ -16,8 +16,9 @@ from .cache import BoundedCache
 from dataclasses import dataclass
 import asyncio
 from web3 import Web3
-from .processing import EventProcessingSystem, TokenSwap
+from .processing import EventProcessingSystem, BlockProcessor, LogProcessor
 from .evm_decoder import EVMDecoder
+
 # Common item getters
 get_hash = itemgetter('hash')
 get_from = itemgetter('from')
@@ -43,7 +44,9 @@ class EVMProcessor(BaseProcessor):
         self.querier = querier
         self.decoder = EVMDecoder(sql_database, network_name)
         self.event_processor = EventProcessingSystem(sql_database, mongodb_database, network_name)
-        
+        self.block_processor = BlockProcessor(self.db_operator, network_name)
+        self.log_processor = LogProcessor(self.db_operator, network_name)
+
         # Initialize connection pool
         self.db_pool = ThreadedConnectionPool(
             minconn=5,
@@ -113,44 +116,11 @@ class EVMProcessor(BaseProcessor):
         Process a block, transactions and logs concurrently.
         """
         try:
-            block_number = decode_hex(get_block_number(block))
-            timestamp = decode_hex(get_block_time(block))
+            # Get block info immediately - this is synchronous and fast
+            block_number, timestamp = self.block_processor.process(block)
             
-            self.logger.info(f"Processing block {block_number} on {self.network}")
-            
-            # Insert block into MongoDB
-            self.db_operator.mongodb.insert.insert_block(block, self.network, block_number, timestamp)
-            self.logger.info(f"Inserted block {block_number} into {self.network} collection in MongoDB.")
-            
-            # Insert block into PostgreSQL
-            self.db_operator.sql.insert.block.insert_block(
-                self.network,
-                block_number,
-                normalize_hex(get_hash(block)),
-                normalize_hex(get_parent_hash(block)),
-                timestamp
-            )
-            self.logger.info(f"{self.network} block {block_number} inserted successfully")
-            
-            # Process transactions and logs concurrently
-            await asyncio.gather(
-                asyncio.get_event_loop().run_in_executor(
-                    None, 
-                    self._process_transactions,
-                    block,
-                    block_number,
-                    timestamp
-                ),
-                self.process_logs(block_number, timestamp)
-            )
-            
-            # Process withdrawals if they exist (e.g., for Ethereum post-merge)
-            #if 'withdrawals' in block:
-            #    await asyncio.get_event_loop().run_in_executor(
-            #        None,
-            #        self.process_withdrawals,
-            #        block
-            #    )
+            # Process logs concurrently
+            await self.process_logs(block_number, timestamp)
             
         except Exception as e:
             self.logger.error(f"Error processing block {block_number}: {e}", exc_info=True)

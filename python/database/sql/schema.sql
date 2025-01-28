@@ -1,14 +1,14 @@
+DROP TABLE IF EXISTS blocks;
+
 -- Blocks table - Partitioned by network
 CREATE TABLE IF NOT EXISTS blocks (
-    id SERIAL,
-    network VARCHAR(20) NOT NULL,
+    chain VARCHAR(20) NOT NULL,
     block_number BIGINT NOT NULL,
     block_hash VARCHAR(128) NOT NULL,
     parent_hash VARCHAR(128),
     timestamp BIGINT NOT NULL,
-    CONSTRAINT pk_blocks PRIMARY KEY (network, block_number, id),
-    CONSTRAINT uq_blocks_hash UNIQUE (network, block_hash)  -- Added network to unique constraint
-) PARTITION BY LIST (network);
+    PRIMARY KEY (chain, block_hash)
+) PARTITION BY LIST (chain);
 
 -- Create partitions for each network
 CREATE TABLE IF NOT EXISTS blocks_ethereum PARTITION OF blocks FOR VALUES IN ('Ethereum');
@@ -20,7 +20,10 @@ CREATE TABLE IF NOT EXISTS blocks_base PARTITION OF blocks FOR VALUES IN ('Base'
 CREATE TABLE IF NOT EXISTS blocks_arbitrum PARTITION OF blocks FOR VALUES IN ('Arbitrum');
 
 -- Block-specific indexes
-CREATE INDEX IF NOT EXISTS idx_blocks_timestamp ON blocks USING brin (timestamp) WITH (pages_per_range = 128);
+CREATE INDEX IF NOT EXISTS idx_blocks_timestamp 
+    ON blocks USING brin (timestamp) WITH (pages_per_range = 128);
+CREATE INDEX IF NOT EXISTS idx_blocks_hash 
+    ON blocks USING btree (block_hash, chain);
 
 -- EVM Transactions - Partitioned by network
 CREATE TABLE IF NOT EXISTS base_evm_transactions (

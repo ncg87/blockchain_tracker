@@ -55,7 +55,7 @@ class MongoInsertOperations:
             }
             collection.insert_one(document)
 
-            self.logger.info(f"Inserted block {block_number} into {network} collection in MongoDB.")
+            self.logger.info(f"Successfully inserted block {block_number} into {network} collection in MongoDB.")
         except Exception as e:
             self.logger.error(f"Error inserting block {block_number} into {network} collection in MongoDB: {e}")
     
