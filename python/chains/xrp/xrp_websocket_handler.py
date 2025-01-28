@@ -4,7 +4,7 @@ from ..base_models import BaseWebSocketHandler
 
 class XRPWebSocketHandler(BaseWebSocketHandler):
     def __init__(self, websocket_url):
-        super().__init__("XRP", websocket_url)
+        super().__init__("xrp", websocket_url)
         self.logger.info("Initializing XRPWebSocketHandler for XRP Ledger")
 
     def get_subscription_message(self):

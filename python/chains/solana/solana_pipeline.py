@@ -8,7 +8,7 @@ class SolanaPipeline(BasePipeline):
     Solana pipeline class supporting asynchronous block streaming.
     """
     def __init__(self, sql_database, mongodb_database):
-        super().__init__(sql_database, mongodb_database, 'Solana')
+        super().__init__(sql_database, mongodb_database, 'solana')
         self.querier = SolanaQuerier()
         self.processor = SolanaProcessor(sql_database, mongodb_database, self.querier)
 

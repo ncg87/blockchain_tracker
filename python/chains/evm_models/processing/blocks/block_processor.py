@@ -149,3 +149,24 @@ class BlockProcessor:
         If neither is available, return None.
         """
         return get_chain_id(transaction) if 'chainId' in transaction else self.chain_id
+    
+    def process_withdrawals(self, block):
+        """
+        Process raw withdrawal data and store it.
+        """
+        self.logger.info(f"Processing withdrawals for block {block['number']}")
+        for withdrawl in block['withdrawals']:
+            # Format withdrawal data
+            withdrawal_data = {
+                "network": self.network,
+                "block_number": block["number"],
+                "withdrawal_index": withdrawl["index"],
+                "validator_index": withdrawl["validatorIndex"],
+                "address": withdrawl["address"],
+                "amount": withdrawl["amount"],
+                "timestamp": block["timestamp"],
+            }
+            # Store withdrawal data
+            self.database.insert_withdrawal(withdrawal_data)
+            self.logger.debug(f"Withdrawal {withdrawal_data['withdrawal_index']} processed.")
+

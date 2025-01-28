@@ -12,7 +12,7 @@ class SolanaQuerier(BaseQuerier):
     """
     
     def __init__(self):
-        super().__init__('Solana')
+        super().__init__('solana')
         self.client = Client(Settings.SOLANA_ENDPOINT)
         self.ws = SolanaWebSocketHandler(Settings.SOLANA_WEBSOCKET_ENDPOINT)
 

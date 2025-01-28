@@ -20,7 +20,7 @@ class XRPProcessor(BaseProcessor):
     XRP-specific processor.
     """
     def __init__(self, sql_database, mongodb_database, querier):
-        super().__init__(sql_database, mongodb_database, 'XRP')
+        super().__init__(sql_database, mongodb_database, 'xrp')
         self.querier = querier
         
     async def process_block(self, ledger):

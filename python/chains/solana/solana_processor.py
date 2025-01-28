@@ -28,7 +28,7 @@ class SolanaProcessor(BaseProcessor):
         """
         Initialize the processor with a database instance.
         """
-        super().__init__(sql_database, mongodb_database, 'Solana')
+        super().__init__(sql_database, mongodb_database, 'solana')
         self.querier = querier
     
     async def process_block(self, block):

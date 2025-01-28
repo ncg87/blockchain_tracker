@@ -12,7 +12,7 @@ class XRPQuerier(BaseQuerier):
     XRP-specific querier for fetching ledger data.
     """
     def __init__(self):
-        super().__init__('XRP')
+        super().__init__('xrp')
         nest_asyncio.apply()
         self.client = JsonRpcClient(Settings.XRP_ENDPOINT)
         self.ws = XRPWebSocketHandler(Settings.XRP_WEBSOCKET_ENDPOINT)
