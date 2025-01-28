@@ -4,9 +4,6 @@ import logging
 from eth_abi.codec import ABICodec
 from eth_abi.registry import registry
 from database import DatabaseOperator
-import json
-from dataclasses import dataclass
-from typing import List
 from datetime import datetime
 import threading
 import time
