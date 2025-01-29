@@ -61,8 +61,8 @@ QUERY_EVM_TOKEN_INFO = """
 
 QUERY_EVM_FACTORY_CONTRACT = """
     SELECT *
-    FROM evm_contract_to_creator
-    WHERE network = %s AND contract_address = %s;
+    FROM evm_contract_to_factory
+    WHERE chain = %s AND contract_address = %s;
 """
 
 QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS = """

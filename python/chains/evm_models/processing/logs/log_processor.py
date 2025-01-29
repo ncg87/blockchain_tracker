@@ -173,7 +173,7 @@ class LogProcessor:
             # Get the factory of the contract
             factory = contract.functions.factory().call(),
             
-            self.db_operator.sql.insert.evm.insert_contract_to_factory(self.chain, address, factory)
+            self.db_operator.sql.insert.evm.contract_to_factory(self.chain, address, factory)
             
             swap_methods = ['token0', 'token1', 'factory']
             for method in swap_methods:
@@ -223,7 +223,7 @@ class LogProcessor:
             contract_address = Web3.to_checksum_address(contract_address)
             
             # Check the database for the token info
-            token_info = self.db_operator.sql.query.evm.query_token_info_by_chain(self.chain, contract_address)
+            token_info = self.db_operator.sql.query.evm.token_info_by_chain(self.chain, contract_address)
             if token_info and not update:
                 return token_info
             

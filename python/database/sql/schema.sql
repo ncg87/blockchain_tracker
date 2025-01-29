@@ -203,20 +203,26 @@ CREATE INDEX IF NOT EXISTS idx_evm_token_info_address ON evm_token_info
 
 
 -- Change creator to factory
-CREATE TABLE IF NOT EXISTS evm_contract_to_creator (
+CREATE TABLE IF NOT EXISTS evm_contract_to_factory (
     contract_address VARCHAR(64) NOT NULL,
     factory_address VARCHAR(64) NOT NULL,
-    network VARCHAR(20) NOT NULL,
-    CONSTRAINT pk_evm_contract_to_creator PRIMARY KEY (contract_address, network)
-) PARTITION BY LIST (network);
+    chain VARCHAR(20) NOT NULL,
+    name VARCHAR(100),
+    CONSTRAINT pk_evm_contract_to_factory PRIMARY KEY (contract_address, chain)
+) PARTITION BY LIST (chain);
 
-CREATE TABLE IF NOT EXISTS evm_contract_to_creator_ethereum PARTITION OF evm_contract_to_creator FOR VALUES IN ('ethereum');
-CREATE TABLE IF NOT EXISTS evm_contract_to_creator_bnb PARTITION OF evm_contract_to_creator FOR VALUES IN ('bnb');
-CREATE TABLE IF NOT EXISTS evm_contract_to_creator_base PARTITION OF evm_contract_to_creator FOR VALUES IN ('base');
-CREATE TABLE IF NOT EXISTS evm_contract_to_creator_arbitrum PARTITION OF evm_contract_to_creator FOR VALUES IN ('arbitrum');
+-- Factory Partitions
+CREATE TABLE IF NOT EXISTS evm_contract_to_factory_ethereum PARTITION OF evm_contract_to_factory FOR VALUES IN ('ethereum');
+CREATE TABLE IF NOT EXISTS evm_contract_to_factory_bnb PARTITION OF evm_contract_to_factory FOR VALUES IN ('bnb');
+CREATE TABLE IF NOT EXISTS evm_contract_to_factory_base PARTITION OF evm_contract_to_factory FOR VALUES IN ('base');
+CREATE TABLE IF NOT EXISTS evm_contract_to_factory_arbitrum PARTITION OF evm_contract_to_factory FOR VALUES IN ('arbitrum');
 
-CREATE INDEX IF NOT EXISTS idx_evm_contract_to_creator_contract_address ON evm_contract_to_creator
-    USING btree (factory_address, network);
+-- Factory Indexes
+CREATE INDEX IF NOT EXISTS idx_evm_contract_to_factory_contract 
+    ON evm_contract_to_factory USING btree (contract_address, chain);
+CREATE INDEX IF NOT EXISTS idx_evm_contract_to_factory_factory 
+    ON evm_contract_to_factory USING btree (factory_address, chain);
+
 
 CREATE TABLE IF NOT EXISTS evm_transaction_swap (
     network VARCHAR(20) NOT NULL,

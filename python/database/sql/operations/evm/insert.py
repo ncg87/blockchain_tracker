@@ -114,7 +114,7 @@ class EVMInsertOperations(BaseOperations):
             self.db.conn.rollback()
             return False
 
-    def insert_contract_to_factory(self, chain: str, contract_address: str, factory_address: str) -> bool:
+    def contract_to_factory(self, chain: str, contract_address: str, factory_address: str) -> bool:
         """
         Insert an EVM contract to factory mapping into the PostgreSQL database.
         """
@@ -125,9 +125,10 @@ class EVMInsertOperations(BaseOperations):
                 chain
             ))
             self.db.conn.commit()
+            self.db.logger.info(f"Successfully inserted EVM contract {contract_address} to factory {factory_address} mapping for chain {chain}.")
             return True
         except Exception as e:
-            self.db.logger.error(f"Error inserting EVM contract to factory mapping for chain {chain}: {e}")
+            self.db.logger.error(f"Error inserting EVM contract {contract_address} to factory {factory_address} mapping for chain {chain}: {e}")
             self.db.conn.rollback()
             return False
     

@@ -42,9 +42,6 @@ class SQLInsertOperations:
     def insert_evm_token_info(self, network: str, token_info) -> bool:
         return self.evm.insert_token_info(network, token_info)
 
-    def insert_evm_contract_to_creator(self, network: str, contract_address: str, creator_address: str) -> bool:
-        return self.evm.insert_contract_to_factory(network, contract_address, creator_address)
-
 def convert_timestamp(timestamp):
     """
     Convert a timestamp to a PostgreSQL-compatible TIMESTAMP format.

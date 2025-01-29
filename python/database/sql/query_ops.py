@@ -69,12 +69,6 @@ class SQLQueryOperations:
     def query_evm_swap(self, network: str, contract_address: str) -> Optional[Dict[str, Any]]:
         return self.evm.query_swap(network, contract_address)
     
-    def query_evm_token_info(self, network: str, token_address: str) -> Optional[Dict[str, Any]]:
-        return self.evm.query_token_info(network, token_address)
-
-    def query_evm_factory_contract(self, network: str, contract_address: str) -> Optional[Dict[str, Any]]:
-        return self.evm.query_factory_contract(network, contract_address)
-
     def query_high_value_transactions(self, network: str, min_value: int) -> List[Dict[str, Any]]:
         """
         Query high-value transactions using the partial index.

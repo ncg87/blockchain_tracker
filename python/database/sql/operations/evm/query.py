@@ -149,7 +149,7 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying EVM swap for contract address {contract_address}: {e}")
             return None
         
-    def query_token_info_by_chain(self, chain: str, token_address: str) -> Optional[Dict[str, Any]]:
+    def token_info_by_chain(self, chain: str, token_address: str) -> Optional[Dict[str, Any]]:
         """
         Query an EVM token info by its network and address.
         """
@@ -190,7 +190,7 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying EVM token info for address {token_address}: {e}")
             return None
     
-    def query_factory_contract(self, chain: str, contract_address: str) -> Optional[Dict[str, Any]]:
+    def factory_contract(self, chain: str, contract_address: str) -> Optional[Dict[str, Any]]:
         """
         Query an EVM factory contract by its chain and address.
         """

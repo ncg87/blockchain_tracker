@@ -51,10 +51,10 @@ INSERT_EVM_TOKEN_INFO = """
 """
 
 INSERT_EVM_CONTRACT_TO_FACTORY = """
-    INSERT INTO evm_contract_to_creator
-    (contract_address, factory_address, network)
+    INSERT INTO evm_contract_to_factory
+    (contract_address, factory_address, chain)
     VALUES (%s, %s, %s)
-    ON CONFLICT (contract_address, network) DO NOTHING
+    ON CONFLICT (contract_address, chain) DO NOTHING
 """
 
 INSERT_EVM_TRANSACTION_SWAP = """
