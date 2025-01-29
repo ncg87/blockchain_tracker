@@ -1,14 +1,13 @@
 # Look to migrate this into Rust first, since it is simple but loads of data
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 from .event_processors import SwapProcessor
 from database import SQLDatabase
 from operator import itemgetter
 import logging
 from web3 import Web3
-from concurrent.futures import ThreadPoolExecutor
 import asyncio
-from collections import defaultdict
+
 
 get_event = itemgetter('event')
 get_parameters = itemgetter('parameters')
@@ -25,9 +24,10 @@ class EventProcessor:
         self.logger = logger
         self.batch_size = 1000
         
-        self.logger.info("EventProcessingSystem initialized")
+        self.logger.info("EventProcessor initialized")
 
     def load_event_mapping(self):
+
         return {
             "Swap": SwapProcessor(self.sql_db, self.network),
         }
