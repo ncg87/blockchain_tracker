@@ -57,22 +57,23 @@ CREATE INDEX IF NOT EXISTS idx_evm_tx_chain
 
 
 -- Bitcoin Transactions
-CREATE TABLE IF NOT EXISTS base_bitcoin_transactions (
+CREATE TABLE IF NOT EXISTS bitcoin_transactions (
     block_number BIGINT NOT NULL,
-    transaction_id VARCHAR(128) NOT NULL,
+    transaction_hash VARCHAR(128) NOT NULL,
     version SMALLINT NOT NULL,
-    value_satoshis NUMERIC(20, 0) NOT NULL,
+    amount NUMERIC(20, 0) NOT NULL,
     timestamp BIGINT NOT NULL,
     fee NUMERIC(16, 8) NOT NULL,
-    CONSTRAINT pk_bitcoin_transactions PRIMARY KEY (timestamp, transaction_id)
+    CONSTRAINT pk_bitcoin_transactions PRIMARY KEY (timestamp, transaction_hash)
 );
 
 -- Bitcoin transaction indexes
-CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_block ON base_bitcoin_transactions 
-    USING btree (block_number) 
-    INCLUDE (value_satoshis, fee);
-CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_timestamp ON base_bitcoin_transactions 
-    USING btree (timestamp);
+CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_timestamp 
+    ON bitcoin_transactions USING brin (timestamp) WITH (pages_per_range = 128);
+CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_hash 
+    ON bitcoin_transactions USING btree (transaction_hash);
+CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_block 
+    ON bitcoin_transactions USING btree (block_number);
 
 -- XRP Transactions
 CREATE TABLE IF NOT EXISTS base_xrp_transactions (

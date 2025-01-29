@@ -1,6 +1,6 @@
 INSERT_BITCOIN_TRANSACTIONS = """
-    INSERT INTO base_bitcoin_transactions 
-    (block_number, transaction_id, version, value_satoshis, timestamp, fee)
+    INSERT INTO bitcoin_transactions 
+    (block_number, transaction_hash, version, amount, timestamp, fee)
     VALUES %s
-    ON CONFLICT (timestamp, transaction_id) DO NOTHING
+    ON CONFLICT (timestamp, transaction_hash) DO NOTHING
 """
