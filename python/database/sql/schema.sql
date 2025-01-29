@@ -227,7 +227,7 @@ CREATE INDEX IF NOT EXISTS idx_evm_contract_to_factory_contract
 CREATE INDEX IF NOT EXISTS idx_evm_contract_to_factory_factory 
     ON evm_contract_to_factory USING btree (factory_address, chain);
 
-
+-- Adjust so that it can hold all the info about a token, contract, name, decimals, symbol, etc.
 CREATE TABLE IF NOT EXISTS evm_transaction_swap (
     network VARCHAR(20) NOT NULL,
     contract_address VARCHAR(64) NOT NULL,
