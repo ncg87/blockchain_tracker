@@ -82,20 +82,20 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying EVM event for network {network}: {e}")
             return None
         
-    def query_contract_abi(self, network: str, contract_address: str) -> Optional[Dict[str, Any]]:
+    def query_contract_abi(self, chain: str, contract_address: str) -> Optional[Dict[str, Any]]:
         """
         Query an EVM contract ABI by its network and address.
         """
         try:
             self.db.cursor.execute(QUERY_EVM_CONTRACT_ABI, (
-                network,
+                chain,
                 contract_address
             ))
             return self.db.cursor.fetchone()
         except Exception as e:
             # Make debug
-            self.db.logger.error(f"Error querying EVM contract ABI for network {network}: {e}")
-            return None
+            self.db.logger.error(f"Error querying EVM contract ABI for network {chain}: {e}")
+            return  
         
     def query_swap(self, network: str, contract_address: str) -> Optional[Dict[str, Any]]:
         """

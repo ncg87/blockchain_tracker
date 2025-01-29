@@ -117,33 +117,6 @@ CREATE INDEX IF NOT EXISTS idx_solana_tx_account
     ON solana_transactions USING btree (account_key, timestamp DESC);
 
 
-
--- Ethereum Known Events table
-CREATE TABLE IF NOT EXISTS ethereum_known_events (
-    signature_hash VARCHAR(128) NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    full_signature VARCHAR(100) NOT NULL,
-    input_types VARCHAR(100) NOT NULL,
-    indexed_inputs VARCHAR(100) NOT NULL,
-    inputs TEXT NOT NULL,
-    CONSTRAINT pk_signature_hash PRIMARY KEY (signature_hash)
-) WITH (fillfactor = 100);
-CREATE INDEX IF NOT EXISTS idx_signature_hash ON ethereum_known_events
-    USING btree (signature_hash);
-
-
--- Ethereum Contract ABIs table
-CREATE TABLE IF NOT EXISTS ethereum_contract_abis (
-    contract_address VARCHAR(64) NOT NULL,
-    abi TEXT NOT NULL,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT pk_contract_address PRIMARY KEY (contract_address)
-) WITH (fillfactor = 100);
-
-CREATE INDEX IF NOT EXISTS idx_contract_address ON ethereum_contract_abis
-    USING btree (contract_address);
-
-
 -- Create the new partitioned tables
 CREATE TABLE IF NOT EXISTS evm_known_events (
     network VARCHAR(20) NOT NULL,
@@ -170,21 +143,21 @@ CREATE INDEX IF NOT EXISTS idx_evm_events_signature ON evm_known_events
 
 -- Create new partitioned contract ABIs table
 CREATE TABLE IF NOT EXISTS evm_contract_abis (
-    network VARCHAR(20) NOT NULL,
+    chain VARCHAR(20) NOT NULL,
     contract_address VARCHAR(64) NOT NULL,
     abi TEXT NOT NULL,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT pk_evm_contract_abis PRIMARY KEY (network, contract_address)
-) PARTITION BY LIST (network);
+    CONSTRAINT pk_evm_contract_abis PRIMARY KEY (chain, contract_address)
+) PARTITION BY LIST (chain);
 
--- Create partitions for each network
+-- EVM Partitions
 CREATE TABLE IF NOT EXISTS evm_contract_abis_ethereum PARTITION OF evm_contract_abis FOR VALUES IN ('ethereum');
 CREATE TABLE IF NOT EXISTS evm_contract_abis_bnb PARTITION OF evm_contract_abis FOR VALUES IN ('bnb');
 CREATE TABLE IF NOT EXISTS evm_contract_abis_base PARTITION OF evm_contract_abis FOR VALUES IN ('base');
 CREATE TABLE IF NOT EXISTS evm_contract_abis_arbitrum PARTITION OF evm_contract_abis FOR VALUES IN ('arbitrum');
 
-CREATE INDEX IF NOT EXISTS idx_evm_contract_abis_address ON evm_contract_abis
-    USING btree (network, contract_address);
+-- EVM Contract ABIs Indexes
+CREATE INDEX IF NOT EXISTS idx_evm_contract_abis_address 
+    ON evm_contract_abis USING btree (contract_address, chain);
 
 -- EVM Contract Info table
 CREATE TABLE IF NOT EXISTS evm_swap (

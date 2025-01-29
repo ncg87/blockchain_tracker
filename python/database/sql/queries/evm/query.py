@@ -33,7 +33,7 @@ QUERY_EVM_EVENT = """
 QUERY_EVM_CONTRACT_ABI = """
     SELECT *
     FROM evm_contract_abis
-    WHERE network = %s AND contract_address = %s;
+    WHERE chain = %s AND contract_address = %s;
 """
 
 QUERY_EVM_SWAP = """

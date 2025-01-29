@@ -20,11 +20,10 @@ INSERT_EVM_EVENTS = """
 
 INSERT_EVM_CONTRACT_ABI = """
     INSERT INTO evm_contract_abis
-    (network, contract_address, abi, last_updated)
-    VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
-    ON CONFLICT (network, contract_address) DO UPDATE SET
-        abi = EXCLUDED.abi,
-        last_updated = CURRENT_TIMESTAMP
+    (chain, contract_address, abi)
+    VALUES (%s, %s, %s)
+    ON CONFLICT (chain, contract_address) DO UPDATE SET
+        abi = EXCLUDED.abi
 """
 
 INSERT_EVM_SWAP = """
