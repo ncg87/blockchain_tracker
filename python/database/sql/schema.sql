@@ -75,41 +75,47 @@ CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_hash
 CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_block 
     ON bitcoin_transactions USING btree (block_number);
 
+
 -- XRP Transactions
-CREATE TABLE IF NOT EXISTS base_xrp_transactions (
+CREATE TABLE IF NOT EXISTS xrp_transactions (
     block_number BIGINT NOT NULL,
     transaction_hash VARCHAR(128) NOT NULL,
     account VARCHAR(64) NOT NULL,
     type VARCHAR(20) NOT NULL,
     fee BIGINT NOT NULL,
     timestamp BIGINT NOT NULL,
-    CONSTRAINT pk_xrp_transactions PRIMARY KEY (timestamp, transaction_hash)
+    PRIMARY KEY (timestamp, transaction_hash)
 );
 
 -- XRP transaction indexes
-CREATE INDEX IF NOT EXISTS idx_xrp_tx_account ON base_xrp_transactions 
-    USING btree (account, timestamp DESC) 
-    INCLUDE (type, fee);
-CREATE INDEX IF NOT EXISTS idx_xrp_tx_timestamp ON base_xrp_transactions 
-    USING btree (timestamp);
+CREATE INDEX IF NOT EXISTS idx_xrp_tx_timestamp 
+    ON xrp_transactions USING brin (timestamp) WITH (pages_per_range = 128);
+CREATE INDEX IF NOT EXISTS idx_xrp_tx_hash 
+    ON xrp_transactions USING btree (transaction_hash);
+CREATE INDEX IF NOT EXISTS idx_xrp_tx_account 
+    ON xrp_transactions USING btree (account, timestamp DESC);
+
+DROP TABLE IF EXISTS base_solana_transactions;
 
 -- Solana Transactions
-CREATE TABLE IF NOT EXISTS base_solana_transactions (
+CREATE TABLE IF NOT EXISTS solana_transactions (
     block_number BIGINT NOT NULL,
     signature VARCHAR(128) NOT NULL,
-    value_lamports BIGINT NOT NULL,
-    fee_lamports BIGINT NOT NULL,
+    amount BIGINT NOT NULL,
+    fee BIGINT NOT NULL,
     account_key VARCHAR(64) NOT NULL,
     timestamp BIGINT NOT NULL,
-    CONSTRAINT pk_solana_transactions PRIMARY KEY (timestamp, signature)
+    PRIMARY KEY (timestamp, signature)
 );
+CREATE INDEX IF NOT EXISTS idx_solana_tx_timestamp 
+    ON solana_transactions USING brin (timestamp) WITH (pages_per_range = 128);
+-- Is this needed?
+CREATE INDEX IF NOT EXISTS idx_solana_tx_signature 
+    ON solana_transactions USING btree (signature);
 
--- Solana transaction indexes
-CREATE INDEX IF NOT EXISTS idx_solana_tx_account ON base_solana_transactions 
-    USING btree (account_key, timestamp DESC) 
-    INCLUDE (value_lamports, fee_lamports);
-CREATE INDEX IF NOT EXISTS idx_solana_tx_timestamp ON base_solana_transactions 
-    USING btree (timestamp);
+CREATE INDEX IF NOT EXISTS idx_solana_tx_account 
+    ON solana_transactions USING btree (account_key, timestamp DESC);
+
 
 
 -- Ethereum Known Events table

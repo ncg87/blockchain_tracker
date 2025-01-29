@@ -55,12 +55,13 @@ async def main():
 
         # Add pipelines to active list
         active_pipelines.extend([
-            #ethereum_pipeline,
-            #bnb_pipeline,
-            #base_pipeline,
-            #bitcoin_pipeline,
+            ethereum_pipeline,
+            bnb_pipeline,
+            base_pipeline,
+            bitcoin_pipeline,
             xrp_pipeline,
-            #arbitrum_pipeline
+            arbitrum_pipeline,
+            solana_pipeline
         ])
 
         duration = 100000
