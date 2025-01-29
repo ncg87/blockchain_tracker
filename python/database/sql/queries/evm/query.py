@@ -48,12 +48,12 @@ QUERY_EVM_SWAP_ALL_NETWORKS = """
     WHERE contract_address = %s;
 """
 
-QUERY_EVM_TOKEN_INFO = """
+QUERY_EVM_TOKEN_INFO_BY_CHAIN = """
     SELECT contract_address, name, symbol, decimals
     FROM evm_token_info
-    WHERE network = %s AND contract_address = %s;
+    WHERE chain = %s AND contract_address = %s;
 """
-QUERY_EVM_TOKEN_INFO_ALL_NETWORKS = """
+QUERY_EVM_TOKEN_INFO = """
     SELECT *
     FROM evm_token_info
     WHERE contract_address = %s;

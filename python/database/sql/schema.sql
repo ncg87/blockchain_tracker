@@ -188,10 +188,10 @@ CREATE TABLE IF NOT EXISTS evm_token_info (
     contract_address VARCHAR(64) NOT NULL,
     name VARCHAR(100),
     symbol VARCHAR(100),
-    network VARCHAR(20) NOT NULL,
-    decimals INT,
-    CONSTRAINT pk_evm_token_info PRIMARY KEY (contract_address, network)
-) PARTITION BY LIST (network);
+    decimals INT NOT NULL,
+    chain VARCHAR(20) NOT NULL,
+    CONSTRAINT pk_evm_token_info PRIMARY KEY (contract_address, chain)
+) PARTITION BY LIST (chain);
 
 CREATE TABLE IF NOT EXISTS evm_token_info_ethereum PARTITION OF evm_token_info FOR VALUES IN ('ethereum');
 CREATE TABLE IF NOT EXISTS evm_token_info_bnb PARTITION OF evm_token_info FOR VALUES IN ('bnb');
@@ -199,7 +199,7 @@ CREATE TABLE IF NOT EXISTS evm_token_info_base PARTITION OF evm_token_info FOR V
 CREATE TABLE IF NOT EXISTS evm_token_info_arbitrum PARTITION OF evm_token_info FOR VALUES IN ('arbitrum');
 
 CREATE INDEX IF NOT EXISTS idx_evm_token_info_address ON evm_token_info
-    USING btree (contract_address, network, name, symbol);
+    USING btree (contract_address, chain);
 
 
 -- Change creator to factory

@@ -42,9 +42,9 @@ INSERT_EVM_SWAP = """
 
 INSERT_EVM_TOKEN_INFO = """
     INSERT INTO evm_token_info
-    (contract_address, name, symbol, network, decimals)
+    (contract_address, name, symbol, decimals, chain)
     VALUES (%s, %s, %s, %s, %s)
-    ON CONFLICT (contract_address, network) DO UPDATE SET
+    ON CONFLICT (contract_address, chain) DO UPDATE SET
         name = EXCLUDED.name,
         symbol = EXCLUDED.symbol,
         decimals = EXCLUDED.decimals

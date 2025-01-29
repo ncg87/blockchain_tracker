@@ -223,7 +223,7 @@ class LogProcessor:
             contract_address = Web3.to_checksum_address(contract_address)
             
             # Check the database for the token info
-            token_info = self.db_operator.sql.query.evm.query_token_info(self.chain, contract_address)
+            token_info = self.db_operator.sql.query.evm.query_token_info_by_chain(self.chain, contract_address)
             if token_info and not update:
                 return token_info
             

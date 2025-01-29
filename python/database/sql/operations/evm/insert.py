@@ -103,10 +103,11 @@ class EVMInsertOperations(BaseOperations):
                 token_info.address,
                 token_info.name,
                 token_info.symbol,
+                token_info.decimals,
                 chain,
-                token_info.decimals
             ))
             self.db.conn.commit()
+            self.db.logger.info(f"Successfully inserted {token_info.name} info for chain {chain}.")
             return True
         except Exception as e:
             self.db.logger.error(f"Error inserting EVM token info for chain {chain}: {e}")
