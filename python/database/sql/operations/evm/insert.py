@@ -2,7 +2,7 @@ from typing import List, Dict, Any
 from ..base import BaseOperations
 from ...queries import (
     INSERT_EVM_TRANSACTIONS, INSERT_EVM_EVENTS, INSERT_EVM_CONTRACT_ABI,
-    INSERT_EVM_SWAP, INSERT_EVM_TOKEN_INFO, INSERT_EVM_CONTRACT_TO_FACTORY,
+    INSERT_EVM_SWAP_INFO, INSERT_EVM_TOKEN_INFO, INSERT_EVM_CONTRACT_TO_FACTORY,
     INSERT_EVM_TRANSACTION_SWAP
 )
 from psycopg2.extras import execute_values
@@ -11,7 +11,7 @@ class EVMInsertOperations(BaseOperations):
     def __init__(self, db):
         super().__init__(db)
 
-    def insert_transactions(self, chain: str, transactions: List[Dict[str, Any]], block_number: int) -> bool:
+    def transactions(self, chain: str, transactions: List[Dict[str, Any]], block_number: int) -> bool:
         """
         Bulk insert EVM transactions into the PostgreSQL database.
         Uses execute_values for better performance with partitioned tables.
@@ -53,7 +53,7 @@ class EVMInsertOperations(BaseOperations):
             self.db.conn.rollback()
             return False
 
-    def insert_contract_abi(self, chain: str, contract_address: str, abi: dict) -> bool:
+    def contract_abi(self, chain: str, contract_address: str, abi: dict) -> bool:
         """
         Insert or update an EVM contract ABI.
         """
@@ -71,12 +71,12 @@ class EVMInsertOperations(BaseOperations):
             self.db.conn.rollback()
             return False
 
-    def insert_swap(self, chain: str, swap_info) -> bool:
+    def swap_info(self, chain: str, swap_info) -> bool:
         """
         Insert or update an EVM swap.
         """
         try:
-            self.db.cursor.execute(INSERT_EVM_SWAP, (
+            self.db.cursor.execute(INSERT_EVM_SWAP_INFO, (
                 swap_info.address,
                 swap_info.factory,
                 swap_info.fee,
@@ -88,13 +88,14 @@ class EVMInsertOperations(BaseOperations):
                 chain
             ))
             self.db.conn.commit()
+            self.db.logger.info(f"Successfully inserted EVM swap - {swap_info.address} - for chain {chain}.")
             return True
         except Exception as e:
             self.db.logger.error(f"Error inserting EVM swap for chain {chain}: {e}")
             self.db.conn.rollback()
             return False
         
-    def insert_token_info(self, chain: str, token_info) -> bool:
+    def token_info(self, chain: str, token_info) -> bool:
         """
         Insert or update an EVM token info.
         """
@@ -122,7 +123,8 @@ class EVMInsertOperations(BaseOperations):
             self.db.cursor.execute(INSERT_EVM_CONTRACT_TO_FACTORY, (
                 contract_address,
                 factory_address,
-                chain
+                chain,
+                None
             ))
             self.db.conn.commit()
             self.db.logger.info(f"Successfully inserted EVM contract {contract_address} to factory {factory_address} mapping for chain {chain}.")

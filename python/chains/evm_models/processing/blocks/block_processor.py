@@ -110,7 +110,7 @@ class BlockProcessor:
             
             # Bulk insert all transactions
             if all_transactions:
-                self.db_operator.sql.insert.evm.insert_transactions(
+                self.db_operator.sql.insert.evm.transactions(
                     self.chain, 
                     all_transactions, 
                     block_number

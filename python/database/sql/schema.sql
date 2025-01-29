@@ -160,7 +160,7 @@ CREATE INDEX IF NOT EXISTS idx_evm_contract_abis_address
     ON evm_contract_abis USING btree (contract_address, chain);
 
 -- EVM Contract Info table
-CREATE TABLE IF NOT EXISTS evm_swap (
+CREATE TABLE IF NOT EXISTS evm_swap_info (
     contract_address VARCHAR(64) NOT NULL,
     factory_address VARCHAR(64) NOT NULL,
     fee INT,
@@ -169,17 +169,22 @@ CREATE TABLE IF NOT EXISTS evm_swap (
     token0_address VARCHAR(64),
     token1_address VARCHAR(64),
     name VARCHAR(100),
-    network VARCHAR(20) NOT NULL,
-    CONSTRAINT pk_evm_contract_info PRIMARY KEY (contract_address, network)
-) PARTITION BY LIST (network);
+    chain VARCHAR(20) NOT NULL,
+    PRIMARY KEY (contract_address, chain)
+) PARTITION BY LIST (chain);
 
-CREATE TABLE IF NOT EXISTS evm_swap_ethereum PARTITION OF evm_swap FOR VALUES IN ('ethereum');
-CREATE TABLE IF NOT EXISTS evm_swap_bnb PARTITION OF evm_swap FOR VALUES IN ('bnb');
-CREATE TABLE IF NOT EXISTS evm_swap_base PARTITION OF evm_swap FOR VALUES IN ('base');
-CREATE TABLE IF NOT EXISTS evm_swap_arbitrum PARTITION OF evm_swap FOR VALUES IN ('arbitrum');
+CREATE TABLE IF NOT EXISTS evm_swap_info_ethereum PARTITION OF evm_swap_info FOR VALUES IN ('ethereum');
+CREATE TABLE IF NOT EXISTS evm_swap_info_bnb PARTITION OF evm_swap_info FOR VALUES IN ('bnb');
+CREATE TABLE IF NOT EXISTS evm_swap_info_base PARTITION OF evm_swap_info FOR VALUES IN ('base');
+CREATE TABLE IF NOT EXISTS evm_swap_info_arbitrum PARTITION OF evm_swap_info FOR VALUES IN ('arbitrum');
 
-CREATE INDEX IF NOT EXISTS idx_evm_swap_factory_address ON evm_swap
-    USING btree (factory_address, network, contract_address, token0_address, token1_address);
+-- For when we want to get all the swap info of a contract
+CREATE INDEX IF NOT EXISTS idx_evm_swap_contract 
+    ON evm_swap_info USING btree (contract_address, chain);
+
+-- For when we want to get all the swaps for a factory
+CREATE INDEX IF NOT EXISTS idx_evm_swap_factory 
+    ON evm_swap_info USING btree (factory_address, chain);
 
 
 -- EVM Token Info table
@@ -200,7 +205,6 @@ CREATE TABLE IF NOT EXISTS evm_token_info_arbitrum PARTITION OF evm_token_info F
 
 CREATE INDEX IF NOT EXISTS idx_evm_token_info_address ON evm_token_info
     USING btree (contract_address, chain);
-
 
 -- Change creator to factory
 CREATE TABLE IF NOT EXISTS evm_contract_to_factory (

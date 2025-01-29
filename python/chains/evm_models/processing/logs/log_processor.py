@@ -145,7 +145,7 @@ class LogProcessor:
         
         if abi:
             # Store it in DB first
-            self.db_operator.sql.insert.evm.insert_contract_abi(self.chain, address, abi)
+            self.db_operator.sql.insert.evm.contract_abi(self.chain, address, abi)
             
             # Schedule the contract processing asynchronously
             asyncio.create_task(self._process_contract(address, abi))
@@ -160,7 +160,7 @@ class LogProcessor:
         try:
             address = Web3.to_checksum_address(address)
             # Check if contract info is already in DB
-            contract_info = self.db_operator.sql.query.evm.query_swap(self.chain, address)
+            contract_info = self.db_operator.sql.query.evm.swap_info_by_network(self.chain, address)
             if contract_info and not update:
                 return contract_info
             
@@ -210,7 +210,7 @@ class LogProcessor:
             )
 
             # Insert contract info into DB
-            self.db_operator.sql.insert.evm.insert_swap(self.chain, contract_info)
+            self.db_operator.sql.insert.evm.swap_info(self.chain, contract_info)
             
             return contract_info
         except Exception as e:
@@ -238,7 +238,7 @@ class LogProcessor:
                 decimals=token_contract.functions.decimals().call()
             )
             # Insert or update the token info into the database
-            self.db_operator.sql.insert.evm.insert_token_info(self.chain, token_info)
+            self.db_operator.sql.insert.evm.token_info(self.chain, token_info)
             
             return token_info
         except Exception as e:

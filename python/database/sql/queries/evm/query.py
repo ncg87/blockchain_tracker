@@ -36,15 +36,15 @@ QUERY_EVM_CONTRACT_ABI = """
     WHERE chain = %s AND contract_address = %s;
 """
 
-QUERY_EVM_SWAP = """
+QUERY_EVM_SWAP_INFO_BY_CHAIN = """
     SELECT contract_address, factory_address, fee, token0_name, token1_name, token0_address, token1_address, name
-    FROM evm_swap
-    WHERE network = %s AND contract_address = %s;
+    FROM evm_swap_info
+    WHERE chain = %s AND contract_address = %s;
 """
 
-QUERY_EVM_SWAP_ALL_NETWORKS = """
+QUERY_EVM_SWAP_INFO = """
     SELECT contract_address, factory_address, fee, token0_name, token1_name, token0_address, token1_address, name
-    FROM evm_swap
+    FROM evm_swap_info
     WHERE contract_address = %s;
 """
 
@@ -77,13 +77,13 @@ QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS_ALL_NETWORKS = """
     WHERE contract_address = %s;
 """
 
-QUERY_ALL_EVM_SWAPS = """
+QUERY_ALL_EVM_SWAP_INFO = """
     SELECT *
-    FROM evm_swap;
+    FROM evm_swap_info;
 """
 
-QUERY_ALL_EVM_SWAPS_BY_NETWORK = """
+QUERY_ALL_EVM_SWAP_INFO_BY_CHAIN = """
     SELECT *
-    FROM evm_swap
-    WHERE network = %s;
+    FROM evm_swap_info
+    WHERE chain = %s;
 """

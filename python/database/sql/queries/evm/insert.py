@@ -26,11 +26,11 @@ INSERT_EVM_CONTRACT_ABI = """
         abi = EXCLUDED.abi
 """
 
-INSERT_EVM_SWAP = """
-    INSERT INTO evm_swap
-    (contract_address, factory_address, fee, token0_name, token1_name, token0_address, token1_address, name, network)
+INSERT_EVM_SWAP_INFO = """
+    INSERT INTO evm_swap_info
+    (contract_address, factory_address, fee, token0_name, token1_name, token0_address, token1_address, name, chain)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-    ON CONFLICT (contract_address, network) DO UPDATE SET
+    ON CONFLICT (contract_address, chain) DO UPDATE SET
         factory_address = EXCLUDED.factory_address,
         fee = EXCLUDED.fee,
         token0_name = EXCLUDED.token0_name,
@@ -52,8 +52,8 @@ INSERT_EVM_TOKEN_INFO = """
 
 INSERT_EVM_CONTRACT_TO_FACTORY = """
     INSERT INTO evm_contract_to_factory
-    (contract_address, factory_address, chain)
-    VALUES (%s, %s, %s)
+    (contract_address, factory_address, chain, name)
+    VALUES (%s, %s, %s, %s)
     ON CONFLICT (contract_address, chain) DO NOTHING
 """
 

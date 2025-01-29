@@ -44,8 +44,8 @@ get_contract = itemgetter('contract')
 # TODO: Determine the type of the protocol so we can map to DEX or Aggregator, etc.
 
 class SwapProcessor(EventProcessor):
-    def __init__(self, sql_db, network):
-        super().__init__(sql_db, network)
+    def __init__(self, sql_db, chain):
+        super().__init__(sql_db, chain)
         self.logger.info("SwapProcessor initialized")
         self.unknown_protocols = {}
 
@@ -63,7 +63,7 @@ class SwapProcessor(EventProcessor):
             
             address = get_contract(event)
             
-            contract_info = self.sql_query_ops.evm.query_swap_all_networks(address)
+            contract_info = self.sql_query_ops.evm.swap_info_by_network(self.network, address)
             
             if contract_info is None:
                 return None

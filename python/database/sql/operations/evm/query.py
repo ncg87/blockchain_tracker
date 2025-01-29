@@ -1,10 +1,10 @@
 from ..base import BaseOperations
 from typing import List, Dict, Any, Optional
 from ...queries import (QUERY_EVM_FACTORY_CONTRACT, QUERY_EVM_TRANSACTIONS, QUERY_ADDRESS_HISTORY, 
-                        QUERY_EVM_EVENT, QUERY_EVM_CONTRACT_ABI, QUERY_EVM_SWAP, QUERY_EVM_TOKEN_INFO_BY_CHAIN, 
+                        QUERY_EVM_EVENT, QUERY_EVM_CONTRACT_ABI, QUERY_EVM_SWAP_INFO, QUERY_EVM_TOKEN_INFO_BY_CHAIN, 
                         QUERY_EVM_FACTORY_CONTRACT, QUERY_RECENT_EVM_TRANSACTIONS, QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS, 
-                        QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS_ALL_NETWORKS, QUERY_ALL_EVM_SWAPS, QUERY_ALL_EVM_SWAPS_BY_NETWORK, 
-                        QUERY_EVM_SWAP_ALL_NETWORKS, QUERY_EVM_TOKEN_INFO)
+                        QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS_ALL_NETWORKS, QUERY_ALL_EVM_SWAP_INFO, QUERY_ALL_EVM_SWAP_INFO_BY_CHAIN, 
+                        QUERY_EVM_SWAP_INFO_BY_CHAIN, QUERY_EVM_TOKEN_INFO)
 from ..models import EventSignature, ContractInfo, TokenInfo
 import json
 
@@ -97,13 +97,13 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying EVM contract ABI for network {chain}: {e}")
             return  
         
-    def query_swap(self, chain: str, contract_address: str) -> Optional[Dict[str, Any]]:
+    def swap_info_by_network(self, chain: str, contract_address: str) -> Optional[Dict[str, Any]]:
         """
         Query an EVM swap by its network and address.
         """
         # Change query to * rather than specific columns
         try:
-            self.db.cursor.execute(QUERY_EVM_SWAP, (
+            self.db.cursor.execute(QUERY_EVM_SWAP_INFO_BY_CHAIN, (
                 chain,
                 contract_address
             ))
@@ -124,12 +124,12 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying EVM swap for chain {chain}: {e}")
             return None
     
-    def query_swap_all_networks(self, contract_address: str) -> Optional[Dict[str, Any]]:
+    def swap_all_networks(self, contract_address: str) -> Optional[Dict[str, Any]]:
         """
         Query an EVM swap by its contract address across all chains.
         """
         try:
-            self.db.cursor.execute(QUERY_EVM_SWAP_ALL_NETWORKS, (
+            self.db.cursor.execute(QUERY_EVM_SWAP_INFO, (
                 contract_address,
             ))
             result =  self.db.cursor.fetchone()
@@ -249,24 +249,24 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying EVM events by contract address across all networks: {e}")
             return []
     
-    def query_all_evm_swaps_by_network(self, network: str) -> List[Dict[str, Any]]:
+    def all_evm_swaps_by_chain(self, chain: str) -> List[Dict[str, Any]]:
         """
-        Query all EVM swaps by network.
+        Query all EVM swaps by chain.
         """
         try:
-            self.db.cursor.execute(QUERY_ALL_EVM_SWAPS_BY_NETWORK, (network,))
+            self.db.cursor.execute(QUERY_ALL_EVM_SWAP_INFO_BY_CHAIN, (chain,))
             results = self.db.cursor.fetchall()
             return results
         except Exception as e:
-            self.db.logger.error(f"Error querying all EVM swaps by network {network}: {e}")
+            self.db.logger.error(f"Error querying all EVM swaps by chain {chain}: {e}")
             return []
         
-    def query_all_evm_swaps(self) -> List[Dict[str, Any]]:
+    def all_evm_swaps(self) -> List[Dict[str, Any]]:
         """
         Query all EVM swaps.
         """
         try:
-            self.db.cursor.execute(QUERY_ALL_EVM_SWAPS)
+            self.db.cursor.execute(QUERY_ALL_EVM_SWAP_INFO)
             results = self.db.cursor.fetchall()
             return results
         except Exception as e:
