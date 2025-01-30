@@ -83,13 +83,17 @@ class EVMInsertOperations(BaseOperations):
                 swap_info.fee,
                 swap_info.token0_name,
                 swap_info.token1_name,
+                swap_info.token0_symbol,
+                swap_info.token1_symbol,
+                swap_info.token0_decimals,
+                swap_info.token1_decimals,
                 swap_info.token0_address,
                 swap_info.token1_address,
                 swap_info.name,
                 chain
             ))
             self.db.conn.commit()
-            self.db.logger.info(f"Successfully inserted EVM swap - {swap_info.address} - for chain {chain}.")
+            self.db.logger.info(f"Successfully inserted EVM swap - {swap_info.address} - from {swap_info.token0_name} to {swap_info.token1_name} for chain {chain}.")
             return True
         except Exception as e:
             self.db.logger.error(f"Error inserting EVM swap for chain {chain}: {e}")

@@ -204,6 +204,10 @@ class LogProcessor:
                 fee=fee,
                 token0_name=token0_info.name,
                 token1_name=token1_info.name,
+                token0_symbol=token0_info.symbol,
+                token1_symbol=token1_info.symbol,
+                token0_decimals=token0_info.decimals,
+                token1_decimals=token1_info.decimals,
                 token0_address=token0_info.address,
                 token1_address=token1_info.address,
                 name=None # Exchange/Factory contract name

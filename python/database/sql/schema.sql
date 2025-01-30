@@ -158,13 +158,16 @@ CREATE INDEX IF NOT EXISTS idx_evm_contract_abis_address
 
 -- EVM Swap Info table
 
--- Adjust so that it can hold all the info about a token, contract, name, decimals, symbol, etc.
 CREATE TABLE IF NOT EXISTS evm_swap_info (
     contract_address VARCHAR(64) NOT NULL,
     factory_address VARCHAR(64) NOT NULL,
     fee INT,
     token0_name VARCHAR(100),
     token1_name VARCHAR(100),
+    token0_symbol VARCHAR(100),
+    token1_symbol VARCHAR(100),
+    token0_decimals SMALLINT,
+    token1_decimals SMALLINT,
     token0_address VARCHAR(64),
     token1_address VARCHAR(64),
     name VARCHAR(100),

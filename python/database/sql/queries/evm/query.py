@@ -37,13 +37,13 @@ QUERY_EVM_CONTRACT_ABI = """
 """
 
 QUERY_EVM_SWAP_INFO_BY_CHAIN = """
-    SELECT contract_address, factory_address, fee, token0_name, token1_name, token0_address, token1_address, name
+    SELECT contract_address, factory_address, fee, token0_name, token1_name, token0_symbol, token1_symbol, token0_decimals, token1_decimals, token0_address, token1_address, name
     FROM evm_swap_info
     WHERE chain = %s AND contract_address = %s;
 """
 
 QUERY_EVM_SWAP_INFO = """
-    SELECT contract_address, factory_address, fee, token0_name, token1_name, token0_address, token1_address, name
+    SELECT contract_address, factory_address, fee, token0_name, token1_name, token0_symbol, token1_symbol, token0_decimals, token1_decimals, token0_address, token1_address, name
     FROM evm_swap_info
     WHERE contract_address = %s;
 """
