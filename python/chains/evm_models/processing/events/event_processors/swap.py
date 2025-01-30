@@ -87,7 +87,7 @@ class SwapProcessor(EventProcessor):
                 self.unknown_protocols[signature] = 1
             else:
                 self.unknown_protocols[signature] += 1
-            self.logger.error(f"Error processing event {event} - {e}", exc_info=True)
+            self.logger.error(f"Error processing event for {self.chain} - {e}", exc_info=True)
             return None
 
     # Create a better way of loading and updating it in a custom protocol file
