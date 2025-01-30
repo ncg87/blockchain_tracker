@@ -6,16 +6,16 @@ INSERT_EVM_TRANSACTIONS = """
 """
 
 INSERT_EVM_EVENTS = """
-    INSERT INTO evm_known_events
-    (network, signature_hash, name, full_signature, input_types, indexed_inputs, inputs, contract_address)
+    INSERT INTO evm_decoded_events
+    (chain, signature_hash, event_name, decoded_signature, input_types, indexed_inputs, input_names, inputs)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-    ON CONFLICT (network, signature_hash) DO UPDATE SET
-        name = EXCLUDED.name,
-        full_signature = EXCLUDED.full_signature,
+    ON CONFLICT (chain, signature_hash) DO UPDATE SET
+        event_name = EXCLUDED.event_name,
+        decoded_signature = EXCLUDED.decoded_signature,
         input_types = EXCLUDED.input_types,
         indexed_inputs = EXCLUDED.indexed_inputs,
-        inputs = EXCLUDED.inputs,
-        contract_address = COALESCE(evm_known_events.contract_address, EXCLUDED.contract_address)
+        input_names = EXCLUDED.input_names,
+        inputs = EXCLUDED.inputs
 """
 
 INSERT_EVM_CONTRACT_ABI = """

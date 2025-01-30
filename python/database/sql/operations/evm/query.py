@@ -57,7 +57,7 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying address history for chain {chain}: {e}")
             return []
     
-    def query_event(self, chain: str, signature_hash: str) -> Optional[Dict[str, Any]]:
+    def query_event(self, chain: str, signature_hash: str) -> Optional[EventSignature]:
         """
         Query an EVM event by its network and signature hash.
         """
@@ -70,12 +70,12 @@ class EVMQueryOperations(BaseOperations):
             if result:
                 return EventSignature(
                     signature_hash=result.get('signature_hash'),
-                    name=result.get('name'),
-                    full_signature=result.get('full_signature'),
+                    event_name=result.get('event_name'),
+                    decoded_signature=result.get('decoded_signature'),
                     input_types=json.loads(result.get('input_types')),
                     indexed_inputs=json.loads(result.get('indexed_inputs')),
+                    input_names=json.loads(result.get('input_names')),
                     inputs=json.loads(result.get('inputs')),
-                    contract_address=result.get('contract_address')
                 )
             return None
         except Exception as e:

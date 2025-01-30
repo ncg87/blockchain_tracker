@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 @dataclass
 class TokenInfo:
     address: str
@@ -20,9 +20,9 @@ class ContractInfo:
 @dataclass
 class EventSignature:
     signature_hash: str
-    name: str
-    full_signature: str
+    event_name: str
+    decoded_signature: str
     input_types: List[str]
     indexed_inputs: List[bool]
+    input_names: List[str]
     inputs: List[dict]
-    contract_address: str

@@ -3,7 +3,7 @@ from .solana import SolanaQuerier, SolanaProcessor, SolanaPipeline, SolanaWebSoc
 from .xrp import XRPQuerier, XRPProcessor, XRPPipeline, XRPWebSocketHandler
 from .bitcoin import BitcoinQuerier, BitcoinProcessor, BitcoinPipeline
 from .bnb import BNBQuerier, BNBProcessor, BNBPipeline
-from .evm_models import EVMProcessor, EVMQuerier, EVMWebSocketHandler, EVMPipeline, EVMDecoder
+from .evm_models import EVMProcessor, EVMQuerier, EVMWebSocketHandler, EVMPipeline
 from .base import BaseChainQuerier, BaseChainProcessor, BaseChainPipeline
 from .arbitrum import ArbitrumPipeline, ArbitrumQuerier, ArbitrumProcessor
 __all__ = [
@@ -12,8 +12,9 @@ __all__ = [
     'XRPQuerier', 'XRPProcessor', 'XRPPipeline', 'XRPWebSocketHandler',
     'BitcoinQuerier', 'BitcoinProcessor', 'BitcoinPipeline',
     'BNBQuerier', 'BNBProcessor', 'BNBPipeline'
-    'EVMProcessor', 'EVMQuerier', 'EVMWebSocketHandler', 'EVMPipeline', 'EVMDecoder',
+    'EVMProcessor', 'EVMQuerier', 'EVMWebSocketHandler', 'EVMPipeline',
     'BaseChainQuerier', 'BaseChainProcessor', 'BaseChainPipeline'
     'decode_hex', 'normalize_hex',
-    'ArbitrumPipeline', 'ArbitrumQuerier', 'ArbitrumProcessor'
+    'ArbitrumPipeline', 'ArbitrumQuerier', 'ArbitrumProcessor',
+    'BaseChainPipeline', 'BaseChainQuerier', 'BaseChainProcessor'
     ]

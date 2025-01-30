@@ -26,8 +26,8 @@ QUERY_ADDRESS_HISTORY = """
 
 QUERY_EVM_EVENT = """
     SELECT *
-    FROM evm_known_events
-    WHERE network = %s AND signature_hash = %s;
+    FROM evm_decoded_events
+    WHERE chain = %s AND signature_hash = %s;
 """
 
 QUERY_EVM_CONTRACT_ABI = """
@@ -67,13 +67,13 @@ QUERY_EVM_FACTORY_CONTRACT = """
 
 QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS = """
     SELECT *
-    FROM evm_known_events
-    WHERE network = %s AND contract_address = %s;
+    FROM evm_decoded_events
+    WHERE chain = %s AND contract_address = %s;
 """
 
 QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS_ALL_NETWORKS = """
     SELECT *
-    FROM evm_known_events
+    FROM evm_decoded_events
     WHERE contract_address = %s;
 """
 

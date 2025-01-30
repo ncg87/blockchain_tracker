@@ -28,7 +28,7 @@ class EVMInsertOperations(BaseOperations):
             self.db.conn.rollback()
             return False
         
-    def insert_event(self, chain: str, event_object) -> bool:
+    def event(self, chain: str, event_object) -> bool:
         """
         Insert or update an EVM event signature.
         Updates contract_address only if it was previously NULL.
@@ -38,14 +38,15 @@ class EVMInsertOperations(BaseOperations):
             self.db.cursor.execute(query,(
                 chain,
                 event_object.signature_hash,
-                event_object.name,
-                event_object.full_signature,
+                event_object.event_name,
+                event_object.decoded_signature,
                 json.dumps(event_object.input_types),
                 json.dumps(event_object.indexed_inputs),
+                json.dumps(event_object.input_names),
                 json.dumps(event_object.inputs),
-                event_object.contract_address
             ))
             self.db.conn.commit()
+            self.db.logger.info(f"Successfully inserted EVM event {event_object.event_name} for chain {chain}.")
             return True
         except Exception as e:
             # Change to debug

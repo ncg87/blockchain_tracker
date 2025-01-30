@@ -27,9 +27,6 @@ class SQLInsertOperations:
     def insert_bulk_solana_transactions(self, transactions: List[Dict[str, Any]], block_number: int):
         return self.solana.insert_transactions(transactions, block_number)
 
-    def insert_evm_event(self, network: str, event_object) -> bool:
-        return self.evm.insert_event(network, event_object)
-
 def convert_timestamp(timestamp):
     """
     Convert a timestamp to a PostgreSQL-compatible TIMESTAMP format.

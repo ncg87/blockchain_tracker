@@ -45,10 +45,10 @@ class EVMDecoder:
                 else:
                     # Search for matching event in ABI
                     for event in (e for e in abi if e["type"] == "event"):
-                        new_sig = self.get_event_signature(event, get_address(log))
+                        new_sig = self.get_event_signature(event)
                         if new_sig.signature_hash == event_signature:
                             event_object = new_sig
-                            self.db_operator.sql.insert.evm.insert_event(self.network, event_object)
+                            self.db_operator.sql.insert.evm.event(self.network, event_object)
                             self._event_signature_cache.set(event_signature, event_object)
                             break
 
@@ -70,16 +70,16 @@ class EVMDecoder:
 
             # Fast path for no parameters
             if not event_sig.input_types:
-                return {"event": event_sig.name}
+                return {"event": event_sig.event_name}
 
             topics = topics[1:]  # Skip first topic (event signature)
             data = log.get("data", "0x")
             
-            result = {"event": event_sig.name,
+            result = {"event": event_sig.event_name,
                       "parameters": {}
                       }
             
-            input_names = [i["name"] for i in event_sig.inputs]
+            input_names = event_sig.input_names
             input_descriptions = [i.get("description", "") for i in event_sig.inputs]
             
              # Process indexed parameters
@@ -148,7 +148,7 @@ class EVMDecoder:
                 "raw_log": log
             }
     
-    def get_event_signature(self, event_abi: dict, contract_address: str) -> EventSignature:
+    def get_event_signature(self, event_abi: dict) -> EventSignature:
         name = event_abi["name"]
         inputs = event_abi["inputs"]
         input_types = [i["type"] for i in inputs]
@@ -159,12 +159,12 @@ class EVMDecoder:
         
         return EventSignature(
             signature_hash=sig_hash,
-            name=name,
-            full_signature=full_sig,
+            event_name=name,
+            decoded_signature=full_sig,
             input_types=input_types,
             indexed_inputs=indexed_inputs,
+            input_names=input_names,
             inputs=inputs,
-            contract_address=contract_address
         )
     
     def decode_log_without_abi(self, log: dict) -> dict:

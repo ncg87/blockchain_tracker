@@ -115,31 +115,30 @@ CREATE INDEX IF NOT EXISTS idx_solana_tx_signature
 
 CREATE INDEX IF NOT EXISTS idx_solana_tx_account 
     ON solana_transactions USING btree (account_key, timestamp DESC);
+DROP TABLE IF EXISTS evm_decoded_events;
+DROP TABLE IF EXISTS evm_known_events;
 
-
--- Create the new partitioned tables
-CREATE TABLE IF NOT EXISTS evm_known_events (
-    network VARCHAR(20) NOT NULL,
+-- EVM Decoded Events -- Holds the decoded events, based on the signature hash for each chain, helps to determine non-native actions
+CREATE TABLE IF NOT EXISTS evm_decoded_events (
+    chain VARCHAR(20) NOT NULL,
     signature_hash VARCHAR(128) NOT NULL,
-    name TEXT NOT NULL,
-    full_signature VARCHAR(128) NOT NULL,
+    event_name TEXT NOT NULL,
+    decoded_signature TEXT NOT NULL,
     input_types TEXT NOT NULL,
     indexed_inputs TEXT NOT NULL,
+    input_names TEXT NOT NULL,
     inputs TEXT NOT NULL,
-    contract_address VARCHAR(64) NOT NULL,
-    factory_address VARCHAR(64),
-    CONSTRAINT pk_evm_events PRIMARY KEY (network, signature_hash)
-) PARTITION BY LIST (network);
+    PRIMARY KEY (chain, signature_hash)
+) PARTITION BY LIST (chain);
 
--- Create partitions for each network
-CREATE TABLE IF NOT EXISTS evm_known_events_ethereum PARTITION OF evm_known_events FOR VALUES IN ('ethereum');
-CREATE TABLE IF NOT EXISTS evm_known_events_bnb PARTITION OF evm_known_events FOR VALUES IN ('bnb');
-CREATE TABLE IF NOT EXISTS evm_known_events_base PARTITION OF evm_known_events FOR VALUES IN ('base');
-CREATE TABLE IF NOT EXISTS evm_known_events_arbitrum PARTITION OF evm_known_events FOR VALUES IN ('arbitrum');
+-- EVM Partitions
+CREATE TABLE IF NOT EXISTS evm_decoded_events_ethereum PARTITION OF evm_decoded_events FOR VALUES IN ('ethereum');
+CREATE TABLE IF NOT EXISTS evm_decoded_events_bnb PARTITION OF evm_decoded_events FOR VALUES IN ('bnb');
+CREATE TABLE IF NOT EXISTS evm_decoded_events_base PARTITION OF evm_decoded_events FOR VALUES IN ('base');
+CREATE TABLE IF NOT EXISTS evm_decoded_events_arbitrum PARTITION OF evm_decoded_events FOR VALUES IN ('arbitrum');
 
-
-CREATE INDEX IF NOT EXISTS idx_evm_events_signature ON evm_known_events
-    USING btree (network, signature_hash);
+CREATE INDEX IF NOT EXISTS idx_evm_events_signature 
+    ON evm_decoded_events USING btree (signature_hash);
 
 -- Create new partitioned contract ABIs table
 CREATE TABLE IF NOT EXISTS evm_contract_abis (
@@ -159,7 +158,9 @@ CREATE TABLE IF NOT EXISTS evm_contract_abis_arbitrum PARTITION OF evm_contract_
 CREATE INDEX IF NOT EXISTS idx_evm_contract_abis_address 
     ON evm_contract_abis USING btree (contract_address, chain);
 
--- EVM Contract Info table
+-- EVM Swap Info table
+
+-- Adjust so that it can hold all the info about a token, contract, name, decimals, symbol, etc.
 CREATE TABLE IF NOT EXISTS evm_swap_info (
     contract_address VARCHAR(64) NOT NULL,
     factory_address VARCHAR(64) NOT NULL,

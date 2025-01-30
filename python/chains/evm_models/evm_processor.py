@@ -4,9 +4,7 @@ from psycopg2.pool import ThreadedConnectionPool
 from config import Settings
 import signal
 import time
-import asyncio
 from .processing import EventProcessor, BlockProcessor, LogProcessor
-from .evm_decoder import EVMDecoder
 
 class EVMProcessor(BaseProcessor):
     """
@@ -15,7 +13,6 @@ class EVMProcessor(BaseProcessor):
     def __init__(self, sql_database, mongodb_database, network_name: str, querier):
         super().__init__(sql_database, mongodb_database, network_name)
         self.querier = querier
-        self.decoder = EVMDecoder(sql_database, network_name)
         self.event_processor = EventProcessor(sql_database, mongodb_database, network_name)
         self.block_processor = BlockProcessor(self.db_operator, network_name)
         self.log_processor = LogProcessor(self.db_operator, self.querier, network_name)
