@@ -10,7 +10,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("maintenance.log", mode='w'),  # Reset on each run
+        logging.FileHandler("maintenance.log", mode='w', encoding='utf-8'),
         #logging.StreamHandler()  # Optional: Logs to the console
     ]
 )

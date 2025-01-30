@@ -13,7 +13,7 @@ class EVMProcessor(BaseProcessor):
     def __init__(self, sql_database, mongodb_database, network_name: str, querier):
         super().__init__(sql_database, mongodb_database, network_name)
         self.querier = querier
-        self.event_processor = EventProcessor(sql_database, mongodb_database, network_name)
+        self.event_processor = EventProcessor(self.db_operator, network_name)
         self.block_processor = BlockProcessor(self.db_operator, network_name)
         self.log_processor = LogProcessor(self.db_operator, self.querier, network_name)
 

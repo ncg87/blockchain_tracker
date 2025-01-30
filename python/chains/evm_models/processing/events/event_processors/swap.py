@@ -2,7 +2,6 @@ from ..models import ArbitarySwap, TokenSwap, BaseTokenSwap
 from typing import Optional
 from operator import itemgetter
 from .processors import EventProcessor
-from database import SQLDatabase, SQLQueryOperations, SQLInsertOperations
 
 get_to = itemgetter('to')
 get_sender = itemgetter('sender')
@@ -44,8 +43,8 @@ get_contract = itemgetter('contract')
 # TODO: Determine the type of the protocol so we can map to DEX or Aggregator, etc.
 
 class SwapProcessor(EventProcessor):
-    def __init__(self, sql_db, chain):
-        super().__init__(sql_db, chain)
+    def __init__(self, db_operator, chain):
+        super().__init__(db_operator, chain)
         self.logger.info("SwapProcessor initialized")
         self.unknown_protocols = {}
 
@@ -63,22 +62,22 @@ class SwapProcessor(EventProcessor):
             
             address = get_contract(event)
             
-            contract_info = self.sql_query_ops.evm.swap_info_by_chain(self.network, address)
+            contract_info = self.db_operator.sql.query.evm.swap_info_by_chain(self.chain, address)
             
             if contract_info is None:
                 return None
             
             # Get the token info if the address for the tokens are already given, multi pool swap
             if isinstance(swap_info, BaseTokenSwap):
-                token_0_info = self.sql_query_ops.evm.token_info_by_chain(self.network, swap_info.token0_address)
-                token_1_info = self.sql_query_ops.evm.token_info_by_chain(self.network, swap_info.token1_address)
+                token_0_info = self.db_operator.sql.query.evm.token_info_by_chain(self.chain, swap_info.token0_address)
+                token_1_info = self.db_operator.sql.query.evm.token_info_by_chain(self.chain, swap_info.token1_address)
                 swap_info = TokenSwap.from_token_info(swap_info, token_0_info, token_1_info)
             
             # Get the info about the contract if just the amounts are given, two pool swap (Majority of the swaps)
             if isinstance(swap_info, ArbitarySwap):
                 swap_info = TokenSwap.from_swap_info(swap_info, contract_info)
             
-            self.sql_insert_ops.evm.swap(self.network, swap_info, address, tx_hash, index, timestamp)
+            self.db_operator.sql.insert.evm.swap(self.chain, swap_info, address, tx_hash, index, timestamp)
             
             return swap_info
         

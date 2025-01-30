@@ -16,10 +16,9 @@ get_type = itemgetter('type')
 logger = logging.getLogger(__name__)
 
 class EventProcessor:
-    def __init__(self, sql_db: SQLDatabase, mongodb, network):
-        self.sql_db = sql_db
-        self.mongodb = mongodb
-        self.network = network
+    def __init__(self, db_operator, chain):
+        self.db_operator = db_operator
+        self.chain = chain
         self.event_mapping = self.load_event_mapping()
         self.logger = logger
         self.batch_size = 1000
@@ -29,7 +28,7 @@ class EventProcessor:
     def load_event_mapping(self):
 
         return {
-            "Swap": SwapProcessor(self.sql_db, self.network),
+            "Swap": SwapProcessor(self.db_operator, self.chain),
         }
 
     async def process_events(self, events: List[Dict], tx_hash: str, timestamp: int):
