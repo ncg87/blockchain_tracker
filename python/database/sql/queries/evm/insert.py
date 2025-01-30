@@ -61,9 +61,10 @@ INSERT_EVM_CONTRACT_TO_FACTORY = """
     ON CONFLICT (contract_address, chain) DO NOTHING
 """
 
-INSERT_EVM_TRANSACTION_SWAP = """
-    INSERT INTO evm_transaction_swap
-    (network, contract_address, tx_hash, log_index, timestamp, amount0, amount1, token0, token1, amount0_in)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    ON CONFLICT (network, tx_hash, log_index) DO NOTHING
+INSERT_EVM_SWAP = """
+    INSERT INTO evm_swaps
+    (chain, contract_address, transaction_hash, log_index, timestamp, amount0, amount1, token0_address, token1_address, token0_name, token1_name, token0_symbol, token1_symbol, factory_address, name)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ON CONFLICT (chain, transaction_hash, log_index) DO NOTHING
 """
+

@@ -20,18 +20,18 @@ active_pipelines = []
 
 async def cleanup(pipelines):
     """Cleanup function to properly close all pipeline connections"""
-    print("Starting cleanup...")  # Add debug print
+    logging.info("Starting cleanup...")  # Add debug print
     cleanup_tasks = []
     for pipeline in pipelines:
         if hasattr(pipeline, 'websocket_handler'):
             cleanup_tasks.append(pipeline.websocket_handler.stop())
     if cleanup_tasks:
         await asyncio.gather(*cleanup_tasks)
-    print("Cleanup completed")  # Add debug print
+    logging.info("Cleanup completed")  # Add debug print
 
 async def signal_handler(sig, frame):
     """Handle shutdown signals"""
-    print("Received shutdown signal, cleaning up...")
+    logging.info("Received shutdown signal, cleaning up...")
     await cleanup(active_pipelines)
     # Force exit after cleanup
     loop = asyncio.get_running_loop()

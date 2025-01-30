@@ -97,7 +97,7 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying EVM contract ABI for network {chain}: {e}")
             return  
         
-    def swap_info_by_network(self, chain: str, contract_address: str) -> Optional[Dict[str, Any]]:
+    def swap_info_by_chain(self, chain: str, contract_address: str) -> Optional[Dict[str, Any]]:
         """
         Query an EVM swap by its network and address.
         """
@@ -128,7 +128,7 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying EVM swap for chain {chain}: {e}")
             return None
     
-    def swap_all_networks(self, contract_address: str) -> Optional[Dict[str, Any]]:
+    def swap_info(self, contract_address: str) -> Optional[Dict[str, Any]]:
         """
         Query an EVM swap by its contract address across all chains.
         """

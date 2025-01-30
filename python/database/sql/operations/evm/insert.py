@@ -3,7 +3,7 @@ from ..base import BaseOperations
 from ...queries import (
     INSERT_EVM_TRANSACTIONS, INSERT_EVM_EVENTS, INSERT_EVM_CONTRACT_ABI,
     INSERT_EVM_SWAP_INFO, INSERT_EVM_TOKEN_INFO, INSERT_EVM_CONTRACT_TO_FACTORY,
-    INSERT_EVM_TRANSACTION_SWAP
+    INSERT_EVM_SWAP
 )
 from psycopg2.extras import execute_values
 import json
@@ -139,24 +139,30 @@ class EVMInsertOperations(BaseOperations):
             self.db.conn.rollback()
             return False
     
-    def insert_transaction_swap(self, chain: str, swap_info, address: str, tx_hash: str, index: int, timestamp: int) -> bool:
+    def swap(self, chain: str, swap_info, address: str, transaction_hash: str, log_index: int, timestamp: int) -> bool:
         """
         Insert or update an EVM transaction swap.
         """
         try:
-            self.db.cursor.execute(INSERT_EVM_TRANSACTION_SWAP, (
+            self.db.cursor.execute(INSERT_EVM_SWAP, (
                 chain,
                 address,
-                tx_hash,
-                index,
+                transaction_hash,
+                log_index,
                 timestamp,
                 swap_info.amount0,
                 swap_info.amount1,
-                swap_info.token0,
-                swap_info.token1,
-                swap_info.isAmount0In
+                swap_info.token0_address,
+                swap_info.token1_address,
+                swap_info.token0_name,
+                swap_info.token1_name,
+                swap_info.token0_symbol,
+                swap_info.token1_symbol,
+                swap_info.factory_address,
+                swap_info.name
             ))
             self.db.conn.commit()
+            self.db.logger.info(f"Successfully inserted EVM swap - {address} - from {swap_info.token0_name} of {swap_info.amount0} swapped for {swap_info.token1_name} of {swap_info.amount1} for chain {chain}.")
             return True
         except Exception as e:
             self.db.logger.error(f"Error inserting EVM transaction swap for chain {chain}: {e}")

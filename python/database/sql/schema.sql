@@ -230,32 +230,38 @@ CREATE INDEX IF NOT EXISTS idx_evm_contract_to_factory_factory
     ON evm_contract_to_factory USING btree (factory_address, chain);
 
 -- Adjust so that it can hold all the info about a token, contract, name, decimals, symbol, etc.
-CREATE TABLE IF NOT EXISTS evm_transaction_swap (
-    network VARCHAR(20) NOT NULL,
+CREATE TABLE IF NOT EXISTS evm_swaps (
+    chain VARCHAR(20) NOT NULL,
     contract_address VARCHAR(64) NOT NULL,
-    tx_hash VARCHAR(128) NOT NULL,
+    transaction_hash VARCHAR(128) NOT NULL,
     log_index INT NOT NULL,
     timestamp BIGINT NOT NULL,
-    amount0 NUMERIC(78, 0) NOT NULL,
-    amount1 NUMERIC(78, 0) NOT NULL,
-    token0 VARCHAR(100) NOT NULL,
-    token1 VARCHAR(100) NOT NULL,
-    amount0_in BOOLEAN NOT NULL,
-    CONSTRAINT pk_evm_transaction_swap PRIMARY KEY (network, tx_hash, log_index)
-) PARTITION BY LIST (network);
+    amount0 NUMERIC(78, 36) NOT NULL,
+    amount1 NUMERIC(78, 36) NOT NULL,
+    token0_address VARCHAR(64) NOT NULL,
+    token1_address VARCHAR(64) NOT NULL,
+    token0_name VARCHAR(100),
+    token1_name VARCHAR(100),
+    token0_symbol VARCHAR(100),
+    token1_symbol VARCHAR(100),
+    factory_address VARCHAR(64),
+    name VARCHAR(100),
+    PRIMARY KEY (chain, transaction_hash, log_index)
+) PARTITION BY LIST (chain);
 
-CREATE TABLE IF NOT EXISTS evm_transaction_swap_ethereum PARTITION OF evm_transaction_swap FOR VALUES IN ('ethereum');
-CREATE TABLE IF NOT EXISTS evm_transaction_swap_bnb PARTITION OF evm_transaction_swap FOR VALUES IN ('bnb');
-CREATE TABLE IF NOT EXISTS evm_transaction_swap_base PARTITION OF evm_transaction_swap FOR VALUES IN ('base');
-CREATE TABLE IF NOT EXISTS evm_transaction_swap_arbitrum PARTITION OF evm_transaction_swap FOR VALUES IN ('arbitrum');
+-- EVM Partitions
+CREATE TABLE IF NOT EXISTS evm_swaps_ethereum PARTITION OF evm_swaps FOR VALUES IN ('ethereum');
+CREATE TABLE IF NOT EXISTS evm_swaps_bnb PARTITION OF evm_swaps FOR VALUES IN ('bnb');
+CREATE TABLE IF NOT EXISTS evm_swaps_base PARTITION OF evm_swaps FOR VALUES IN ('base');
+CREATE TABLE IF NOT EXISTS evm_swaps_arbitrum PARTITION OF evm_swaps FOR VALUES IN ('arbitrum');
 
-CREATE INDEX IF NOT EXISTS idx_evm_transaction_swap_tx_hash ON evm_transaction_swap
-    USING btree (tx_hash, network, token0, token1, contract_address);
-
-CREATE INDEX IF NOT EXISTS idx_evm_transaction_swap_timestamp 
-    ON evm_transaction_swap USING brin (timestamp) WITH (pages_per_range = 128);
-
-
-
+CREATE INDEX IF NOT EXISTS idx_evm_swaps_timestamp 
+    ON evm_swaps USING brin (timestamp) WITH (pages_per_range = 128);
+CREATE INDEX IF NOT EXISTS idx_evm_swaps_tx 
+    ON evm_swaps USING btree (transaction_hash, chain);
+CREATE INDEX IF NOT EXISTS idx_evm_swaps_contract 
+    ON evm_swaps USING btree (contract_address, chain);
+CREATE INDEX IF NOT EXISTS idx_evm_swaps_tokens 
+    ON evm_swaps USING btree (token0_address, token1_address, chain);
 
 

@@ -160,7 +160,7 @@ class LogProcessor:
         try:
             address = Web3.to_checksum_address(address)
             # Check if contract info is already in DB
-            contract_info = self.db_operator.sql.query.evm.swap_info_by_network(self.chain, address)
+            contract_info = self.db_operator.sql.query.evm.swap_info_by_chain(self.chain, address)
             if contract_info and not update:
                 return contract_info
             
