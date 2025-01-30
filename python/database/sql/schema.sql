@@ -115,8 +115,6 @@ CREATE INDEX IF NOT EXISTS idx_solana_tx_signature
 
 CREATE INDEX IF NOT EXISTS idx_solana_tx_account 
     ON solana_transactions USING btree (account_key, timestamp DESC);
-DROP TABLE IF EXISTS evm_decoded_events;
-DROP TABLE IF EXISTS evm_known_events;
 
 -- EVM Decoded Events -- Holds the decoded events, based on the signature hash for each chain, helps to determine non-native actions
 CREATE TABLE IF NOT EXISTS evm_decoded_events (
