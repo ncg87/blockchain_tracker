@@ -9,8 +9,7 @@ from .decoder import EVMDecoder
 import json
 from database import DatabaseOperator
 from .models import ContractInfo, TokenInfo
-
-from ...evm_data import ERC20_ABI
+from ...utils import ERC20_ABI
 
 # Log item getters
 get_address = itemgetter('address')

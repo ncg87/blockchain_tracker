@@ -1,6 +1,6 @@
 from .base import SQLDatabase
-from .insert_ops import SQLInsertOperations
-from .query_ops import SQLQueryOperations
+from .operations.insert_ops import SQLInsertOperations
+from .operations.query_ops import SQLQueryOperations
 from .operator import SQLOperator
 
 __all__ = [

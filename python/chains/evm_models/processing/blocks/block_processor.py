@@ -3,7 +3,7 @@ from database import DatabaseOperator
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from ....utils import decode_hex, normalize_hex
-from ...evm_data import CHAIN_IDS
+from ...utils import CHAIN_IDS
 
 
 # Block item getters

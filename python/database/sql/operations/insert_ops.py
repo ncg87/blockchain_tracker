@@ -1,7 +1,12 @@
 from datetime import datetime
 from typing import List, Dict, Any
-from .base import SQLDatabase
-from .operations import BlockInsertOperations, EVMInsertOperations, BitcoinInsertOperations, SolanaInsertOperations, XRPInsertOperations
+from ..base import SQLDatabase
+from .blocks import BlockInsertOperations
+from .evm import EVMInsertOperations
+from .bitcoin import BitcoinInsertOperations
+from .solana import SolanaInsertOperations
+from .xrp import XRPInsertOperations
+
 
 class SQLInsertOperations:
     def __init__(self, db: SQLDatabase):

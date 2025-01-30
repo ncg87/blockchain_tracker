@@ -1,9 +1,13 @@
-from .base import SQLDatabase
+from ..base import SQLDatabase
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from psycopg2.extras import RealDictCursor
-
-from .operations import BlockQueryOperations, EVMQueryOperations, BitcoinQueryOperations, SolanaQueryOperations, XRPQueryOperations, APIQueryOperations
+from .blocks import BlockQueryOperations
+from .evm import EVMQueryOperations
+from .bitcoin import BitcoinQueryOperations
+from .solana import SolanaQueryOperations
+from .xrp import XRPQueryOperations
+from .api import APIQueryOperations
 
 class SQLQueryOperations:
     """

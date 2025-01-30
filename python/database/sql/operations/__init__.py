@@ -4,6 +4,9 @@ from .bitcoin import BitcoinInsertOperations, BitcoinQueryOperations
 from .solana import SolanaInsertOperations, SolanaQueryOperations
 from .xrp import XRPInsertOperations, XRPQueryOperations
 from .api import APIQueryOperations
+from .insert_ops import SQLInsertOperations
+from .query_ops import SQLQueryOperations
+
 __all__ = [
     # Block Operations
     BlockInsertOperations, BlockQueryOperations,
@@ -16,5 +19,9 @@ __all__ = [
     # XRP Operations
     XRPInsertOperations, XRPQueryOperations,
     # API Operations
-    APIQueryOperations
+    APIQueryOperations,
+    # Insert Operations
+    SQLInsertOperations,
+    # Query Operations
+    SQLQueryOperations
 ]
