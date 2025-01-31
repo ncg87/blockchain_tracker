@@ -55,7 +55,7 @@ class MongoInsertOperations:
             }
             collection.insert_one(document)
 
-            self.logger.info(f"Inserted block {block_number} into {network} collection in MongoDB.")
+            self.logger.info(f"Successfully inserted block {block_number} into {network} collection in MongoDB.")
         except Exception as e:
             self.logger.error(f"Error inserting block {block_number} into {network} collection in MongoDB: {e}")
     
@@ -63,7 +63,7 @@ class MongoInsertOperations:
         """
         Bulk insert for EVM transactions, skipping any that fail compression.
         """
-        collection = self.mongodb.get_collection(f'{network}Transactions')
+        collection = self.mongodb.get_collection(f'{network}_transactions')
         
         # Filter and prepare documents, skipping any compression failures
         documents = []

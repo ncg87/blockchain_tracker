@@ -20,7 +20,7 @@ class XRPProcessor(BaseProcessor):
     XRP-specific processor.
     """
     def __init__(self, sql_database, mongodb_database, querier):
-        super().__init__(sql_database, mongodb_database, 'XRP')
+        super().__init__(sql_database, mongodb_database, 'xrp')
         self.querier = querier
         
     async def process_block(self, ledger):
@@ -36,10 +36,10 @@ class XRPProcessor(BaseProcessor):
         ledger = get_ledger(ledger)
         timestamp = get_block_time(ledger) + 946684800
         # Insert block into MongoDB, add 30 years since XRP has its own epoch
-        self.mongodb_insert_ops.insert_block(ledger, self.network, ledger_index, timestamp)
+        self.db_operator.mongodb.insert.insert_block(ledger, self.network, ledger_index, timestamp)
         
         # Insert block data into the PostgreSQL database
-        self.sql_insert_ops.insert_block(self.network, ledger_index, get_ledger_hash(ledger), get_parent_hash(ledger), timestamp)
+        self.db_operator.sql.insert.block.insert_block(self.network, ledger_index, get_ledger_hash(ledger), get_parent_hash(ledger), timestamp)
         self.logger.debug(f"Processed {self.network} block {ledger_index}")
 
         # Process transactions
@@ -62,7 +62,7 @@ class XRPProcessor(BaseProcessor):
                 ) for tx in ledger['transactions']
             ]
             
-            self.sql_insert_ops.insert_bulk_xrp_transactions(transactions, ledger_index)
+            self.db_operator.sql.insert.xrp.insert_transactions(transactions, ledger_index)
             self.logger.debug(f"Processed {len(ledger['transactions'])} {self.network} transactions for block {ledger_index}")
         except Exception as e:
             self.logger.error(f"Error processing transactions for block {ledger_index}: {e}")

@@ -3,26 +3,12 @@ from operator import itemgetter
 import logging
 from eth_abi.codec import ABICodec
 from eth_abi.registry import registry
-from database import SQLInsertOperations, SQLQueryOperations
-import json
-from dataclasses import dataclass
-from typing import List
+from database import DatabaseOperator
 from datetime import datetime
 import threading
 import time
 from .cache import BoundedCache
-
-@dataclass
-class EventSignature:
-    signature_hash: str
-    name: str
-    full_signature: str
-    input_types: List[str]
-    indexed_inputs: List[bool]
-    inputs: List[dict]
-    contract_address: str
-
-logger = logging.getLogger(__name__)
+from .models import EventSignature
 
 get_name = itemgetter("name")
 get_topics = itemgetter("topics")
@@ -31,12 +17,11 @@ get_inputs = itemgetter("inputs")
 get_address = itemgetter("address")
 
 class EVMDecoder:
-    def __init__(self, sql_database, network):
-        self.sql_insert_ops = SQLInsertOperations(sql_database)
-        self.sql_query_ops = SQLQueryOperations(sql_database)
-        self.logger = logger
+    def __init__(self, db_operator: DatabaseOperator, chain: str):
+        self.db_operator = db_operator
+        self.logger = logging.getLogger(__name__)
         self.abi_codec = ABICodec(registry)
-        self.network = network
+        self.network = chain
         self._event_signature_cache = BoundedCache(max_size=1000, ttl_hours=24)
         self._start_cleanup_thread()
     
@@ -52,7 +37,7 @@ class EVMDecoder:
             
             # If not in cache, try to get from DB
             if event_object is None:
-                event_object = self.sql_query_ops.query_evm_event(self.network, event_signature)
+                event_object = self.db_operator.sql.query.evm.event_by_chain(self.network, event_signature)
                 # If found in DB, add to cache
                 if event_object:
                     self._event_signature_cache.set(event_signature, event_object)
@@ -60,10 +45,10 @@ class EVMDecoder:
                 else:
                     # Search for matching event in ABI
                     for event in (e for e in abi if e["type"] == "event"):
-                        new_sig = self.get_event_signature(event, get_address(log))
+                        new_sig = self.get_event_signature(event)
                         if new_sig.signature_hash == event_signature:
                             event_object = new_sig
-                            self.sql_insert_ops.insert_evm_event(self.network, event_object)
+                            self.db_operator.sql.insert.evm.event(self.network, event_object)
                             self._event_signature_cache.set(event_signature, event_object)
                             break
 
@@ -85,16 +70,16 @@ class EVMDecoder:
 
             # Fast path for no parameters
             if not event_sig.input_types:
-                return {"event": event_sig.name}
+                return {"event": event_sig.event_name}
 
             topics = topics[1:]  # Skip first topic (event signature)
             data = log.get("data", "0x")
             
-            result = {"event": event_sig.name,
+            result = {"event": event_sig.event_name,
                       "parameters": {}
                       }
             
-            input_names = [i["name"] for i in event_sig.inputs]
+            input_names = event_sig.input_names
             input_descriptions = [i.get("description", "") for i in event_sig.inputs]
             
              # Process indexed parameters
@@ -163,7 +148,7 @@ class EVMDecoder:
                 "raw_log": log
             }
     
-    def get_event_signature(self, event_abi: dict, contract_address: str) -> EventSignature:
+    def get_event_signature(self, event_abi: dict) -> EventSignature:
         name = event_abi["name"]
         inputs = event_abi["inputs"]
         input_types = [i["type"] for i in inputs]
@@ -174,12 +159,12 @@ class EVMDecoder:
         
         return EventSignature(
             signature_hash=sig_hash,
-            name=name,
-            full_signature=full_sig,
+            event_name=name,
+            decoded_signature=full_sig,
             input_types=input_types,
             indexed_inputs=indexed_inputs,
+            input_names=input_names,
             inputs=inputs,
-            contract_address=contract_address
         )
     
     def decode_log_without_abi(self, log: dict) -> dict:

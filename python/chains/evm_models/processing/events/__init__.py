@@ -1,4 +1,4 @@
-from .system import EventProcessingSystem
+from .event_processor import EventProcessor
 from .models import TokenSwap
 
-__all__ = ['EventProcessingSystem', 'TokenSwap']
+__all__ = ['EventProcessor', 'TokenSwap']

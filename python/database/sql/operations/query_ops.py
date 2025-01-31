@@ -1,9 +1,13 @@
-from .base import SQLDatabase
+from ..base import SQLDatabase
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from psycopg2.extras import RealDictCursor
-
-from .operations import BlockQueryOperations, EVMQueryOperations, BitcoinQueryOperations, SolanaQueryOperations, XRPQueryOperations, APIQueryOperations
+from .blocks import BlockQueryOperations
+from .evm import EVMQueryOperations
+from .bitcoin import BitcoinQueryOperations
+from .solana import SolanaQueryOperations
+from .xrp import XRPQueryOperations
+from .api import APIQueryOperations
 
 class SQLQueryOperations:
     """
@@ -51,30 +55,14 @@ class SQLQueryOperations:
     def query_recent_solana_transactions(self, limit: int = 10) -> List[Dict[str, Any]]:
         return self.solana.query_recent_transactions(limit)
     
-    def query_xrp_transactions(self, block_number: int) -> List[Dict[str, Any]]:
-        return self.xrp.query_transactions(block_number)
-    
-    def query_recent_xrp_transactions(self, limit: int = 10) -> List[Dict[str, Any]]:
-        return self.xrp.query_recent_transactions(limit)
-    
     def query_evm_address_history(self, network: str, address: str, start_time: int, end_time: int) -> List[Dict[str, Any]]:
         return self.evm.query_address_history(network, address, start_time, end_time)
 
-    def query_evm_event(self, network: str, signature_hash: str) -> Optional[Dict[str, Any]]:
-        return self.evm.query_event(network, signature_hash)
         
     def query_evm_contract_abi(self, network: str, contract_address: str) -> Optional[Dict[str, Any]]:
         return self.evm.query_contract_abi(network, contract_address)
         
-    def query_evm_swap(self, network: str, contract_address: str) -> Optional[Dict[str, Any]]:
-        return self.evm.query_swap(network, contract_address)
     
-    def query_evm_token_info(self, network: str, token_address: str) -> Optional[Dict[str, Any]]:
-        return self.evm.query_token_info(network, token_address)
-
-    def query_evm_factory_contract(self, network: str, contract_address: str) -> Optional[Dict[str, Any]]:
-        return self.evm.query_factory_contract(network, contract_address)
-
     def query_high_value_transactions(self, network: str, min_value: int) -> List[Dict[str, Any]]:
         """
         Query high-value transactions using the partial index.

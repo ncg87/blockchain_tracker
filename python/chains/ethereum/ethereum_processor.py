@@ -3,7 +3,6 @@ from ..utils import decode_hex, normalize_hex
 from operator import itemgetter
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from ..ethereum.ethereum_decoder import EthereumDecoder
 from ..evm_models import EVMProcessor
 
 # Item getters
@@ -20,12 +19,13 @@ class EthereumProcessor(EVMProcessor):
         """
         Initialize the processor with a database instance.
         """
-        super().__init__(sql_database, mongodb_database, 'Ethereum', querier, EthereumDecoder(sql_database))
+        super().__init__(
+            sql_database=sql_database,
+            mongodb_database=mongodb_database,
+            network_name='ethereum',
+            querier=querier
+        )
         
-    
-    def get_chain_id_with_default(self, tx):
-        return decode_hex(get_chain_id(tx)) if 'chainId' in tx else 1
-    
     def _process_native_transfer(self, transaction, timestamp):
         """
         Process native transfer transaction data.

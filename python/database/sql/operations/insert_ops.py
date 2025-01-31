@@ -1,7 +1,12 @@
 from datetime import datetime
 from typing import List, Dict, Any
-from .base import SQLDatabase
-from .operations import BlockInsertOperations, EVMInsertOperations, BitcoinInsertOperations, SolanaInsertOperations, XRPInsertOperations
+from ..base import SQLDatabase
+from .blocks import BlockInsertOperations
+from .evm import EVMInsertOperations
+from .bitcoin import BitcoinInsertOperations
+from .solana import SolanaInsertOperations
+from .xrp import XRPInsertOperations
+
 
 class SQLInsertOperations:
     def __init__(self, db: SQLDatabase):
@@ -18,9 +23,6 @@ class SQLInsertOperations:
     def insert_block(self, network, block_number, block_hash, parent_hash, timestamp):
         return self.block.insert_block(network, block_number, block_hash, parent_hash, timestamp)
         
-    def insert_bulk_evm_transactions(self, network: str, transactions: List[Dict[str, Any]], block_number: int):
-        return self.evm.insert_transactions(network, transactions, block_number)
-        
     def insert_bulk_bitcoin_transactions(self, transactions: List[Dict[str, Any]], block_number: int):
         return self.bitcoin.insert_transactions(transactions, block_number)
 
@@ -29,21 +31,6 @@ class SQLInsertOperations:
 
     def insert_bulk_solana_transactions(self, transactions: List[Dict[str, Any]], block_number: int):
         return self.solana.insert_transactions(transactions, block_number)
-
-    def insert_evm_event(self, network: str, event_object) -> bool:
-        return self.evm.insert_event(network, event_object)
-
-    def insert_evm_contract_abi(self, network: str, contract_address: str, abi: dict) -> bool:
-        return self.evm.insert_contract_abi(network, contract_address, abi)
-
-    def insert_evm_swap(self, network: str, swap_info) -> bool:
-        return self.evm.insert_swap(network, swap_info)
-    
-    def insert_evm_token_info(self, network: str, token_info) -> bool:
-        return self.evm.insert_token_info(network, token_info)
-
-    def insert_evm_contract_to_creator(self, network: str, contract_address: str, creator_address: str) -> bool:
-        return self.evm.insert_contract_to_factory(network, contract_address, creator_address)
 
 def convert_timestamp(timestamp):
     """

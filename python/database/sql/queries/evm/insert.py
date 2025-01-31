@@ -1,41 +1,44 @@
 INSERT_EVM_TRANSACTIONS = """
-    INSERT INTO base_evm_transactions
-    (block_number, network, transaction_hash, chain_id, from_address, to_address, value_wei, total_gas, timestamp)
+    INSERT INTO evm_transactions
+    (block_number, chain, transaction_hash, chain_id, from_address, to_address, amount, total_gas, timestamp)
     VALUES %s
-    ON CONFLICT (network, timestamp, transaction_hash) DO NOTHING
+    ON CONFLICT (chain, timestamp, transaction_hash) DO NOTHING
 """
 
 INSERT_EVM_EVENTS = """
-    INSERT INTO evm_known_events
-    (network, signature_hash, name, full_signature, input_types, indexed_inputs, inputs, contract_address)
+    INSERT INTO evm_decoded_events
+    (chain, signature_hash, event_name, decoded_signature, input_types, indexed_inputs, input_names, inputs)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-    ON CONFLICT (network, signature_hash) DO UPDATE SET
-        name = EXCLUDED.name,
-        full_signature = EXCLUDED.full_signature,
+    ON CONFLICT (chain, signature_hash) DO UPDATE SET
+        event_name = EXCLUDED.event_name,
+        decoded_signature = EXCLUDED.decoded_signature,
         input_types = EXCLUDED.input_types,
         indexed_inputs = EXCLUDED.indexed_inputs,
-        inputs = EXCLUDED.inputs,
-        contract_address = COALESCE(evm_known_events.contract_address, EXCLUDED.contract_address)
+        input_names = EXCLUDED.input_names,
+        inputs = EXCLUDED.inputs
 """
 
 INSERT_EVM_CONTRACT_ABI = """
     INSERT INTO evm_contract_abis
-    (network, contract_address, abi, last_updated)
-    VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
-    ON CONFLICT (network, contract_address) DO UPDATE SET
-        abi = EXCLUDED.abi,
-        last_updated = CURRENT_TIMESTAMP
+    (chain, contract_address, abi)
+    VALUES (%s, %s, %s)
+    ON CONFLICT (chain, contract_address) DO UPDATE SET
+        abi = EXCLUDED.abi
 """
 
-INSERT_EVM_SWAP = """
-    INSERT INTO evm_swap
-    (contract_address, factory_address, fee, token0_name, token1_name, token0_address, token1_address, name, network)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-    ON CONFLICT (contract_address, network) DO UPDATE SET
+INSERT_EVM_SWAP_INFO = """
+    INSERT INTO evm_swap_info
+    (contract_address, factory_address, fee, token0_name, token1_name, token0_symbol, token1_symbol, token0_decimals, token1_decimals, token0_address, token1_address, name, chain)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ON CONFLICT (contract_address, chain) DO UPDATE SET
         factory_address = EXCLUDED.factory_address,
         fee = EXCLUDED.fee,
         token0_name = EXCLUDED.token0_name,
         token1_name = EXCLUDED.token1_name,
+        token0_symbol = EXCLUDED.token0_symbol,
+        token1_symbol = EXCLUDED.token1_symbol,
+        token0_decimals = EXCLUDED.token0_decimals,
+        token1_decimals = EXCLUDED.token1_decimals,
         token0_address = EXCLUDED.token0_address,
         token1_address = EXCLUDED.token1_address,
         name = EXCLUDED.name
@@ -43,24 +46,25 @@ INSERT_EVM_SWAP = """
 
 INSERT_EVM_TOKEN_INFO = """
     INSERT INTO evm_token_info
-    (contract_address, name, symbol, network, decimals)
+    (contract_address, name, symbol, decimals, chain)
     VALUES (%s, %s, %s, %s, %s)
-    ON CONFLICT (contract_address, network) DO UPDATE SET
+    ON CONFLICT (contract_address, chain) DO UPDATE SET
         name = EXCLUDED.name,
         symbol = EXCLUDED.symbol,
         decimals = EXCLUDED.decimals
 """
 
 INSERT_EVM_CONTRACT_TO_FACTORY = """
-    INSERT INTO evm_contract_to_creator
-    (contract_address, factory_address, network)
-    VALUES (%s, %s, %s)
-    ON CONFLICT (contract_address, network) DO NOTHING
+    INSERT INTO evm_contract_to_factory
+    (contract_address, factory_address, chain, name)
+    VALUES (%s, %s, %s, %s)
+    ON CONFLICT (contract_address, chain) DO NOTHING
 """
 
-INSERT_EVM_TRANSACTION_SWAP = """
-    INSERT INTO evm_transaction_swap
-    (network, contract_address, tx_hash, log_index, timestamp, amount0, amount1, token0, token1, amount0_in)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    ON CONFLICT (network, tx_hash, log_index) DO NOTHING
+INSERT_EVM_SWAP = """
+    INSERT INTO evm_swaps
+    (chain, contract_address, transaction_hash, log_index, timestamp, amount0, amount1, token0_address, token1_address, token0_name, token1_name, token0_symbol, token1_symbol, factory_address, name)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ON CONFLICT (chain, transaction_hash, log_index) DO NOTHING
 """
+

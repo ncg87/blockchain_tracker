@@ -1,16 +1,20 @@
 import asyncio
-from chains import EthereumPipeline, BNBPipeline, BitcoinPipeline, SolanaPipeline, XRPPipeline, BaseChainPipeline, ArbitrumPipeline
+from chains import (EthereumPipeline, BNBPipeline, BitcoinPipeline, SolanaPipeline, XRPPipeline, BaseChainPipeline, ArbitrumPipeline,
+                    PolygonChainPipeline, OptimismChainPipeline, AvalancheChainPipeline, PolygonZKPipeline, ZkSyncPipeline, MantlePipeline,
+                    LineaPipeline
+                    )
 from database import SQLDatabase, MongoDatabase
 import logging
 import signal
 import sys
+
 
 # General logging setup for maintenance.log
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("maintenance.log", mode='w'),  # Reset on each run
+        logging.FileHandler("maintenance.log", mode='w', encoding='utf-8'),
         #logging.StreamHandler()  # Optional: Logs to the console
     ]
 )
@@ -20,18 +24,18 @@ active_pipelines = []
 
 async def cleanup(pipelines):
     """Cleanup function to properly close all pipeline connections"""
-    print("Starting cleanup...")  # Add debug print
+    logging.info("Starting cleanup...")  # Add debug print
     cleanup_tasks = []
     for pipeline in pipelines:
         if hasattr(pipeline, 'websocket_handler'):
             cleanup_tasks.append(pipeline.websocket_handler.stop())
     if cleanup_tasks:
         await asyncio.gather(*cleanup_tasks)
-    print("Cleanup completed")  # Add debug print
+    logging.info("Cleanup completed")  # Add debug print
 
 async def signal_handler(sig, frame):
     """Handle shutdown signals"""
-    print("Received shutdown signal, cleaning up...")
+    logging.info("Received shutdown signal, cleaning up...")
     await cleanup(active_pipelines)
     # Force exit after cleanup
     loop = asyncio.get_running_loop()
@@ -51,7 +55,13 @@ async def main():
         xrp_pipeline = XRPPipeline(sql_database, mongodb_database)
         base_pipeline = BaseChainPipeline(sql_database, mongodb_database)
         arbitrum_pipeline = ArbitrumPipeline(sql_database, mongodb_database)
-
+        polygon_pipeline = PolygonChainPipeline(sql_database, mongodb_database)
+        optimism_pipeline = OptimismChainPipeline(sql_database, mongodb_database)
+        avalanche_pipeline = AvalancheChainPipeline(sql_database, mongodb_database)
+        polygonzk_pipeline = PolygonZKPipeline(sql_database, mongodb_database)
+        mantle_pipeline = MantlePipeline(sql_database, mongodb_database)
+        linea_pipeline = LineaPipeline(sql_database, mongodb_database)
+        zksync_pipeline = ZkSyncPipeline(sql_database, mongodb_database)
 
         # Add pipelines to active list
         active_pipelines.extend([
@@ -60,8 +70,20 @@ async def main():
             base_pipeline,
             bitcoin_pipeline,
             xrp_pipeline,
-            arbitrum_pipeline
+            arbitrum_pipeline,
+            polygon_pipeline,
+            optimism_pipeline,
+            avalanche_pipeline,
+            solana_pipeline,
+            polygonzk_pipeline,
+            mantle_pipeline,
+            linea_pipeline,
+            zksync_pipeline
         ])
+
+
+
+
 
         duration = 100000
 
@@ -74,14 +96,25 @@ async def main():
                 bitcoin_pipeline.run(duration=duration),
                 #solana_pipeline.run(duration=1200),
                 xrp_pipeline.run(duration=duration),
-                arbitrum_pipeline.run(duration=duration)
+                arbitrum_pipeline.run(duration=duration),
+                polygon_pipeline.run(duration=duration),
+                optimism_pipeline.run(duration=duration),
+                avalanche_pipeline.run(duration=duration),
+                polygonzk_pipeline.run(duration=duration),
+                mantle_pipeline.run(duration=duration),
+                linea_pipeline.run(duration=duration),
+                zksync_pipeline.run(duration=duration)
             )
         finally:
+
+
+
+
+
             # Ensure cleanup happens even if gather fails
             await cleanup(active_pipelines)
             
     except Exception as e:
-        logging.error(f"An error occurred: {e}")
         # Ensure cleanup happens on error
         await cleanup(active_pipelines)
 

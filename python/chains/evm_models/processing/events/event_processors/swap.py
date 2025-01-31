@@ -1,8 +1,7 @@
-from ..models import ArbitarySwap, TokenSwap
-from typing import Optional
+from ..models import ArbitarySwap, TokenSwap, BaseTokenSwap
+from typing import Optional, Dict
 from operator import itemgetter
 from .processors import EventProcessor
-from database import SQLDatabase, SQLQueryOperations, SQLInsertOperations
 
 get_to = itemgetter('to')
 get_sender = itemgetter('sender')
@@ -44,10 +43,9 @@ get_contract = itemgetter('contract')
 # TODO: Determine the type of the protocol so we can map to DEX or Aggregator, etc.
 
 class SwapProcessor(EventProcessor):
-    def __init__(self, sql_db, network):
-        super().__init__(sql_db, network)
+    def __init__(self, db_operator, chain):
+        super().__init__(db_operator, chain)
         self.logger.info("SwapProcessor initialized")
-        self.unknown_protocols = {}
 
         
 
@@ -63,26 +61,32 @@ class SwapProcessor(EventProcessor):
             
             address = get_contract(event)
             
-            contract_info = self.sql_query_ops.evm.query_swap_all_networks(address)
+            contract_info = self.db_operator.sql.query.evm.swap_info_by_chain(self.chain, address)
             
             if contract_info is None:
                 return None
             
+            # Get the token info if the address for the tokens are already given, multi pool swap
+            if isinstance(swap_info, BaseTokenSwap):
+                token_0_info = self.db_operator.sql.query.evm.token_info_by_chain(self.chain, swap_info.token0_address)
+                token_1_info = self.db_operator.sql.query.evm.token_info_by_chain(self.chain, swap_info.token1_address)
+                swap_info = TokenSwap.from_token_info(swap_info, token_0_info, token_1_info)
+            
+            # Get the info about the contract if just the amounts are given, two pool swap (Majority of the swaps)
             if isinstance(swap_info, ArbitarySwap):
                 swap_info = TokenSwap.from_swap_info(swap_info, contract_info)
             
-            self.sql_insert_ops.evm.insert_transaction_swap(self.network, swap_info, address, tx_hash, index, timestamp)
+            self.db_operator.sql.insert.evm.swap(self.chain, swap_info, address, tx_hash, index, timestamp)
             
             return swap_info
-        
-        except Exception as e:
-            
-            if signature not in self.unknown_protocols:
-                self.unknown_protocols[signature] = 1
-            else:
-                self.unknown_protocols[signature] += 1
-            #self.logger.error(f"Error processing event {event} - signature: {signature} - {e}", exc_info=True)
+        except KeyError:
+            self.increment_unknown_protocol(signature)
+            self.logger.error(f"Unknown protocol: {signature}")
             return None
+        except Exception as e:
+            self.logger.error(f"Error processing event for {self.chain} - {e}", exc_info=True)
+            return None
+
 
     # Create a better way of loading and updating it in a custom protocol file
     def create_protocol_map(self):
@@ -149,7 +153,7 @@ class SwapProcessor(EventProcessor):
         recipient = get_value(get_recipient(parameters))
         amount0 = get_value(get_amount0(parameters))
         amount1 = get_value(get_amount1(parameters))
-        sqrtPriceX96 = get_value(get_sqrtPriceX96(parameters))         # Can use this to determine price of tokens in the future
+        #sqrtPriceX96 = get_value(get_sqrtPriceX96(parameters))         # Can use this to determine price of tokens in the future
         liquidity = get_value(get_liquidity(parameters))
         tick = get_value(get_tick(parameters))
 
@@ -191,12 +195,12 @@ class SwapProcessor(EventProcessor):
         amountIn = get_value(get_amountIn(parameters))
         amountOut = get_value(get_amountOut(parameters))
         
-        return TokenSwap (
+        return BaseTokenSwap (
             amount0 = amountIn,
             amount1 = amountOut,
             isAmount0In = True,
-            token0 = tokenIn,
-            token1 = tokenOut
+            token0_address = tokenIn,
+            token1_address = tokenOut
         )
     
     def poolId_tokenIn_tokenOut_amountIn_amountOut_user(self, parameters) -> TokenSwap:
@@ -213,8 +217,8 @@ class SwapProcessor(EventProcessor):
             amount0 = amountIn,
             amount1 = amountOut,
             isAmount0In = True,
-            token0 = tokenIn,
-            token1 = tokenOut
+            token0_address = tokenIn,
+            token1_address = tokenOut
         )
     
     def sender_recipient_baseIn_quoteIn_baseOut_quoteOut_fee_adminFee_oraclePrice(self, parameters) -> ArbitarySwap:
@@ -239,12 +243,12 @@ class SwapProcessor(EventProcessor):
         
         
         
-        return TokenSwap(
+        return BaseTokenSwap(
             amount0=amountIn, 
             amount1=amountOut, 
             isAmount0In=True,
-            token0 = tokenIn,
-            token1 = tokenOut
+            token0_address = tokenIn,
+            token1_address = tokenOut
             )
 
     def sender_amount0In_amount1In_amount0Out_amount1Out_to(self, parameters) -> ArbitarySwap:
@@ -277,12 +281,12 @@ class SwapProcessor(EventProcessor):
         amountOut = get_value(get_amountOut(parameters))
         referralCode = get_value(get_referralCode(parameters))
         
-        return TokenSwap(
+        return BaseTokenSwap(
             amount0 = amountIn,
             amount1 = amountOut,
             isAmount0In = True,
-            token0 = assetIn,
-            token1 = assetOut
+            token0_address = assetIn,
+            token1_address = assetOut
         )
     
     def sender_recipient_amount0_amount1_sqrtPriceX96_liquidity_tick_protocolFeesToken0_protocolFeesToken1(self, parameters) -> ArbitarySwap:
@@ -303,3 +307,7 @@ class SwapProcessor(EventProcessor):
             amount1 = amount1,
             isAmount0In = isAmount0In
         )
+
+    # Updated to use simplified unknown protocols check
+    def get_unknown_protocol_counts(self) -> Dict[str, int]:
+        return self.get_unknown_protocols()
