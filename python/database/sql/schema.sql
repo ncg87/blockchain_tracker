@@ -16,9 +16,13 @@ CREATE TABLE IF NOT EXISTS blocks_solana PARTITION OF blocks FOR VALUES IN ('sol
 CREATE TABLE IF NOT EXISTS blocks_bnb PARTITION OF blocks FOR VALUES IN ('bnb');
 CREATE TABLE IF NOT EXISTS blocks_base PARTITION OF blocks FOR VALUES IN ('base');
 CREATE TABLE IF NOT EXISTS blocks_arbitrum PARTITION OF blocks FOR VALUES IN ('arbitrum');
+CREATE TABLE IF NOT EXISTS blocks_avalanche PARTITION OF blocks FOR VALUES IN ('avalanche');
+CREATE TABLE IF NOT EXISTS blocks_polygon PARTITION OF blocks FOR VALUES IN ('polygon');
+CREATE TABLE IF NOT EXISTS blocks_optimism PARTITION OF blocks FOR VALUES IN ('optimism');
 
 -- Block-specific indexes
 CREATE INDEX IF NOT EXISTS idx_blocks_timestamp 
+
     ON blocks USING brin (timestamp) WITH (pages_per_range = 128);
 CREATE INDEX IF NOT EXISTS idx_blocks_hash 
     ON blocks USING btree (block_hash, chain);
@@ -42,6 +46,10 @@ CREATE TABLE IF NOT EXISTS evm_transactions_ethereum PARTITION OF evm_transactio
 CREATE TABLE IF NOT EXISTS evm_transactions_bnb PARTITION OF evm_transactions FOR VALUES IN ('bnb');
 CREATE TABLE IF NOT EXISTS evm_transactions_base PARTITION OF evm_transactions FOR VALUES IN ('base');
 CREATE TABLE IF NOT EXISTS evm_transactions_arbitrum PARTITION OF evm_transactions FOR VALUES IN ('arbitrum');
+CREATE TABLE IF NOT EXISTS evm_transactions_avalanche PARTITION OF evm_transactions FOR VALUES IN ('avalanche');
+CREATE TABLE IF NOT EXISTS evm_transactions_polygon PARTITION OF evm_transactions FOR VALUES IN ('polygon');
+CREATE TABLE IF NOT EXISTS evm_transactions_optimism PARTITION OF evm_transactions FOR VALUES IN ('optimism');
+
 
 -- EVM transaction indexes
 CREATE INDEX IF NOT EXISTS idx_evm_tx_timestamp 
@@ -134,9 +142,13 @@ CREATE TABLE IF NOT EXISTS evm_decoded_events_ethereum PARTITION OF evm_decoded_
 CREATE TABLE IF NOT EXISTS evm_decoded_events_bnb PARTITION OF evm_decoded_events FOR VALUES IN ('bnb');
 CREATE TABLE IF NOT EXISTS evm_decoded_events_base PARTITION OF evm_decoded_events FOR VALUES IN ('base');
 CREATE TABLE IF NOT EXISTS evm_decoded_events_arbitrum PARTITION OF evm_decoded_events FOR VALUES IN ('arbitrum');
+CREATE TABLE IF NOT EXISTS evm_decoded_events_avalanche PARTITION OF evm_decoded_events FOR VALUES IN ('avalanche');
+CREATE TABLE IF NOT EXISTS evm_decoded_events_polygon PARTITION OF evm_decoded_events FOR VALUES IN ('polygon');
+CREATE TABLE IF NOT EXISTS evm_decoded_events_optimism PARTITION OF evm_decoded_events FOR VALUES IN ('optimism');
 
 CREATE INDEX IF NOT EXISTS idx_evm_events_signature 
     ON evm_decoded_events USING btree (signature_hash);
+
 
 -- Create new partitioned contract ABIs table
 CREATE TABLE IF NOT EXISTS evm_contract_abis (
@@ -151,6 +163,10 @@ CREATE TABLE IF NOT EXISTS evm_contract_abis_ethereum PARTITION OF evm_contract_
 CREATE TABLE IF NOT EXISTS evm_contract_abis_bnb PARTITION OF evm_contract_abis FOR VALUES IN ('bnb');
 CREATE TABLE IF NOT EXISTS evm_contract_abis_base PARTITION OF evm_contract_abis FOR VALUES IN ('base');
 CREATE TABLE IF NOT EXISTS evm_contract_abis_arbitrum PARTITION OF evm_contract_abis FOR VALUES IN ('arbitrum');
+CREATE TABLE IF NOT EXISTS evm_contract_abis_avalanche PARTITION OF evm_contract_abis FOR VALUES IN ('avalanche');
+CREATE TABLE IF NOT EXISTS evm_contract_abis_polygon PARTITION OF evm_contract_abis FOR VALUES IN ('polygon');
+CREATE TABLE IF NOT EXISTS evm_contract_abis_optimism PARTITION OF evm_contract_abis FOR VALUES IN ('optimism');
+
 
 -- EVM Contract ABIs Indexes
 CREATE INDEX IF NOT EXISTS idx_evm_contract_abis_address 
@@ -179,6 +195,11 @@ CREATE TABLE IF NOT EXISTS evm_swap_info_ethereum PARTITION OF evm_swap_info FOR
 CREATE TABLE IF NOT EXISTS evm_swap_info_bnb PARTITION OF evm_swap_info FOR VALUES IN ('bnb');
 CREATE TABLE IF NOT EXISTS evm_swap_info_base PARTITION OF evm_swap_info FOR VALUES IN ('base');
 CREATE TABLE IF NOT EXISTS evm_swap_info_arbitrum PARTITION OF evm_swap_info FOR VALUES IN ('arbitrum');
+CREATE TABLE IF NOT EXISTS evm_swap_info_avalanche PARTITION OF evm_swap_info FOR VALUES IN ('avalanche');
+CREATE TABLE IF NOT EXISTS evm_swap_info_polygon PARTITION OF evm_swap_info FOR VALUES IN ('polygon');
+CREATE TABLE IF NOT EXISTS evm_swap_info_optimism PARTITION OF evm_swap_info FOR VALUES IN ('optimism');
+
+
 
 -- For when we want to get all the swap info of a contract
 CREATE INDEX IF NOT EXISTS idx_evm_swap_contract 
@@ -204,6 +225,10 @@ CREATE TABLE IF NOT EXISTS evm_token_info_ethereum PARTITION OF evm_token_info F
 CREATE TABLE IF NOT EXISTS evm_token_info_bnb PARTITION OF evm_token_info FOR VALUES IN ('bnb');
 CREATE TABLE IF NOT EXISTS evm_token_info_base PARTITION OF evm_token_info FOR VALUES IN ('base');
 CREATE TABLE IF NOT EXISTS evm_token_info_arbitrum PARTITION OF evm_token_info FOR VALUES IN ('arbitrum');
+CREATE TABLE IF NOT EXISTS evm_token_info_avalanche PARTITION OF evm_token_info FOR VALUES IN ('avalanche');
+CREATE TABLE IF NOT EXISTS evm_token_info_polygon PARTITION OF evm_token_info FOR VALUES IN ('polygon');
+CREATE TABLE IF NOT EXISTS evm_token_info_optimism PARTITION OF evm_token_info FOR VALUES IN ('optimism');
+
 
 CREATE INDEX IF NOT EXISTS idx_evm_token_info_address ON evm_token_info
     USING btree (contract_address, chain);
@@ -222,6 +247,11 @@ CREATE TABLE IF NOT EXISTS evm_contract_to_factory_ethereum PARTITION OF evm_con
 CREATE TABLE IF NOT EXISTS evm_contract_to_factory_bnb PARTITION OF evm_contract_to_factory FOR VALUES IN ('bnb');
 CREATE TABLE IF NOT EXISTS evm_contract_to_factory_base PARTITION OF evm_contract_to_factory FOR VALUES IN ('base');
 CREATE TABLE IF NOT EXISTS evm_contract_to_factory_arbitrum PARTITION OF evm_contract_to_factory FOR VALUES IN ('arbitrum');
+CREATE TABLE IF NOT EXISTS evm_contract_to_factory_avalanche PARTITION OF evm_contract_to_factory FOR VALUES IN ('avalanche');
+CREATE TABLE IF NOT EXISTS evm_contract_to_factory_polygon PARTITION OF evm_contract_to_factory FOR VALUES IN ('polygon');
+CREATE TABLE IF NOT EXISTS evm_contract_to_factory_optimism PARTITION OF evm_contract_to_factory FOR VALUES IN ('optimism');
+
+
 
 -- Factory Indexes
 CREATE INDEX IF NOT EXISTS idx_evm_contract_to_factory_contract 
@@ -254,6 +284,11 @@ CREATE TABLE IF NOT EXISTS evm_swaps_ethereum PARTITION OF evm_swaps FOR VALUES 
 CREATE TABLE IF NOT EXISTS evm_swaps_bnb PARTITION OF evm_swaps FOR VALUES IN ('bnb');
 CREATE TABLE IF NOT EXISTS evm_swaps_base PARTITION OF evm_swaps FOR VALUES IN ('base');
 CREATE TABLE IF NOT EXISTS evm_swaps_arbitrum PARTITION OF evm_swaps FOR VALUES IN ('arbitrum');
+CREATE TABLE IF NOT EXISTS evm_swaps_avalanche PARTITION OF evm_swaps FOR VALUES IN ('avalanche');
+CREATE TABLE IF NOT EXISTS evm_swaps_polygon PARTITION OF evm_swaps FOR VALUES IN ('polygon');
+CREATE TABLE IF NOT EXISTS evm_swaps_optimism PARTITION OF evm_swaps FOR VALUES IN ('optimism');
+
+
 
 CREATE INDEX IF NOT EXISTS idx_evm_swaps_timestamp 
     ON evm_swaps USING brin (timestamp) WITH (pages_per_range = 128);

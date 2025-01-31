@@ -1,9 +1,12 @@
 import asyncio
-from chains import EthereumPipeline, BNBPipeline, BitcoinPipeline, SolanaPipeline, XRPPipeline, BaseChainPipeline, ArbitrumPipeline
+from chains import (EthereumPipeline, BNBPipeline, BitcoinPipeline, SolanaPipeline, XRPPipeline, BaseChainPipeline, ArbitrumPipeline,
+                    PolygonChainPipeline, OptimismChainPipeline, AvalancheChainPipeline
+                    )
 from database import SQLDatabase, MongoDatabase
 import logging
 import signal
 import sys
+
 
 # General logging setup for maintenance.log
 logging.basicConfig(
@@ -51,6 +54,10 @@ async def main():
         xrp_pipeline = XRPPipeline(sql_database, mongodb_database)
         base_pipeline = BaseChainPipeline(sql_database, mongodb_database)
         arbitrum_pipeline = ArbitrumPipeline(sql_database, mongodb_database)
+        polygon_pipeline = PolygonChainPipeline(sql_database, mongodb_database)
+        optimism_pipeline = OptimismChainPipeline(sql_database, mongodb_database)
+        avalanche_pipeline = AvalancheChainPipeline(sql_database, mongodb_database)
+
 
 
         # Add pipelines to active list
@@ -61,8 +68,12 @@ async def main():
             bitcoin_pipeline,
             xrp_pipeline,
             arbitrum_pipeline,
+            polygon_pipeline,
+            optimism_pipeline,
+            avalanche_pipeline,
             solana_pipeline
         ])
+
 
         duration = 100000
 
@@ -75,9 +86,13 @@ async def main():
                 bitcoin_pipeline.run(duration=duration),
                 #solana_pipeline.run(duration=1200),
                 xrp_pipeline.run(duration=duration),
-                arbitrum_pipeline.run(duration=duration)
+                arbitrum_pipeline.run(duration=duration),
+                polygon_pipeline.run(duration=duration),
+                optimism_pipeline.run(duration=duration),
+                avalanche_pipeline.run(duration=duration)
             )
         finally:
+
             # Ensure cleanup happens even if gather fails
             await cleanup(active_pipelines)
             

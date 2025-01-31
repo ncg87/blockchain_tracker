@@ -13,10 +13,7 @@ from .solana import INSERT_SOLANA_TRANSACTIONS, QUERY_SOLANA_TRANSACTIONS, QUERY
 
 from .xrp import INSERT_XRP_TRANSACTIONS, QUERY_XRP_TRANSACTIONS, QUERY_RECENT_XRP_TRANSACTIONS
 
-from .api import (get_network_volume_query, get_all_networks_volume_query, get_all_networks_fees_query, 
-                  get_network_fees_query, get_all_networks_tx_count_query, get_network_tx_count_query, 
-                  get_network_historical_data_query, get_volume_of_all_tokens, get_volume_for_interval, get_swaps, 
-                  get_swaps_all_networks)
+from .api import (get_swaps, get_swaps_by_chain)
 
 __all__ = [
     # Block Queries
@@ -38,10 +35,7 @@ __all__ = [
     INSERT_XRP_TRANSACTIONS,
     QUERY_XRP_TRANSACTIONS, QUERY_RECENT_XRP_TRANSACTIONS,
     # API Queries
-    get_network_volume_query, get_all_networks_volume_query, 
-    get_all_networks_fees_query, get_network_fees_query, 
-    get_all_networks_tx_count_query, get_network_tx_count_query,
-    get_network_historical_data_query, get_volume_of_all_tokens,
-    get_volume_for_interval, get_swaps
+    get_swaps, get_swaps_by_chain
+
 ]
 

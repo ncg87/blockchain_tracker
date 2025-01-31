@@ -155,7 +155,7 @@ class SwapProcessor(EventProcessor):
         recipient = get_value(get_recipient(parameters))
         amount0 = get_value(get_amount0(parameters))
         amount1 = get_value(get_amount1(parameters))
-        sqrtPriceX96 = get_value(get_sqrtPriceX96(parameters))         # Can use this to determine price of tokens in the future
+        #sqrtPriceX96 = get_value(get_sqrtPriceX96(parameters))         # Can use this to determine price of tokens in the future
         liquidity = get_value(get_liquidity(parameters))
         tick = get_value(get_tick(parameters))
 

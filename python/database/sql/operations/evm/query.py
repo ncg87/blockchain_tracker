@@ -253,11 +253,12 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying EVM events by contract address across all networks: {e}")
             return []
     
-    def all_evm_swaps_by_chain(self, chain: str) -> List[Dict[str, Any]]:
+    def all_evm_swap_info_by_chain(self, chain: str) -> List[Dict[str, Any]]:
         """
         Query all EVM swaps by chain.
         """
         try:
+
             self.db.cursor.execute(QUERY_ALL_EVM_SWAP_INFO_BY_CHAIN, (chain,))
             results = self.db.cursor.fetchall()
             return results
@@ -265,7 +266,7 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying all EVM swaps by chain {chain}: {e}")
             return []
         
-    def all_evm_swaps(self) -> List[Dict[str, Any]]:
+    def all_evm_swap_info(self) -> List[Dict[str, Any]]:
         """
         Query all EVM swaps.
         """
