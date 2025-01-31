@@ -2,11 +2,12 @@
 
 from typing import Dict, List
 from .event_processors import SwapProcessor
-from database import SQLDatabase
+from database import DatabaseOperator
 from operator import itemgetter
 import logging
 from web3 import Web3
 import asyncio
+
 
 
 get_event = itemgetter('event')
@@ -16,7 +17,7 @@ get_type = itemgetter('type')
 logger = logging.getLogger(__name__)
 
 class EventProcessor:
-    def __init__(self, db_operator, chain):
+    def __init__(self, db_operator : DatabaseOperator, chain : str):
         self.db_operator = db_operator
         self.chain = chain
         self.event_mapping = self.load_event_mapping()
@@ -111,10 +112,3 @@ class EventProcessor:
         except Exception as e:
             self.logger.error(f"Error processing block events: {e}")
             return []
-
-    def shutdown(self):
-        """Cleanup method for graceful shutdown"""
-        try:
-            self._executor.shutdown(wait=True)
-        except Exception as e:
-            self.logger.error(f"Error during shutdown: {e}")

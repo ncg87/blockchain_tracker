@@ -1,5 +1,5 @@
 from ..models import ArbitarySwap, TokenSwap, BaseTokenSwap
-from typing import Optional
+from typing import Optional, Dict
 from operator import itemgetter
 from .processors import EventProcessor
 
@@ -46,7 +46,6 @@ class SwapProcessor(EventProcessor):
     def __init__(self, db_operator, chain):
         super().__init__(db_operator, chain)
         self.logger.info("SwapProcessor initialized")
-        self.unknown_protocols = {}
 
         
 
@@ -80,15 +79,14 @@ class SwapProcessor(EventProcessor):
             self.db_operator.sql.insert.evm.swap(self.chain, swap_info, address, tx_hash, index, timestamp)
             
             return swap_info
-        
+        except KeyError:
+            self.increment_unknown_protocol(signature)
+            self.logger.error(f"Unknown protocol: {signature}")
+            return None
         except Exception as e:
-            
-            if signature not in self.unknown_protocols:
-                self.unknown_protocols[signature] = 1
-            else:
-                self.unknown_protocols[signature] += 1
             self.logger.error(f"Error processing event for {self.chain} - {e}", exc_info=True)
             return None
+
 
     # Create a better way of loading and updating it in a custom protocol file
     def create_protocol_map(self):
@@ -309,3 +307,7 @@ class SwapProcessor(EventProcessor):
             amount1 = amount1,
             isAmount0In = isAmount0In
         )
+
+    # Updated to use simplified unknown protocols check
+    def get_unknown_protocol_counts(self) -> Dict[str, int]:
+        return self.get_unknown_protocols()
