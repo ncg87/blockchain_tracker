@@ -9,9 +9,14 @@ from .arbitrum import ArbitrumPipeline, ArbitrumQuerier, ArbitrumProcessor
 from .polygon import PolygonChainQuerier, PolygonChainProcessor, PolygonChainPipeline
 from .optimism import OptimismChainQuerier, OptimismChainProcessor, OptimismChainPipeline
 from .avalanche import AvalancheChainQuerier, AvalancheChainProcessor, AvalancheChainPipeline
+from .polygonzk import PolygonZKQuerier, PolygonZKProcessor, PolygonZKPipeline
+from .zksync import ZkSyncQuerier, ZkSyncProcessor, ZkSyncPipeline
+from .mantle import MantleQuerier, MantleProcessor, MantlePipeline
+from .linea import LineaQuerier, LineaProcessor, LineaPipeline
 __all__ = [
     'EthereumQuerier', 'EthereumProcessor', 'EthereumPipeline'
     'SolanaQuerier', 'SolanaProcessor', 'SolanaPipeline', 'SolanaWebSocketHandler',
+
 
     'XRPQuerier', 'XRPProcessor', 'XRPPipeline', 'XRPWebSocketHandler',
     'BitcoinQuerier', 'BitcoinProcessor', 'BitcoinPipeline',
@@ -23,5 +28,9 @@ __all__ = [
     'BaseChainPipeline', 'BaseChainQuerier', 'BaseChainProcessor',
     'PolygonChainQuerier', 'PolygonChainProcessor', 'PolygonChainPipeline',
     'OptimismChainQuerier', 'OptimismChainProcessor', 'OptimismChainPipeline',
-    'AvalancheChainQuerier', 'AvalancheChainProcessor', 'AvalancheChainPipeline'
+    'AvalancheChainQuerier', 'AvalancheChainProcessor', 'AvalancheChainPipeline',
+    'PolygonZKQuerier', 'PolygonZKProcessor', 'PolygonZKPipeline',
+    'ZkSyncQuerier', 'ZkSyncProcessor', 'ZkSyncPipeline',
+    'MantleQuerier', 'MantleProcessor', 'MantlePipeline',
+    'LineaQuerier', 'LineaProcessor', 'LineaPipeline'
     ]

@@ -1,6 +1,7 @@
 import asyncio
 from chains import (EthereumPipeline, BNBPipeline, BitcoinPipeline, SolanaPipeline, XRPPipeline, BaseChainPipeline, ArbitrumPipeline,
-                    PolygonChainPipeline, OptimismChainPipeline, AvalancheChainPipeline
+                    PolygonChainPipeline, OptimismChainPipeline, AvalancheChainPipeline, PolygonZKPipeline, ZkSyncPipeline, MantlePipeline,
+                    LineaPipeline
                     )
 from database import SQLDatabase, MongoDatabase
 import logging
@@ -57,8 +58,10 @@ async def main():
         polygon_pipeline = PolygonChainPipeline(sql_database, mongodb_database)
         optimism_pipeline = OptimismChainPipeline(sql_database, mongodb_database)
         avalanche_pipeline = AvalancheChainPipeline(sql_database, mongodb_database)
-
-
+        polygonzk_pipeline = PolygonZKPipeline(sql_database, mongodb_database)
+        mantle_pipeline = MantlePipeline(sql_database, mongodb_database)
+        linea_pipeline = LineaPipeline(sql_database, mongodb_database)
+        zksync_pipeline = ZkSyncPipeline(sql_database, mongodb_database)
 
         # Add pipelines to active list
         active_pipelines.extend([
@@ -71,8 +74,15 @@ async def main():
             polygon_pipeline,
             optimism_pipeline,
             avalanche_pipeline,
-            solana_pipeline
+            solana_pipeline,
+            polygonzk_pipeline,
+            mantle_pipeline,
+            linea_pipeline,
+            zksync_pipeline
         ])
+
+
+
 
 
         duration = 100000
@@ -89,9 +99,17 @@ async def main():
                 arbitrum_pipeline.run(duration=duration),
                 polygon_pipeline.run(duration=duration),
                 optimism_pipeline.run(duration=duration),
-                avalanche_pipeline.run(duration=duration)
+                avalanche_pipeline.run(duration=duration),
+                polygonzk_pipeline.run(duration=duration),
+                mantle_pipeline.run(duration=duration),
+                linea_pipeline.run(duration=duration),
+                zksync_pipeline.run(duration=duration)
             )
         finally:
+
+
+
+
 
             # Ensure cleanup happens even if gather fails
             await cleanup(active_pipelines)

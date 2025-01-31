@@ -37,7 +37,7 @@ class EVMDecoder:
             
             # If not in cache, try to get from DB
             if event_object is None:
-                event_object = self.db_operator.sql.query.evm.query_event(self.network, event_signature)
+                event_object = self.db_operator.sql.query.evm.event_by_chain(self.network, event_signature)
                 # If found in DB, add to cache
                 if event_object:
                     self._event_signature_cache.set(event_signature, event_object)

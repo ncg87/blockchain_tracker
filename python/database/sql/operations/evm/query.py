@@ -4,7 +4,7 @@ from ...queries import (QUERY_EVM_FACTORY_CONTRACT, QUERY_EVM_TRANSACTIONS, QUER
                         QUERY_EVM_EVENT, QUERY_EVM_CONTRACT_ABI, QUERY_EVM_SWAP_INFO, QUERY_EVM_TOKEN_INFO_BY_CHAIN, 
                         QUERY_EVM_FACTORY_CONTRACT, QUERY_RECENT_EVM_TRANSACTIONS, QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS, 
                         QUERY_EVM_EVENT_BY_CONTRACT_ADDRESS_ALL_NETWORKS, QUERY_ALL_EVM_SWAP_INFO, QUERY_ALL_EVM_SWAP_INFO_BY_CHAIN, 
-                        QUERY_EVM_SWAP_INFO_BY_CHAIN, QUERY_EVM_TOKEN_INFO)
+                        QUERY_EVM_SWAP_INFO_BY_CHAIN, QUERY_EVM_TOKEN_INFO, QUERY_EVM_EVENT_BY_CHAIN)
 from ..models import EventSignature, ContractInfo, TokenInfo
 import json
 
@@ -57,12 +57,13 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying address history for chain {chain}: {e}")
             return []
     
-    def query_event(self, chain: str, signature_hash: str) -> Optional[EventSignature]:
+    def event_by_chain(self, chain: str, signature_hash: str) -> Optional[EventSignature]:
         """
         Query an EVM event by its network and signature hash.
         """
         try:
-            self.db.cursor.execute(QUERY_EVM_EVENT, (
+
+            self.db.cursor.execute(QUERY_EVM_EVENT_BY_CHAIN, (
                 chain, 
                 signature_hash
             ))
@@ -82,8 +83,31 @@ class EVMQueryOperations(BaseOperations):
             self.db.logger.error(f"Error querying EVM event for chain {chain}: {e}")
             return None
         
+    def event(self, signature_hash: str) -> Optional[EventSignature]:
+        """
+        Query all EVM events for a chain.
+        """
+        try:
+
+            self.db.cursor.execute(QUERY_EVM_EVENT, (signature_hash,))
+            result = self.db.cursor.fetchone()
+            if result:
+                return EventSignature(
+                    signature_hash=result.get('signature_hash'),
+                    event_name=result.get('event_name'),
+                    decoded_signature=result.get('decoded_signature'),
+                    input_types=json.loads(result.get('input_types')),
+                    indexed_inputs=json.loads(result.get('indexed_inputs')),
+                    input_names=json.loads(result.get('input_names')),
+                    inputs=json.loads(result.get('inputs')),
+                )
+            return None
+        except Exception as e:
+            self.db.logger.error(f"Error querying EVM event for signature hash {signature_hash}: {e}")
+            return []
     def query_contract_abi(self, chain: str, contract_address: str) -> Optional[Dict[str, Any]]:
         """
+
         Query an EVM contract ABI by its network and address.
         """
         try:
