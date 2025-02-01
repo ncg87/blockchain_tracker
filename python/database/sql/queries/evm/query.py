@@ -27,7 +27,7 @@ QUERY_ADDRESS_HISTORY = """
 QUERY_EVM_EVENT = """
     SELECT *
     FROM evm_decoded_events
-    WHERE chain = %s;
+    WHERE signature_hash = %s;
 """
 
 QUERY_EVM_EVENT_BY_CHAIN = """

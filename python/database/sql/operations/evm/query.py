@@ -91,17 +91,7 @@ class EVMQueryOperations(BaseOperations):
 
             self.db.cursor.execute(QUERY_EVM_EVENT, (signature_hash,))
             result = self.db.cursor.fetchone()
-            if result:
-                return EventSignature(
-                    signature_hash=result.get('signature_hash'),
-                    event_name=result.get('event_name'),
-                    decoded_signature=result.get('decoded_signature'),
-                    input_types=json.loads(result.get('input_types')),
-                    indexed_inputs=json.loads(result.get('indexed_inputs')),
-                    input_names=json.loads(result.get('input_names')),
-                    inputs=json.loads(result.get('inputs')),
-                )
-            return None
+            return result
         except Exception as e:
             self.db.logger.error(f"Error querying EVM event for signature hash {signature_hash}: {e}")
             return []
