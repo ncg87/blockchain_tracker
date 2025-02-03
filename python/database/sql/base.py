@@ -26,7 +26,7 @@ class SQLDatabase:
         
         self.pool = psycopg2.pool.ThreadedConnectionPool(
             minconn=5,
-            maxconn=20,
+            maxconn=100,
             **Settings.POSTGRES_CONFIG
         )
         

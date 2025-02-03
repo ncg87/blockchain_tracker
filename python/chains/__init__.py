@@ -14,17 +14,15 @@ from .zksync import ZkSyncQuerier, ZkSyncProcessor, ZkSyncPipeline
 from .mantle import MantleQuerier, MantleProcessor, MantlePipeline
 from .linea import LineaQuerier, LineaProcessor, LineaPipeline
 __all__ = [
-    'EthereumQuerier', 'EthereumProcessor', 'EthereumPipeline'
+    'EthereumQuerier', 'EthereumProcessor', 'EthereumPipeline',
     'SolanaQuerier', 'SolanaProcessor', 'SolanaPipeline', 'SolanaWebSocketHandler',
-
-
     'XRPQuerier', 'XRPProcessor', 'XRPPipeline', 'XRPWebSocketHandler',
     'BitcoinQuerier', 'BitcoinProcessor', 'BitcoinPipeline',
-    'BNBQuerier', 'BNBProcessor', 'BNBPipeline'
+    'BNBQuerier', 'BNBProcessor', 'BNBPipeline',
     'EVMProcessor', 'EVMQuerier', 'EVMWebSocketHandler', 'EVMPipeline',
-    'BaseChainQuerier', 'BaseChainProcessor', 'BaseChainPipeline'
-    'decode_hex', 'normalize_hex',
+    'BaseChainQuerier', 'BaseChainProcessor', 'BaseChainPipeline',
     'ArbitrumPipeline', 'ArbitrumQuerier', 'ArbitrumProcessor',
+
     'BaseChainPipeline', 'BaseChainQuerier', 'BaseChainProcessor',
     'PolygonChainQuerier', 'PolygonChainProcessor', 'PolygonChainPipeline',
     'OptimismChainQuerier', 'OptimismChainProcessor', 'OptimismChainPipeline',
@@ -32,5 +30,5 @@ __all__ = [
     'PolygonZKQuerier', 'PolygonZKProcessor', 'PolygonZKPipeline',
     'ZkSyncQuerier', 'ZkSyncProcessor', 'ZkSyncPipeline',
     'MantleQuerier', 'MantleProcessor', 'MantlePipeline',
-    'LineaQuerier', 'LineaProcessor', 'LineaPipeline'
+    'LineaQuerier', 'LineaProcessor', 'LineaPipeline',
     ]
