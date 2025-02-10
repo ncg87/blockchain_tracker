@@ -70,6 +70,8 @@ get_outputAmount = itemgetter('outputAmount')
 get_sqrtPriceX96 = itemgetter('sqrtPriceX96')
 get_tick = itemgetter('tick')
 
+get_log_index = itemgetter('log_index')
+
 
 
 
@@ -91,7 +93,6 @@ class SwapProcessor(EventProcessor):
             # Aggregators
             "0fe977d619f8172f7fdbe8bb8928ef80952817d96936509f67d66346bc4cd10f",
             "823eaf01002d7353fbcadb2ea3305cc46fa35d799cb0914846d185ac06f8ad05",
-            "20efd6d5195b7b50273f01cd79a27989255356f9f13293edc53ee142accfdb75",
             "fc431937278b84c6fa5b23bcc58f673c647fea974d3656e766b22d8c1412e544", # Smart Vault (0xa7Ca2C8673bcFA5a26d8ceeC2887f2CC2b0Db22A)
             "0fe977d619f8172f7fdbe8bb8928ef80952817d96936509f67d66346bc4cd10f",
             "20efd6d5195b7b50273f01cd79a27989255356f9f13293edc53ee142accfdb75",
@@ -102,7 +103,7 @@ class SwapProcessor(EventProcessor):
             "0874b2d545cb271cdbda4e093020c452328b24af12382ed62c4d00f5c26709db", # Vault
             "c528cda9e500228b16ce84fadae290d9a49aecb17483110004c5af0a07f6fd73",
             "015fc8ee969fd902d9ebd12a31c54446400a2b512a405366fe14defd6081d220",
-            "20efd6d5195b7b50273f01cd79a27989255356f9f13293edc53ee142accfdb75",
+            
             # Prob a DEX
             "cd42809a29fc60d050d9e34a2f48fe30855a6451eca6c8a61ca7f21e1881644d",
             "d44b536c8222cd875ef4b7f421435c474a3e1035e29c64e5f039af6944de4bea",
@@ -119,6 +120,15 @@ class SwapProcessor(EventProcessor):
             # Order Book?
             "4a6de6fb74140040ff5f8a230383d4ce15312512a98da513ec606b8c60c45314",
             "562c219552544ec4c9d7a8eb850f80ea152973e315372bf4999fe7c953ea004f",
+            # something with routing
+            "39fded47e0083893073674c7057018a2eeea09c81036ddad3666cdf954351f43",
+            # ??
+            "976ffbca84869d39bddd7057048dffc33e97641e3c7fe06fd7fc2b039c17b6e5",
+            # cant determine no contract abi stored
+            "b3822e221d737fbfd984649052a302a883d38a40f7ae591e3bcb5069eedc2a59",
+            "3cdf650a4f51a08d31e2bcbce65dcf40f71b46d22989e2a093e8c618cf7221ed",
+            "e7525d00e88ec2fe4949364ebcdf61f80247212b853f121457da56e0df239589",
+            "e1d4504fa5e661f80f16e8d613b5bc290ee6afe00a96b833a972d8e4490976e1",
             
         }
 
@@ -139,6 +149,8 @@ class SwapProcessor(EventProcessor):
             
             address = get_contract(event)
             
+            log_index = get_log_index(event)
+            
             contract_info = self.db_operator.sql.query.evm.swap_info_by_chain(self.chain, address)
             
             if contract_info is None:
@@ -154,7 +166,7 @@ class SwapProcessor(EventProcessor):
             if isinstance(swap_info, ArbitarySwap):
                 swap_info = TokenSwap.from_swap_info(swap_info, contract_info)
             
-            self.db_operator.sql.insert.evm.swap(self.chain, swap_info, address, tx_hash, index, timestamp)
+            self.db_operator.sql.insert.evm.swap(self.chain, swap_info, address, tx_hash, log_index, timestamp)
             
             return swap_info
         except KeyError:
@@ -197,6 +209,7 @@ class SwapProcessor(EventProcessor):
             "d44b536c8222cd875ef4b7f421435c474a3e1035e29c64e5f039af6944de4bea" : self.sender_amountTokenIn_amountNativeIn_amountTokenOut_amountNativeOut_flashSwap,
             "fa2dda1cc1b86e41239702756b13effbc1a092b5c57e3ad320fbe4f3b13fe235" : self.tokenIn_tokenOut_amountIn_amountOut,
             "cd3829a3813dc3cdd188fd3d01dcf3268c16be2fdd2dd21d0665418816e46062" : self.recipient_tokenIn_tokenOut_amountIn_amountOut,
+            "0874b2d545cb271cdbda4e093020c452328b24af12382ed62c4d00f5c26709db" : self.account_tokenIn_tokenOut_amountIn_amountOut_amountOutAfterFees_feeBasisPoints,
             
             
 
@@ -209,15 +222,14 @@ class SwapProcessor(EventProcessor):
             "20efd6d5195b7b50273f01cd79a27989255356f9f13293edc53ee142accfdb75" : self.fromAddress_toAddress_fromAssetAddress_toAssetAddress_amountIn_amountOut,
             "fc431937278b84c6fa5b23bcc58f673c647fea974d3656e766b22d8c1412e544" : self.source_tokenIn_tokenOut_amountIn_amountOut_minAmountOut_minAmountOut_fee_data,
             "0fe977d619f8172f7fdbe8bb8928ef80952817d96936509f67d66346bc4cd10f" : self.tokenX_tokenY_fee_sellXEarnY_amountX_amountY_currentPoint,
-            "20efd6d5195b7b50273f01cd79a27989255356f9f13293edc53ee142accfdb75" : self.fromAddress_toAddress_fromAssetAddress_toAssetAddress_amountIn_amountOut,
             "823eaf01002d7353fbcadb2ea3305cc46fa35d799cb0914846d185ac06f8ad05" : self.sender_inputAmount_inputToken_amountOut_outputToken_slippage_referralCode,
             "beee1e6e7fe307ddcf84b0a16137a4430ad5e2480fc4f4a8e250ab56ccd7630d" : self.aggregatorId_sender,
             "45f377f845e1cc76ae2c08f990e15d58bcb732db46f92a4852b956580c3a162f" : self.fromToken_toToken_sender_destination_fromAmount_minReturnAmount,
             "829000a5bc6a12d46e30cdcecd7c56b1efd88f6d7d059da6734a04f3764557c4" : self.caller_reveiver_netPtOut_netSyOut_netSyFee_netSyToReserve,
             "0874b2d545cb271cdbda4e093020c452328b24af12382ed62c4d00f5c26709db" : self.account_tokenIn_tokenOut_amountIn_amountOut_amountOutAfterFees_feeBasisPoints,
             "c528cda9e500228b16ce84fadae290d9a49aecb17483110004c5af0a07f6fd73" : self.sender_recipient_id_swapForY_amountIn_amountOut_votatilityAccumulated_fees,
-            "20efd6d5195b7b50273f01cd79a27989255356f9f13293edc53ee142accfdb75" : self.fromAddress_toAddress_fromAssetAddress_toAssetAddress_amountIn_amountOut,
             "cd3829a3813dc3cdd188fd3d01dcf3268c16be2fdd2dd21d0665418816e46062" : self.recipient_tokenIn_tokenOut_amountIn_amountOut,
+            "976ffbca84869d39bddd7057048dffc33e97641e3c7fe06fd7fc2b039c17b6e5" : self.inputToken_inputAmount_outputAmount_slippageProtection_user_computeOutput,
             
             # Dex with a tax, special type of dex tax   
             "49138cfc883446ed694cc43b8a3a702d1734f9c3a87125875f3be98a414d7e60" : self._user_cId_tokenIn_tokenOut_buyAmount_realOutAmount_taxToken_taxAmount,
@@ -237,7 +249,10 @@ class SwapProcessor(EventProcessor):
             # Order Book?
             "4a6de6fb74140040ff5f8a230383d4ce15312512a98da513ec606b8c60c45314" : self.swapHash_maker_taker_recipient_inputToken_inputAmount_outputToken_outputAmount,
             
-            "562c219552544ec4c9d7a8eb850f80ea152973e315372bf4999fe7c953ea004f" : self.token_amount
+            "562c219552544ec4c9d7a8eb850f80ea152973e315372bf4999fe7c953ea004f" : self.token_amount,
+            
+            # Routing
+            "39fded47e0083893073674c7057018a2eeea09c81036ddad3666cdf954351f43" : self.swapRouter
 
             
         }
@@ -584,6 +599,14 @@ class SwapProcessor(EventProcessor):
             isAmount0In = zeroForOne
         )
         
+    def inputToken_inputAmount_outputAmount_slippageProtection_user_computeOutput(self, parameters) -> TokenSwap:
+        #inputToken = get_value(get_inputToken(parameters))
+        #inputAmount = get_value(get_inputAmount(parameters))
+        #outputAmount = get_value(get_outputAmount(parameters))
+        #slippageProtection = get_value(get_slippageProtection(parameters))
+        #user = get_value(get_user(parameters))
+        return None
+        
     def sender_amountTokenIn_amountNativeIn_amountTokenOut_amountNativeOut_flashSwap(self, parameters) -> ArbitarySwap:
         #sender = get_value(get_sender(parameters))
         #amountTokenIn = get_value(get_amountTokenIn(parameters))
@@ -731,9 +754,15 @@ class SwapProcessor(EventProcessor):
         #inputToken = get_value(get_inputToken(parameters))
         
         return None
+    
+    def swapRouter(self, parameters) -> TokenSwap:
+        #swapRouter = get_value(get_swapRouter(parameters))
+        
+        return None
         
         
         
+
 
     # Updated to use simplified unknown protocols check
     def get_unknown_protocol_counts(self) -> Dict[str, int]:

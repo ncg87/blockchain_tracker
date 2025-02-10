@@ -15,6 +15,7 @@ get_topics = itemgetter("topics")
 get_type = itemgetter("type")
 get_inputs = itemgetter("inputs")
 get_address = itemgetter("address")
+get_log_index = itemgetter("logIndex")
 
 class EVMDecoder:
     def __init__(self, db_operator: DatabaseOperator, chain: str):
@@ -51,13 +52,17 @@ class EVMDecoder:
                             self.db_operator.sql.insert.evm.event(self.network, event_object)
                             self._event_signature_cache.set(event_signature, event_object)
                             break
-
+            
+            log_index = get_log_index(log)
+            
             if event_object:
                 decoded_log = self._decode_log(log, event_object)
             else:
                 decoded_log = self.decode_log_without_abi(log)
+            decoded_log["log_index"] = log_index
             return decoded_log
         
+
         except Exception as e:
             self.logger.error(f"Error decoding log for {self.network}: {e}", exc_info=True)
             return None

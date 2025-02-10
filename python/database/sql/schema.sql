@@ -312,6 +312,7 @@ CREATE TABLE IF NOT EXISTS evm_swaps (
     PRIMARY KEY (chain, transaction_hash, log_index)
 ) PARTITION BY LIST (chain);
 
+
 -- EVM Partitions
 CREATE TABLE IF NOT EXISTS evm_swaps_ethereum PARTITION OF evm_swaps FOR VALUES IN ('ethereum');
 CREATE TABLE IF NOT EXISTS evm_swaps_bnb PARTITION OF evm_swaps FOR VALUES IN ('bnb');
@@ -336,4 +337,42 @@ CREATE INDEX IF NOT EXISTS idx_evm_swaps_contract
 CREATE INDEX IF NOT EXISTS idx_evm_swaps_tokens 
     ON evm_swaps USING btree (token0_address, token1_address, chain);
 
+
+CREATE TABLE IF NOT EXISTS evm_syncs (
+    chain VARCHAR(20) NOT NULL,
+    contract_address VARCHAR(64) NOT NULL,
+    transaction_hash VARCHAR(128) NOT NULL,
+    log_index INT NOT NULL,
+    timestamp BIGINT NOT NULL,
+    reserve0 NUMERIC(78, 36) NOT NULL,
+    reserve1 NUMERIC(78, 36) NOT NULL,
+    token0_address VARCHAR(64) NOT NULL,
+    token1_address VARCHAR(64) NOT NULL,
+    token0_name VARCHAR(100),
+    token1_name VARCHAR(100),
+    token0_symbol VARCHAR(100),
+    token1_symbol VARCHAR(100),
+    factory_address VARCHAR(64),
+    name VARCHAR(100),
+    PRIMARY KEY (chain, transaction_hash, log_index)
+) PARTITION BY LIST (chain);
+
+
+CREATE TABLE IF NOT EXISTS evm_syncs_ethereum PARTITION OF evm_syncs FOR VALUES IN ('ethereum');
+CREATE TABLE IF NOT EXISTS evm_syncs_bnb PARTITION OF evm_syncs FOR VALUES IN ('bnb');
+CREATE TABLE IF NOT EXISTS evm_syncs_base PARTITION OF evm_syncs FOR VALUES IN ('base');
+CREATE TABLE IF NOT EXISTS evm_syncs_arbitrum PARTITION OF evm_syncs FOR VALUES IN ('arbitrum');
+CREATE TABLE IF NOT EXISTS evm_syncs_avalanche PARTITION OF evm_syncs FOR VALUES IN ('avalanche');
+CREATE TABLE IF NOT EXISTS evm_syncs_polygon PARTITION OF evm_syncs FOR VALUES IN ('polygon');
+CREATE TABLE IF NOT EXISTS evm_syncs_optimism PARTITION OF evm_syncs FOR VALUES IN ('optimism');
+CREATE TABLE IF NOT EXISTS evm_syncs_polygonzk PARTITION OF evm_syncs FOR VALUES IN ('polygonzk');
+
+
+
+CREATE INDEX IF NOT EXISTS idx_evm_syncs_timestamp 
+    ON evm_syncs USING brin (timestamp) WITH (pages_per_range = 128);
+CREATE INDEX IF NOT EXISTS idx_evm_syncs_tx 
+    ON evm_syncs USING btree (transaction_hash, chain);
+CREATE INDEX IF NOT EXISTS idx_evm_syncs_contract 
+    ON evm_syncs USING btree (contract_address, chain);
 

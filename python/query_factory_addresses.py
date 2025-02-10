@@ -115,10 +115,11 @@ class FactoryProcessor:
                 async def process_single_pair(pair_address):
                     while True:
                         try:
-                            await processor.process_contract(pair_address)
+                            await processor.log_processor.process_contract(pair_address)
                             self.db_operator.sql.insert.evm.contract_to_factory(chain, pair_address, factory_key)
                             return True
                         except Exception as e:
+
                             if "connection" in str(e).lower():
                                 logger.warning(f"Connection issue, retrying in 30s: {e}")
                                 await asyncio.sleep(30)

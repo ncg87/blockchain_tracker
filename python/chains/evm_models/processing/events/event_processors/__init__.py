@@ -1,3 +1,4 @@
 from .swap import SwapProcessor
+from .sync import SyncProcessor
 
-__all__ = ['SwapProcessor']
+__all__ = ['SwapProcessor', 'SyncProcessor']
