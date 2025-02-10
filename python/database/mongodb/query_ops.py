@@ -102,7 +102,7 @@ class MongoQueryOperations:
     def get_evm_transactions(self, network, block_number, decompress = True):
         try:
             self.logger.info(f"Retrieving transactions from {network} collection in MongoDB for block {block_number}")
-            collection = self.mongodb.get_collection(f"{network}Transactions")
+            collection = self.mongodb.get_collection(f"{network}_transactions")
             transactions = collection.find({"block_number": block_number})
             transaction_list = list(transactions)
             
@@ -130,7 +130,7 @@ class MongoQueryOperations:
     def get_recent_transactions(self, network, limit=10):
         try:
             self.logger.info(f"Retrieving recent transactions from {network} collection in MongoDB")
-            collection = self.mongodb.get_collection(f"{network}Transactions")
+            collection = self.mongodb.get_collection(f"{network}_transactions")
             transactions = collection.find().sort("timestamp", -1).limit(limit)
             transaction_list = list(transactions)
             if transaction_list:

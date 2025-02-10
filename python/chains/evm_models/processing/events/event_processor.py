@@ -1,7 +1,7 @@
 # Look to migrate this into Rust first, since it is simple but loads of data
 
 from typing import Dict, List
-from .event_processors import SwapProcessor
+from .event_processors import SwapProcessor, SyncProcessor
 from database import DatabaseOperator
 from operator import itemgetter
 import logging
@@ -30,6 +30,7 @@ class EventProcessor:
 
         return {
             "Swap": SwapProcessor(self.db_operator, self.chain),
+            "Sync": SyncProcessor(self.db_operator, self.chain),
         }
 
     async def process_events(self, events: List[Dict], tx_hash: str, timestamp: int):

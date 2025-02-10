@@ -68,3 +68,11 @@ INSERT_EVM_SWAP = """
     ON CONFLICT (chain, transaction_hash, log_index) DO NOTHING
 """
 
+INSERT_EVM_SYNC = """
+    INSERT INTO evm_syncs
+    (chain, contract_address, transaction_hash, log_index, timestamp, reserve0, reserve1, token0_address, token1_address, token0_name, token1_name, token0_symbol, token1_symbol, factory_address, name)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ON CONFLICT (chain, transaction_hash, log_index) DO NOTHING
+"""
+
+

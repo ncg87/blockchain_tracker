@@ -35,6 +35,11 @@ QUERY_EVM_EVENT_BY_CHAIN = """
     FROM evm_decoded_events
     WHERE chain = %s and signature_hash = %s;
 """
+QUERY_EVM_EVENT_BY_NAME = """
+    SELECT *
+    FROM evm_decoded_events
+    WHERE event_name = %s;
+"""
 
 
 

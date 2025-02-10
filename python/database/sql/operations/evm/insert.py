@@ -3,7 +3,7 @@ from ..base import BaseOperations
 from ...queries import (
     INSERT_EVM_TRANSACTIONS, INSERT_EVM_EVENTS, INSERT_EVM_CONTRACT_ABI,
     INSERT_EVM_SWAP_INFO, INSERT_EVM_TOKEN_INFO, INSERT_EVM_CONTRACT_TO_FACTORY,
-    INSERT_EVM_SWAP
+    INSERT_EVM_SWAP, INSERT_EVM_SYNC
 )
 from psycopg2.extras import execute_values
 import json
@@ -166,6 +166,36 @@ class EVMInsertOperations(BaseOperations):
             return True
         except Exception as e:
             self.db.logger.error(f"Error inserting EVM transaction swap for chain {chain}: {e}")
+            self.db.conn.rollback()
+            return False
+    
+    def sync(self, chain: str, sync_info, address: str, transaction_hash: str, log_index: int, timestamp: int) -> bool:
+        """
+        Insert or update an EVM transaction sync.
+        """
+        try:
+            self.db.cursor.execute(INSERT_EVM_SYNC, (
+                chain,
+                address,
+                transaction_hash,
+                log_index,
+                timestamp,
+                sync_info.reserve0,
+                sync_info.reserve1,
+                sync_info.token0_address,
+                sync_info.token1_address,
+                sync_info.token0_name,
+                sync_info.token1_name,
+                sync_info.token0_symbol,
+                sync_info.token1_symbol,
+                sync_info.factory_address,
+                sync_info.name
+            ))
+            self.db.conn.commit()
+            self.db.logger.info(f"Successfully inserted EVM sync - {address} - from {sync_info.token0_name} : {sync_info.reserve0} to {sync_info.token1_name} : {sync_info.reserve1} for chain {chain}.")
+            return True
+        except Exception as e:
+            self.db.logger.error(f"Error inserting EVM transaction sync for chain {chain}: {e}")
             self.db.conn.rollback()
             return False
 
