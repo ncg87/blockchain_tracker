@@ -49,17 +49,18 @@ async def main():
 
         # Initialize pipelines
         ethereum_pipeline = EthereumPipeline(sql_database, mongodb_database)
-        bnb_pipeline = BNBPipeline(sql_database, mongodb_database)
-        bitcoin_pipeline = BitcoinPipeline(sql_database, mongodb_database)
-        solana_pipeline = SolanaPipeline(sql_database, mongodb_database)
-        xrp_pipeline = XRPPipeline(sql_database, mongodb_database)
-        base_pipeline = BaseChainPipeline(sql_database, mongodb_database)
-        arbitrum_pipeline = ArbitrumPipeline(sql_database, mongodb_database)
-        polygon_pipeline = PolygonChainPipeline(sql_database, mongodb_database)
-        optimism_pipeline = OptimismChainPipeline(sql_database, mongodb_database)
-        avalanche_pipeline = AvalancheChainPipeline(sql_database, mongodb_database)
+        #bnb_pipeline = BNBPipeline(sql_database, mongodb_database)
+        #bitcoin_pipeline = BitcoinPipeline(sql_database, mongodb_database)
+        #solana_pipeline = SolanaPipeline(sql_database, mongodb_database)
+        #xrp_pipeline = XRPPipeline(sql_database, mongodb_database)
+        #base_pipeline = BaseChainPipeline(sql_database, mongodb_database)
+        #arbitrum_pipeline = ArbitrumPipeline(sql_database, mongodb_database)
+        #polygon_pipeline = PolygonChainPipeline(sql_database, mongodb_database)
+        #optimism_pipeline = OptimismChainPipeline(sql_database, mongodb_database)
+        #avalanche_pipeline = AvalancheChainPipeline(sql_database, mongodb_database)
         #polygonzk_pipeline = PolygonZKPipeline(sql_database, mongodb_database)
         #mantle_pipeline = MantlePipeline(sql_database, mongodb_database)
+
         #linea_pipeline = LineaPipeline(sql_database, mongodb_database)
         #zksync_pipeline = ZkSyncPipeline(sql_database, mongodb_database)
 
@@ -67,15 +68,15 @@ async def main():
         # Add pipelines to active list
         active_pipelines.extend([
             ethereum_pipeline,
-            bnb_pipeline,
-            base_pipeline,
-            bitcoin_pipeline,
-            xrp_pipeline,
-            arbitrum_pipeline,
-            polygon_pipeline,
-            optimism_pipeline,
-            avalanche_pipeline,
-            solana_pipeline,
+            #bnb_pipeline,
+            #base_pipeline,
+            #bitcoin_pipeline,
+            #xrp_pipeline,
+            #arbitrum_pipeline,
+            #polygon_pipeline,
+            #optimism_pipeline,
+            #avalanche_pipeline,
+            #solana_pipeline,
             #polygonzk_pipeline,
             #mantle_pipeline,
             #linea_pipeline,

@@ -10,14 +10,13 @@ class ClickHouseDB:
     ClickHouse Database class.
     """
 
-    def __init__(self, host=None, port=None, database=None, schema_file="clickhouse_schema.sql"):
+    def __init__(self, host='localhost', port=9000, database="blockchain_db", user="nicko", password="", schema_file="schema.sql"):
         """
         Initialize ClickHouse connection.
         """
-        self.host = host or Settings.CLICKHOUSE_HOST
-        self.port = port or Settings.CLICKHOUSE_PORT
-        self.database = database or Settings.CLICKHOUSE_DB
-        self.client = Client(host=self.host, port=self.port)
+        self.client = Client(**Settings.CLICKHOUSE_CONFIG)
+        self.database = database
+
 
         logger.info(f"Connected to ClickHouse at {self.host}:{self.port}")
 
@@ -25,8 +24,9 @@ class ClickHouseDB:
         self._create_database()
 
         # Apply schema if necessary
-        schema_path = os.path.join(os.path.dirname(__file__), schema_file)
-        self._apply_schema(schema_path)
+        schema_file = os.path.join(os.path.dirname(__file__), schema_file)
+        self._apply_schema(schema_file)
+
 
     def _create_database(self):
         """

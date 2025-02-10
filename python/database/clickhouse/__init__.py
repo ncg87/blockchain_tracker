@@ -1,6 +1,7 @@
 from .base import ClickHouseDB
-from .insert_ops import ClickHouseInsertOps
-from .query_ops import ClickHouseQueryOps
+from .insert_ops import ClickHouseInsertOperations
+from .query_ops import ClickHouseQueryOperations
+from .operator import ClickHouseOperator
 
-__all__ = ['ClickHouseDB', 'ClickHouseInsertOps', 'ClickHouseQueryOps']
+__all__ = ['ClickHouseDB', 'ClickHouseInsertOperations', 'ClickHouseQueryOperations', 'ClickHouseOperator']
 

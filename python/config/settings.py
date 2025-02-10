@@ -78,5 +78,19 @@ class Settings:
     NEO4J_DB_NAME = os.getenv('NEO4J_DB_NAME')
     NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD')
 
+    # CLICKHOUSE CONFIG
+    CLICKHOUSE_CONFIG = {
+        "host": os.getenv('CLICKHOUSE_HOST', 'localhost'),
+        "port": int(os.getenv('CLICKHOUSE_PORT', 9000)),
+        "database": os.getenv('CLICKHOUSE_DB', 'blockchain_db'),
+        "user": os.getenv('CLICKHOUSE_USER', 'default'),
+        "password": os.getenv('CLICKHOUSE_PASSWORD', ''),
+    }
+
+    # ARCTICDB CONFIG
+    ARCTICDB_HOST = os.getenv('ARCTICDB_HOST', 'localhost')
+    ARCTICDB_PORT = int(os.getenv('ARCTICDB_PORT', 27017))
+    ARCTICDB_DB = os.getenv('ARCTICDB_DB', 'blockchain_db')
+
 
 
