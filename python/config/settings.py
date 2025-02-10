@@ -85,12 +85,20 @@ class Settings:
         "database": os.getenv('CLICKHOUSE_DB', 'blockchain_db'),
         "user": os.getenv('CLICKHOUSE_USER', 'default'),
         "password": os.getenv('CLICKHOUSE_PASSWORD', ''),
+        "settings": {
+            "use_numpy": True
+        }
     }
 
     # ARCTICDB CONFIG
-    ARCTICDB_HOST = os.getenv('ARCTICDB_HOST', 'localhost')
-    ARCTICDB_PORT = int(os.getenv('ARCTICDB_PORT', 27017))
-    ARCTICDB_DB = os.getenv('ARCTICDB_DB', 'blockchain_db')
+    ARCTICDB_CONFIG = {
+        "host": os.getenv('ARCTICDB_HOST', 'localhost'),
+        "database": os.getenv('ARCTICDB_DB', 'blockchain_db'),
+        "lib_options": {
+            "dynamic_strings": True,
+            "force_strings": True
+        }
+    }
 
 
 

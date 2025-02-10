@@ -160,9 +160,14 @@ class EVMQueryOperations(BaseOperations):
                     token1_name=result.get('token1_name', None),
                     token0_address=result.get('token0_address', None),
                     token1_address=result.get('token1_address', None),
+                    token0_symbol=result.get('token0_symbol', None),
+                    token1_symbol=result.get('token1_symbol', None),
+                    token0_decimals=result.get('token0_decimals', None),
+                    token1_decimals=result.get('token1_decimals', None),
                     name=result.get('name', None)
                 )
             return None
+
         except Exception as e:
             self.db.logger.error(f"Error querying EVM swap for contract address {contract_address}: {e}")
             return None

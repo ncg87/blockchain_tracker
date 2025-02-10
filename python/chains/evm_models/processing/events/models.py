@@ -101,6 +101,7 @@ class TokenSync:
     token0_symbol: str
     token1_symbol: str
     factory_address: str
+    contract_address: str
     name: Optional[str] = None
     
 
@@ -115,7 +116,9 @@ class TokenSync:
                    token0_symbol = contract_info.token0_symbol,
                    token1_symbol = contract_info.token1_symbol,
                    factory_address = contract_info.factory,
+                   contract_address = contract_info.address,
                    name = contract_info.name)
+
 
 
 

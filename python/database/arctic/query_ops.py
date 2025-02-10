@@ -1,7 +1,9 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from .base import ArcticDB
 import logging
 import pandas as pd
+import numpy as np
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -85,3 +87,139 @@ class ArcticQueryOperations:
         except Exception as e:
             logger.error(f"Error getting symbols from library {library}: {e}")
             return []
+
+    def query_swaps_by_time(self, 
+                           start_time: Optional[Union[int, datetime, pd.Timestamp]] = None,
+                           end_time: Optional[Union[int, datetime, pd.Timestamp]] = None,
+                           pool_address: Optional[str] = None,
+                           chain: Optional[str] = None) -> Optional[pd.DataFrame]:
+        """
+        Query swap data within a specific time range.
+        
+        Args:
+            start_time: Start time (unix timestamp in seconds)
+            end_time: End time (unix timestamp in seconds)
+            pool_address: Optional pool contract address to filter by
+            chain: Optional chain to filter by (e.g., 'ethereum')
+            
+        Returns:
+            DataFrame containing swap data with unix timestamp index
+        """
+        try:
+            lib = self.db.get_library('dex_swaps')
+            symbols = lib.list_symbols()
+            
+            # Convert any datetime/timestamp inputs to unix timestamps
+            if isinstance(start_time, datetime):
+                start_time = int(start_time.timestamp())
+            elif isinstance(start_time, pd.Timestamp):
+                start_time = int(start_time.timestamp())
+                
+            if isinstance(end_time, datetime):
+                end_time = int(end_time.timestamp())
+            elif isinstance(end_time, pd.Timestamp):
+                end_time = int(end_time.timestamp())
+
+            # Filter symbols if chain or pool_address is specified
+            if chain or pool_address:
+                filtered_symbols = []
+                for symbol in symbols:
+                    if chain and chain not in symbol:
+                        continue
+                    if pool_address and pool_address not in symbol:
+                        continue
+                    filtered_symbols.append(symbol)
+                symbols = filtered_symbols
+
+            dfs = []
+            for symbol in symbols:
+                try:
+                    df = lib.read(symbol)
+                    if df is not None and not df.empty:
+                        # Convert index to unix timestamps if it isn't already
+                        if not np.issubdtype(df.index.dtype, np.integer):
+                            df.index = df.index.astype(np.int64) // 10**9
+                            
+                        # Apply time filters
+                        if start_time:
+                            df = df[df.index >= start_time]
+                        if end_time:
+                            df = df[df.index <= end_time]
+                        
+                        if not df.empty:
+                            dfs.append(df)
+                except Exception as e:
+                    logger.warning(f"Error reading symbol {symbol}: {e}")
+                    continue
+
+            if not dfs:
+                return None
+
+            # Combine all dataframes and sort by timestamp
+            result = pd.concat(dfs)
+            return result.sort_index()
+
+        except Exception as e:
+            logger.error(f"Error querying swaps by time: {e}")
+            return None
+
+    def query_exact_timestamp(self, 
+                            timestamp: Union[int, datetime, pd.Timestamp],
+                            pool_address: Optional[str] = None,
+                            chain: Optional[str] = None) -> Optional[pd.DataFrame]:
+        """
+        Query swap data at an exact timestamp.
+        
+        Args:
+            timestamp: The exact timestamp to query (unix timestamp in seconds)
+            pool_address: Optional pool contract address to filter by
+            chain: Optional chain to filter by
+            
+        Returns:
+            DataFrame containing swap data with unix timestamp index
+        """
+        try:
+            # Convert to unix timestamp if needed
+            if isinstance(timestamp, datetime):
+                ts = int(timestamp.timestamp())
+            elif isinstance(timestamp, pd.Timestamp):
+                ts = int(timestamp.timestamp())
+            else:
+                ts = int(timestamp)
+
+            # Query a small window around the timestamp
+            start_time = ts - 1  # 1 second before
+            end_time = ts + 1    # 1 second after
+            
+            df = self.query_swaps_by_time(
+                start_time=start_time,
+                end_time=end_time,
+                pool_address=pool_address,
+                chain=chain
+            )
+            
+            if df is None or df.empty:
+                return None
+                
+            # Get the exact timestamp or nearest available
+            exact_ts = df.index[df.index.get_indexer([ts], method='nearest')[0]]
+            return df.loc[[exact_ts]]
+
+        except Exception as e:
+            logger.error(f"Error querying exact timestamp: {e}")
+            return None
+
+    def read_symbol(self, lib, symbol, date_range=None):
+        try:
+            # Get the versioned item
+            data = lib.read(symbol, date_range=date_range)
+            
+            # Check if data exists and has content before accessing
+            if data is not None and hasattr(data, 'data') and not data.data.empty:
+                return data.data
+            else:
+                return None
+            
+        except Exception as e:
+            print(f"Error reading symbol {symbol}: {str(e)}")
+            return None

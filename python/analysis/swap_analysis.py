@@ -181,9 +181,9 @@ class DexAnalyzer:
             raise ValueError(f"Unsupported format: {format}")
         
     def price_from_to(self, fee: float, reserve_from: float, reserve_to: float) -> float:
-        return np.log(reserve_from * (1 - fee) / reserve_to)
+        return  - np.log(reserve_from * (1 - fee) / reserve_to)
     
 
     def price_to_from(self, fee: float, reserve_from: float, reserve_to: float) -> float:
-        return np.log(reserve_to * (1 - fee) / reserve_from)
+        return  - np.log(reserve_to * (1 - fee) / reserve_from)
     

@@ -10,23 +10,26 @@ class ClickHouseDB:
     ClickHouse Database class.
     """
 
-    def __init__(self, host='localhost', port=9000, database="blockchain_db", user="nicko", password="", schema_file="schema.sql"):
+    def __init__(self, schema_file="schema.sql"):
         """
         Initialize ClickHouse connection.
         """
-        self.client = Client(**Settings.CLICKHOUSE_CONFIG)
-        self.database = database
+        try:
+            self.config = Settings.CLICKHOUSE_CONFIG
+            self.client = Client(**self.config)
+            self.database = self.config["database"]
 
+            logger.info(f"Connected to ClickHouse at {self.config['host']}:{self.config['port']}")
 
-        logger.info(f"Connected to ClickHouse at {self.host}:{self.port}")
+            # Ensure database exists
+            self._create_database()
 
-        # Ensure database exists
-        self._create_database()
-
-        # Apply schema if necessary
-        schema_file = os.path.join(os.path.dirname(__file__), schema_file)
-        self._apply_schema(schema_file)
-
+            # Apply schema if necessary
+            schema_file = os.path.join(os.path.dirname(__file__), schema_file)
+            self._apply_schema(schema_file)
+        except Exception as e:
+            logger.error(f"Error connecting to ClickHouse: {e}")
+            raise
 
     def _create_database(self):
         """

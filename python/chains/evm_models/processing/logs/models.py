@@ -30,3 +30,13 @@ class EventSignature:
     indexed_inputs: List[bool]
     input_names: List[str]
     inputs: List[dict]
+@dataclass
+class TokenSync:
+    reserve0: float
+    reserve1: float
+    token0_address: str
+    token1_address: str
+    token0_symbol: str
+    token1_symbol: str
+    contract_address: str
+    dex: str

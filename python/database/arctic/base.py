@@ -8,16 +8,16 @@ class ArcticDB:
     """
     ArcticDB Database class using the new arcticdb package.
     """
-    def __init__(self, host=None, port=None, database="blockchain_data"):
+    def __init__(self, host=None, database="blockchain_data"):
         """
         Initialize ArcticDB connection.
         """
         try:
-            self.host = host or Settings.ARCTICDB_HOST
-            self.port = port or Settings.ARCTICDB_PORT
-            self.database = database
+            config = Settings.ARCTICDB_CONFIG
+            self.host = host or config["host"]
+            self.database = database or config["database"]
             
-            # Connect to ArcticDB using new syntax
+            # Connect to ArcticDB using LMDB storage
             self.store = Arctic(f"lmdb:///{self.database}")
             
             # Initialize libraries if they don't exist

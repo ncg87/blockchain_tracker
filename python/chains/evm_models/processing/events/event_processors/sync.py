@@ -97,10 +97,11 @@ class SyncProcessor(EventProcessor):
         priceAverage1 = get_value(get_priceAverage1(parameters))
 
         return ArbitarySync(
-            fictiveReserve0 = fictiveReserve0,
-            fictiveReserve1 = fictiveReserve1,
+            reserve0 = fictiveReserve0,
+            reserve1 = fictiveReserve1,
         )
         
+
 
 
 
