@@ -48,6 +48,13 @@ class BlockProcessor:
             # Insert block data
             self.db_operator.mongodb.insert.insert_block(block, self.chain, block_number, timestamp)
             
+            # Insert block timestamp using tuple format
+            self.db_operator.clickhouse.insert.block_timestamp(
+                self.chain,
+                timestamp,
+                block_number
+            )
+            
             block_hash = normalize_hex(get_hash(block))
             parent_hash = normalize_hex(get_parent_hash(block))
 

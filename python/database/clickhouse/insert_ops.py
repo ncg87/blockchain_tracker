@@ -12,54 +12,64 @@ class ClickHouseInsertOperations:
     def __init__(self, db: ClickHouseDB):
         self.db = db
 
-    async def insert_swaps(self, records: List[Dict]):
+    def block_timestamp(self, chain: str, timestamp: int, block_number: int):
         """
-        Insert swap records into ClickHouse.
+        Insert a single block timestamp record into ClickHouse.
+        
+        :param chain: Blockchain identifier string
+        :param timestamp: Unix timestamp as UInt32
+        :param block_number: Block number as UInt64
         """
         query = """
-        INSERT INTO blockchain_db.dex_swaps
-        (timestamp, chain, dex, factory_id, from_coin_symbol, from_coin_address, 
-         to_coin_symbol, to_coin_address, price_from)
+        INSERT INTO blockchain_db.block_timestamps
+        (chain, timestamp, block_number)
         VALUES
         """
         try:
-            # Convert records to tuples in the correct order
-            values = [
-                (
-                    r['timestamp'],
-                    r['chain'],
-                    r['dex'],
-                    r['factory_id'],
-                    r['from_coin_symbol'],
-                    r['from_coin_address'],
-                    r['to_coin_symbol'],
-                    r['to_coin_address'],
-                    r['price_from']
-                )
-                for r in records
-            ]
-            
-            await self.db.client.execute(query, values)
-            logger.info(f"Inserted {len(records)} swap records into ClickHouse")
+            self.db.client.execute(
+                query, 
+                [(chain, timestamp, block_number)],
+                settings={
+                    'async_insert': 1,
+                    'wait_for_async_insert': 0
+                }
+            )
+            logger.info(f"Queued block timestamp for chain {chain}, block {block_number}")
             return True
         except Exception as e:
-            logger.error(f"Error inserting swaps into ClickHouse: {e}")
+            logger.error(f"Error inserting block timestamp into ClickHouse: {e}")
             return False
 
-    def insert_bulk_swaps(self, swaps: List[Tuple[int, str, str, str, str, str, str, str, float]]):
+    def price_record(self, chain: str, records: List[Tuple]):
         """
-        Bulk insert swap transactions into ClickHouse.
+        Insert multiple price records into ClickHouse.
         
-        :param swaps: List of tuples (timestamp, chain, dex, factory_id, from_coin_symbol, from_coin_address, to_coin_symbol, to_coin_address, price_from)
+        :param chain: Blockchain identifier string
+        :param records: List of tuples with values in schema order:
+                       (chain, timestamp, factory_id, contract_id,
+                        from_coin_symbol, from_coin_address,
+                        to_coin_symbol, to_coin_address,
+                        price_from, reserve_from, reserve_to, fees)
         """
-        query = f"""
-        INSERT INTO {self.db.database}.dex_swaps
-        (timestamp, chain, dex, factory_id, from_coin_symbol, from_coin_address, to_coin_symbol, to_coin_address, price_from)
+        query = """
+        INSERT INTO blockchain_db.dex_prices
+        (chain, timestamp, factory_id, contract_id,
+         from_coin_symbol, from_coin_address,
+         to_coin_symbol, to_coin_address,
+         price_from, reserve_from, reserve_to, fees)
         VALUES
         """
         try:
-            self.db.client.execute(query, swaps)
-            logger.info(f"Inserted {len(swaps)} swap records into ClickHouse.")
+            self.db.client.execute(
+                query, 
+                records,
+                settings={
+                    'async_insert': 1,
+                    'wait_for_async_insert': 0
+                }
+            )
+            logger.info(f"Inserted {len(records)} price records for chain {chain}")
+            return True
         except Exception as e:
-            logger.error(f"Error inserting swaps: {e}")
-            raise
+            logger.error(f"Error inserting prices into ClickHouse: {e}")
+            return False

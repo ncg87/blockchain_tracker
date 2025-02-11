@@ -81,13 +81,10 @@ class Settings:
     # CLICKHOUSE CONFIG
     CLICKHOUSE_CONFIG = {
         "host": os.getenv('CLICKHOUSE_HOST', 'localhost'),
-        "port": int(os.getenv('CLICKHOUSE_PORT', 9000)),
+        "port": int(os.getenv('CLICKHOUSE_PORT', 8123)),
         "database": os.getenv('CLICKHOUSE_DB', 'blockchain_db'),
         "user": os.getenv('CLICKHOUSE_USER', 'default'),
         "password": os.getenv('CLICKHOUSE_PASSWORD', ''),
-        "settings": {
-            "use_numpy": True
-        }
     }
 
     # ARCTICDB CONFIG
