@@ -23,16 +23,20 @@ class BaseWebSocketHandler(ABC):
     async def connect(self):
         """
         Establish a WebSocket connection with retry logic.
+        Will keep retrying indefinitely unless shutting down.
         """
-        for attempt in range(self.retry_attempts):
+        attempt = 1
+        while not self.shutting_down:
             try:
                 self.connection = await websockets.connect(self.websocket_url)
                 self.logger.info(f"Connected to WebSocket: {self.network}")
                 return
             except Exception as e:
-                self.logger.error(f"Connection attempt {attempt + 1} failed: {e}")
+                self.logger.error(f"Connection attempt {attempt} failed: {e}")
+                if self.shutting_down:
+                    break
                 await asyncio.sleep(self.retry_delay)
-        raise ConnectionError("Max retries reached. Unable to connect to WebSocket.")
+                attempt += 1
 
     async def subscribe(self):
         """
