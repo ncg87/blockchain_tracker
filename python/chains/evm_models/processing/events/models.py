@@ -42,8 +42,8 @@ class TokenSwap(BaseTokenSwap):
         if not amount0In and amount1 > 0:
             amount1 *= -1
         # Scale the amounts by the decimals of the token
-        amount0 = amount0 / 10 ** contract_info.token0_decimals
-        amount1 = amount1 / 10 ** contract_info.token1_decimals
+        amount0 = amount0
+        amount1 = amount1
         
         
         # Want this to contain full data, need the contract info to contain the decimals and symbols etc.
@@ -65,8 +65,8 @@ class TokenSwap(BaseTokenSwap):
     @classmethod
     def from_token_info(cls, swap_info: BaseTokenSwap, token_0_info: dict, token_1_info: dict):
         
-        amount0 = swap_info.amount0 / 10 ** token_0_info.token0_decimals
-        amount1 = swap_info.amount1 / 10 ** token_1_info.token1_decimals
+        amount0 = swap_info.amount0
+        amount1 = swap_info.amount1
         return cls(amount0 = amount0, 
                    amount1 = amount1, 
                    isAmount0In = swap_info.isAmount0In,
@@ -107,8 +107,8 @@ class TokenSync:
 
     @classmethod
     def from_sync_info(cls, sync_info: ArbitarySync, contract_info):
-        return cls(reserve0 = sync_info.reserve0 / 10 ** contract_info.token0_decimals,
-                   reserve1 = sync_info.reserve1 / 10 ** contract_info.token1_decimals,
+        return cls(reserve0 = sync_info.reserve0,
+                   reserve1 = sync_info.reserve1,
                    token0_address = contract_info.token0_address,
                    token1_address = contract_info.token1_address,
                    token0_name = contract_info.token0_name,

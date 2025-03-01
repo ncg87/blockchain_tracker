@@ -48,12 +48,12 @@ async def main():
         mongodb_database = MongoDatabase()
 
         # Initialize pipelines
-        ethereum_pipeline = EthereumPipeline(sql_database, mongodb_database)
+        #ethereum_pipeline = EthereumPipeline(sql_database, mongodb_database)
         #bnb_pipeline = BNBPipeline(sql_database, mongodb_database)
         #bitcoin_pipeline = BitcoinPipeline(sql_database, mongodb_database)
         #solana_pipeline = SolanaPipeline(sql_database, mongodb_database)
         #xrp_pipeline = XRPPipeline(sql_database, mongodb_database)
-        #base_pipeline = BaseChainPipeline(sql_database, mongodb_database)
+        base_pipeline = BaseChainPipeline(sql_database, mongodb_database)
         #arbitrum_pipeline = ArbitrumPipeline(sql_database, mongodb_database)
         #polygon_pipeline = PolygonChainPipeline(sql_database, mongodb_database)
         #optimism_pipeline = OptimismChainPipeline(sql_database, mongodb_database)
@@ -67,9 +67,9 @@ async def main():
 
         # Add pipelines to active list
         active_pipelines.extend([
-            ethereum_pipeline,
+            #ethereum_pipeline,
             #bnb_pipeline,
-            #base_pipeline,
+            base_pipeline,
             #bitcoin_pipeline,
             #xrp_pipeline,
             #arbitrum_pipeline,
@@ -89,9 +89,9 @@ async def main():
         # Run all pipelines concurrently
         try:
             await asyncio.gather(
-                ethereum_pipeline.run(duration=duration),
+                #ethereum_pipeline.run(duration=duration),
                 #bnb_pipeline.run(duration=duration),
-                #base_pipeline.run(duration=duration),
+                base_pipeline.run(duration=duration),
                 #bitcoin_pipeline.run(duration=duration),
                 #solana_pipeline.run(duration=1200),
                 #xrp_pipeline.run(duration=duration),

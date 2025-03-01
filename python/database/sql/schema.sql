@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS blocks_polygonzk PARTITION OF blocks FOR VALUES IN ('
 CREATE TABLE IF NOT EXISTS blocks_zksync PARTITION OF blocks FOR VALUES IN ('zksync');
 CREATE TABLE IF NOT EXISTS blocks_mantle PARTITION OF blocks FOR VALUES IN ('mantle');
 CREATE TABLE IF NOT EXISTS blocks_linea PARTITION OF blocks FOR VALUES IN ('linea');
+CREATE TABLE IF NOT EXISTS blocks_tron PARTITION OF blocks FOR VALUES IN ('tron');
 
 -- Block-specific indexes
 CREATE INDEX IF NOT EXISTS idx_blocks_timestamp 
@@ -58,6 +59,7 @@ CREATE TABLE IF NOT EXISTS evm_transactions_polygonzk PARTITION OF evm_transacti
 CREATE TABLE IF NOT EXISTS evm_transactions_zksync PARTITION OF evm_transactions FOR VALUES IN ('zksync');
 CREATE TABLE IF NOT EXISTS evm_transactions_mantle PARTITION OF evm_transactions FOR VALUES IN ('mantle');
 CREATE TABLE IF NOT EXISTS evm_transactions_linea PARTITION OF evm_transactions FOR VALUES IN ('linea');
+CREATE TABLE IF NOT EXISTS evm_transactions_tron PARTITION OF evm_transactions FOR VALUES IN ('tron');
 
 
 
@@ -159,6 +161,7 @@ CREATE TABLE IF NOT EXISTS evm_decoded_events_polygonzk PARTITION OF evm_decoded
 CREATE TABLE IF NOT EXISTS evm_decoded_events_zksync PARTITION OF evm_decoded_events FOR VALUES IN ('zksync');
 CREATE TABLE IF NOT EXISTS evm_decoded_events_mantle PARTITION OF evm_decoded_events FOR VALUES IN ('mantle');
 CREATE TABLE IF NOT EXISTS evm_decoded_events_linea PARTITION OF evm_decoded_events FOR VALUES IN ('linea');
+CREATE TABLE IF NOT EXISTS evm_decoded_events_tron PARTITION OF evm_decoded_events FOR VALUES IN ('tron');
 
 
 CREATE INDEX IF NOT EXISTS idx_evm_events_signature 
@@ -185,7 +188,7 @@ CREATE TABLE IF NOT EXISTS evm_contract_abis_polygonzk PARTITION OF evm_contract
 CREATE TABLE IF NOT EXISTS evm_contract_abis_zksync PARTITION OF evm_contract_abis FOR VALUES IN ('zksync');
 CREATE TABLE IF NOT EXISTS evm_contract_abis_mantle PARTITION OF evm_contract_abis FOR VALUES IN ('mantle');
 CREATE TABLE IF NOT EXISTS evm_contract_abis_linea PARTITION OF evm_contract_abis FOR VALUES IN ('linea');
-
+CREATE TABLE IF NOT EXISTS evm_contract_abis_tron PARTITION OF evm_contract_abis FOR VALUES IN ('tron');
 
 
 -- EVM Contract ABIs Indexes
@@ -222,7 +225,7 @@ CREATE TABLE IF NOT EXISTS evm_swap_info_polygonzk PARTITION OF evm_swap_info FO
 CREATE TABLE IF NOT EXISTS evm_swap_info_zksync PARTITION OF evm_swap_info FOR VALUES IN ('zksync');
 CREATE TABLE IF NOT EXISTS evm_swap_info_mantle PARTITION OF evm_swap_info FOR VALUES IN ('mantle');
 CREATE TABLE IF NOT EXISTS evm_swap_info_linea PARTITION OF evm_swap_info FOR VALUES IN ('linea');
-
+CREATE TABLE IF NOT EXISTS evm_swap_info_tron PARTITION OF evm_swap_info FOR VALUES IN ('tron');
 
 
 -- For when we want to get all the swap info of a contract
@@ -256,7 +259,7 @@ CREATE TABLE IF NOT EXISTS evm_token_info_polygonzk PARTITION OF evm_token_info 
 CREATE TABLE IF NOT EXISTS evm_token_info_zksync PARTITION OF evm_token_info FOR VALUES IN ('zksync');
 CREATE TABLE IF NOT EXISTS evm_token_info_mantle PARTITION OF evm_token_info FOR VALUES IN ('mantle');
 CREATE TABLE IF NOT EXISTS evm_token_info_linea PARTITION OF evm_token_info FOR VALUES IN ('linea');
-
+CREATE TABLE IF NOT EXISTS evm_token_info_tron PARTITION OF evm_token_info FOR VALUES IN ('tron');
 
 CREATE INDEX IF NOT EXISTS idx_evm_token_info_address ON evm_token_info
     USING btree (contract_address, chain);
@@ -282,7 +285,7 @@ CREATE TABLE IF NOT EXISTS evm_contract_to_factory_polygonzk PARTITION OF evm_co
 CREATE TABLE IF NOT EXISTS evm_contract_to_factory_zksync PARTITION OF evm_contract_to_factory FOR VALUES IN ('zksync');
 CREATE TABLE IF NOT EXISTS evm_contract_to_factory_mantle PARTITION OF evm_contract_to_factory FOR VALUES IN ('mantle');
 CREATE TABLE IF NOT EXISTS evm_contract_to_factory_linea PARTITION OF evm_contract_to_factory FOR VALUES IN ('linea');
-
+CREATE TABLE IF NOT EXISTS evm_contract_to_factory_tron PARTITION OF evm_contract_to_factory FOR VALUES IN ('tron');
 
 
 -- Factory Indexes
@@ -325,7 +328,7 @@ CREATE TABLE IF NOT EXISTS evm_swaps_polygonzk PARTITION OF evm_swaps FOR VALUES
 CREATE TABLE IF NOT EXISTS evm_swaps_zksync PARTITION OF evm_swaps FOR VALUES IN ('zksync');
 CREATE TABLE IF NOT EXISTS evm_swaps_mantle PARTITION OF evm_swaps FOR VALUES IN ('mantle');
 CREATE TABLE IF NOT EXISTS evm_swaps_linea PARTITION OF evm_swaps FOR VALUES IN ('linea');
-
+CREATE TABLE IF NOT EXISTS evm_swaps_tron PARTITION OF evm_swaps FOR VALUES IN ('tron');
 
 
 CREATE INDEX IF NOT EXISTS idx_evm_swaps_timestamp 
@@ -365,8 +368,11 @@ CREATE TABLE IF NOT EXISTS evm_syncs_arbitrum PARTITION OF evm_syncs FOR VALUES 
 CREATE TABLE IF NOT EXISTS evm_syncs_avalanche PARTITION OF evm_syncs FOR VALUES IN ('avalanche');
 CREATE TABLE IF NOT EXISTS evm_syncs_polygon PARTITION OF evm_syncs FOR VALUES IN ('polygon');
 CREATE TABLE IF NOT EXISTS evm_syncs_optimism PARTITION OF evm_syncs FOR VALUES IN ('optimism');
+CREATE TABLE IF NOT EXISTS evm_syncs_mantle PARTITION OF evm_syncs FOR VALUES IN ('mantle');
+CREATE TABLE IF NOT EXISTS evm_syncs_linea PARTITION OF evm_syncs FOR VALUES IN ('linea');
 CREATE TABLE IF NOT EXISTS evm_syncs_polygonzk PARTITION OF evm_syncs FOR VALUES IN ('polygonzk');
-
+CREATE TABLE IF NOT EXISTS evm_syncs_zksync PARTITION OF evm_syncs FOR VALUES IN ('zksync');
+CREATE TABLE IF NOT EXISTS evm_syncs_tron PARTITION OF evm_syncs FOR VALUES IN ('tron');
 
 
 CREATE INDEX IF NOT EXISTS idx_evm_syncs_timestamp 

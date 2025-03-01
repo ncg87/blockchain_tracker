@@ -2,13 +2,24 @@ import asyncio
 import sys
 from database import SQLDatabase, MongoDatabase
 from chains.ethereum import EthereumPipeline
+from chains.base import BaseChainPipeline
+from chains.bnb import BNBPipeline
+from chains.arbitrum import ArbitrumPipeline
+from chains.polygon import PolygonChainPipeline
+from chains.avalanche import AvalancheChainPipeline
+from chains.optimism import OptimismChainPipeline
 import logging
 from datetime import datetime
 import os
 
-def setup_logging(end_block: int, block_count: int):
+def setup_logging(chain: str, end_block: int, block_count: int):
     """
     Setup logging to both file and console with timestamp-based filename.
+    
+    Args:
+        chain (str): Name of the blockchain
+        end_block (int): The ending block number
+        block_count (int): Number of blocks to fetch
     
     Returns:
         str: Path to the log file
@@ -20,7 +31,7 @@ def setup_logging(end_block: int, block_count: int):
     
     # Create timestamp-based filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_filename = f"historical_blocks_{end_block}_to_{end_block-block_count+1}_{timestamp}.log"
+    log_filename = f"{chain}_historical_blocks_{end_block}_to_{end_block-block_count+1}_{timestamp}.log"
     log_filepath = os.path.join(logs_dir, log_filename)
     
     # Configure logging
@@ -35,11 +46,12 @@ def setup_logging(end_block: int, block_count: int):
     
     return log_filepath
 
-async def fetch_historical_blocks(end_block: int, block_count: int):
+async def fetch_historical_blocks(chain: str, end_block: int, block_count: int):
     """
-    Fetch historical Ethereum data for a specified number of blocks.
+    Fetch historical blockchain data for a specified number of blocks.
     
     Args:
+        chain (str): Name of the blockchain to fetch data from
         end_block (int): The ending block number
         block_count (int): Number of blocks to fetch backwards from end_block
     """
@@ -51,10 +63,24 @@ async def fetch_historical_blocks(end_block: int, block_count: int):
         sql_db = SQLDatabase()
         mongodb = MongoDatabase()
         
-        # Initialize pipeline
-        pipeline = EthereumPipeline(sql_db, mongodb)
+        # Initialize pipeline based on chain
+        pipeline_map = {
+            'ethereum': EthereumPipeline,
+            'base': BaseChainPipeline,
+            'bnb': BNBPipeline,
+            'arbitrum': ArbitrumPipeline,
+            'polygon': PolygonChainPipeline,
+            'avalanche': AvalancheChainPipeline,
+            'optimism': OptimismChainPipeline
+        }
         
-        logger.info(f"Starting historical fetch job")
+        if chain not in pipeline_map:
+            raise ValueError(f"Unsupported chain: {chain}")
+            
+        PipelineClass = pipeline_map[chain]
+        pipeline = PipelineClass(sql_db, mongodb)
+        
+        logger.info(f"Starting historical fetch job for {chain}")
         logger.info(f"Fetching {block_count} blocks from {start_block} to {end_block}")
         
         # Run the historical pipeline
@@ -70,19 +96,21 @@ async def fetch_historical_blocks(end_block: int, block_count: int):
 
 def parse_args():
     """Parse and validate command line arguments"""
-    if len(sys.argv) != 3:
-        print("Usage: python fetch_historical_ethereum_blocks.py END_BLOCK BLOCK_COUNT")
-        print("Example: python fetch_historical_ethereum_blocks.py 19000000 1000")
+    if len(sys.argv) != 4:
+        print("Usage: python fetch_historical_blocks.py CHAIN END_BLOCK BLOCK_COUNT")
+        print("Example: python fetch_historical_blocks.py ethereum 19000000 1000")
+        print("Supported chains: ethereum, base, bnb, arbitrum, polygon")
         sys.exit(1)
     
     try:
-        end_block = int(sys.argv[1])
-        block_count = int(sys.argv[2])
+        chain = sys.argv[1].lower()
+        end_block = int(sys.argv[2])
+        block_count = int(sys.argv[3])
         
         if end_block < 0 or block_count <= 0:
             raise ValueError("Block numbers must be positive")
             
-        return end_block, block_count
+        return chain, end_block, block_count
     
     except ValueError as e:
         logger.error(f"Invalid arguments: {e}")
@@ -90,14 +118,14 @@ def parse_args():
 
 if __name__ == "__main__":
     # Parse arguments first
-    end_block, block_count = parse_args()
+    chain, end_block, block_count = parse_args()
     
     # Setup logging
-    log_file = setup_logging(end_block, block_count)
+    log_file = setup_logging(chain, end_block, block_count)
     logger = logging.getLogger(__name__)
     
     logger.info(f"Log file created at: {log_file}")
-    logger.info(f"Script started with parameters: end_block={end_block}, block_count={block_count}")
+    logger.info(f"Script started with parameters: chain={chain}, end_block={end_block}, block_count={block_count}")
     
     # Run the async function
-    asyncio.run(fetch_historical_blocks(end_block, block_count)) 
+    asyncio.run(fetch_historical_blocks(chain, end_block, block_count)) 

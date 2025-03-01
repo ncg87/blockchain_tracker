@@ -1,7 +1,7 @@
 # Look to migrate this into Rust first, since it is simple but loads of data
 
 from typing import Dict, List
-from .event_processors import SwapProcessor, SyncProcessor
+from .event_processors import SwapProcessor, SyncProcessor, SetCustomFeeProcessor
 from database import DatabaseOperator
 from operator import itemgetter
 import logging
@@ -10,12 +10,13 @@ import asyncio
 import numpy as np
 from time import time
 import math
-
+from decimal import Decimal, getcontext
 
 
 get_event = itemgetter('event')
 get_parameters = itemgetter('parameters')
 get_type = itemgetter('type')
+get_log_index = itemgetter('log_index')
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +28,14 @@ class EventProcessor:
         self.logger = logger
         self.batch_size = 1000
         self.logger.info("EventProcessor initialized")
+        getcontext().prec = 78
 
     def load_event_mapping(self):
 
         return {
             "Swap": SwapProcessor(self.db_operator, self.chain),
             "Sync": SyncProcessor(self.db_operator, self.chain),
+            "SetCustomFee": SetCustomFeeProcessor(self.db_operator, self.chain),
         }
 
     async def process_events(self, events: List[Dict], tx_hash: str, timestamp: int):
@@ -75,7 +78,7 @@ class EventProcessor:
             event_name = get_event(event)
             if event_name not in self.event_mapping:
                 return None
-                
+            log_index = get_log_index(event)
             signature = self.get_signature(event)
             processor = self.event_mapping[event_name]
             processed_event = processor.process_event(event, signature, tx_hash, index, timestamp)
@@ -85,7 +88,7 @@ class EventProcessor:
             
             # Handle sync events directly
             if event_name == "Sync":
-                await self.handle_sync_event(processed_event, timestamp)
+                await self.handle_sync_event(processed_event, timestamp, log_index)
                 
             return processed_event
             
@@ -99,27 +102,28 @@ class EventProcessor:
         types = tuple(get_type(v) for v in get_parameters(event).values())
         return _keccak(text=name + '(' + _join(types) + ')').hex()
 
-    async def handle_sync_event(self, sync, timestamp: int):
+    async def handle_sync_event(self, sync, timestamp: int, log_index: int):
         """Process a sync event and insert price records"""
         try:
-            if sync.factory_address not in FEE_MAP:
-                return
-                
-            fee = FEE_MAP[sync.factory_address]
+            fee = 0.003  # fee as float
+
+            # Convert reserves to float for calculation
+            reserve0 = float(sync.reserve0)
+            reserve1 = float(sync.reserve1)
 
             # Create tuples for both directions matching schema order
             records = [
-                (self.chain, timestamp, sync.factory_address, sync.contract_address,
+                (self.chain, timestamp, log_index, sync.factory_address, sync.contract_address,
                  sync.token0_symbol, sync.token0_address,
                  sync.token1_symbol, sync.token1_address,
-                 self.calculate_price(fee, sync.reserve0, sync.reserve1),
-                 float(sync.reserve0), float(sync.reserve1), fee),
+                 self.calculate_price(fee, reserve0, reserve1),  # Now returns float
+                 int(sync.reserve0), int(sync.reserve1), fee),
                 
-                (self.chain, timestamp, sync.factory_address, sync.contract_address,
+                (self.chain, timestamp, log_index, sync.factory_address, sync.contract_address,
                  sync.token1_symbol, sync.token1_address,
                  sync.token0_symbol, sync.token0_address,
-                 self.calculate_price(fee, sync.reserve1, sync.reserve0),
-                 float(sync.reserve1), float(sync.reserve0), fee)
+                 self.calculate_price(fee, reserve1, reserve0),  # Now returns float
+                 int(sync.reserve1), int(sync.reserve0), fee)
             ]
             
             # Insert both records at once
@@ -129,11 +133,11 @@ class EventProcessor:
             self.logger.error(f"Error inserting prices into ClickHouse: {e}")
 
     def calculate_price(self, fee: float, reserve_from: float, reserve_to: float) -> float:
-        """Calculate price using standard math instead of numpy"""
+        """Calculate price using standard math with floating point numbers"""
         try:
             if reserve_to == 0:
                 return 0.0
-            return - math.log(reserve_from * (1 - fee) / reserve_to)
+            return -math.log(float(reserve_from) * (1 - float(fee))) / float(reserve_to)
         except (ValueError, ZeroDivisionError):
             return 0.0
 

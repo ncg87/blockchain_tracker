@@ -11,12 +11,15 @@ __pycache__/
 *.log.*
 *.log.*.*
 *.log.*.*.*
+*.pkl
 *.log.*.*.*.*
 *.log.*.*.*.*.*
 block_examples
 *.json
 *.db
+*.zip
 *.db.*
+*.txt
 *.db-journal
 run.bat
 python/notebooks/*

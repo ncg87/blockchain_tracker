@@ -3,6 +3,7 @@ from config import Settings
 import requests
 import json
 from web3 import Web3
+from web3.middleware import ExtraDataToPOAMiddleware
 
 class AvalancheChainQuerier(EVMQuerier):
     """
@@ -14,6 +15,7 @@ class AvalancheChainQuerier(EVMQuerier):
             http_endpoint=Settings.AVALANCHE_ENDPOINT,
             ws_endpoint=Settings.AVALANCHE_WEBSOCKET_ENDPOINT
         )
+        self.w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
     async def get_contract_abi(self, contract_address):
         """

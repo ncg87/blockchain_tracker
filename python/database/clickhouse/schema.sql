@@ -10,21 +10,21 @@ CREATE TABLE IF NOT EXISTS blockchain_db.dex_prices
 (
     chain LowCardinality(String),
     timestamp UInt32,
+    log_index UInt32,
     factory_id String,
     contract_id String,
     from_coin_symbol LowCardinality(String),
     from_coin_address String,
     to_coin_symbol LowCardinality(String),
     to_coin_address String,
-    price_from Float64,
-    reserve_from Float64,
-    reserve_to Float64,
-    fees Float64
+    price_from Decimal(38, 18),
+    reserve_from Decimal(42,8),
+    reserve_to Decimal(42,8),
+    fees Decimal(10, 4)
 ) ENGINE = MergeTree()
 PARTITION BY chain
-ORDER BY (chain, factory_id, timestamp, contract_id, from_coin_address, to_coin_address);
+ORDER BY (chain, factory_id, timestamp, log_index, contract_id, from_coin_address, to_coin_address);
 
--- Create new materialized view with fixed column references
 CREATE MATERIALIZED VIEW IF NOT EXISTS blockchain_db.dex_prices_filled
 ENGINE = MergeTree()
 PARTITION BY chain
@@ -32,7 +32,6 @@ ORDER BY (chain, factory_id, contract_id, from_coin_address, to_coin_address, ti
 POPULATE
 AS 
 WITH 
-    -- Get distinct trading pairs to ensure complete coverage
     distinct_pairs AS (
         SELECT DISTINCT 
             chain,
@@ -43,6 +42,7 @@ WITH
             to_coin_symbol,
             to_coin_address
         FROM blockchain_db.dex_prices
+        WHERE chain = 'base'
     )
 SELECT 
     bt.timestamp as timestamp,
@@ -53,10 +53,10 @@ SELECT
     distinct_pairs.from_coin_address as from_coin_address,
     distinct_pairs.to_coin_symbol as to_coin_symbol,
     distinct_pairs.to_coin_address as to_coin_address,
-    argMaxIf(dp_actual.price_from, dp_actual.timestamp, dp_actual.timestamp <= bt.timestamp) AS price_from,
-    argMaxIf(dp_actual.reserve_from, dp_actual.timestamp, dp_actual.timestamp <= bt.timestamp) AS reserve_from,
-    argMaxIf(dp_actual.reserve_to, dp_actual.timestamp, dp_actual.timestamp <= bt.timestamp) AS reserve_to,
-    argMaxIf(dp_actual.fees, dp_actual.timestamp, dp_actual.timestamp <= bt.timestamp) AS fees
+    CAST(argMaxIf(dp_actual.price_from, (dp_actual.timestamp, dp_actual.log_index), dp_actual.timestamp <= bt.timestamp) AS Decimal(18,8)) AS price_from,
+    CAST(argMaxIf(dp_actual.reserve_from, (dp_actual.timestamp, dp_actual.log_index), dp_actual.timestamp <= bt.timestamp) AS Decimal(42,8)) AS reserve_from,
+    CAST(argMaxIf(dp_actual.reserve_to, (dp_actual.timestamp, dp_actual.log_index), dp_actual.timestamp <= bt.timestamp) AS Decimal(42,8)) AS reserve_to,
+    argMaxIf(dp_actual.fees, (dp_actual.timestamp, dp_actual.log_index), dp_actual.timestamp <= bt.timestamp) AS fees
 FROM blockchain_db.block_timestamps bt
 CROSS JOIN distinct_pairs
 LEFT JOIN blockchain_db.dex_prices dp_actual
@@ -73,4 +73,4 @@ GROUP BY
     distinct_pairs.from_coin_address,
     distinct_pairs.to_coin_symbol,
     distinct_pairs.to_coin_address
-HAVING price_from IS NOT NULL  -- Optional: remove rows where we never had a price
+HAVING price_from IS NOT NULL;

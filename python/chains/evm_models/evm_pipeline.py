@@ -121,6 +121,6 @@ class EVMPipeline(BasePipeline):
             self.logger.error(f"Error during pipeline cleanup: {e}", exc_info=True)
         finally:
             # Force exit if cleanup takes too long
-            if time.time() - self._shutdown_start > 65:  # 5 second grace period
+            if time.time() - self._shutdown_flag > 65:  # 5 second grace period
                 self.logger.warning("Forcing exit after timeout")
                 os._exit(0)

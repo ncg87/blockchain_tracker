@@ -29,7 +29,13 @@ class LogProcessor:
         
         # Initialize cache
         self.abi_cache = BoundedCache(max_size=1000, ttl_hours=24)
+        
+        self.aerodrome_factory_contract = self.get_aerodrome_factory_contract()
 
+    def get_aerodrome_factory_contract(self):
+        abi = self.db_operator.sql.query.evm.query_contract_abi(self.chain, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da')
+        return self.querier.get_contract('0x420DD381b31aEf6683db6B902084cB0FFECe40Da', json.loads(abi['abi']))
+    
     async def process(self, block_number: int, timestamp: int, logs: list):
         """Process logs for a given block"""
         try:
@@ -174,6 +180,12 @@ class LogProcessor:
             
             self.db_operator.sql.insert.evm.contract_to_factory(self.chain, address, factory)
             
+            if factory == '0x420DD381b31aEf6683db6B902084cB0FFECe40Da':
+                is_stable = contract.functions.stable().call()
+                fee = self.aerodrome_factory_contract.functions.getFee(address, is_stable).call()
+            else:
+                fee = None
+                is_stable = False
             swap_methods = ['token0', 'token1', 'factory']
             for method in swap_methods:
                 if not hasattr(contract.functions, method):

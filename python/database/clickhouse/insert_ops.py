@@ -46,14 +46,14 @@ class ClickHouseInsertOperations:
         
         :param chain: Blockchain identifier string
         :param records: List of tuples with values in schema order:
-                       (chain, timestamp, factory_id, contract_id,
+                       (chain, timestamp, log_index, factory_id, contract_id,
                         from_coin_symbol, from_coin_address,
                         to_coin_symbol, to_coin_address,
                         price_from, reserve_from, reserve_to, fees)
         """
         query = """
         INSERT INTO blockchain_db.dex_prices
-        (chain, timestamp, factory_id, contract_id,
+        (chain, timestamp, log_index, factory_id, contract_id,
          from_coin_symbol, from_coin_address,
          to_coin_symbol, to_coin_address,
          price_from, reserve_from, reserve_to, fees)
@@ -66,6 +66,7 @@ class ClickHouseInsertOperations:
                 settings={
                     'async_insert': 1,
                     'wait_for_async_insert': 0
+                    
                 }
             )
             logger.info(f"Inserted {len(records)} price records for chain {chain}")
