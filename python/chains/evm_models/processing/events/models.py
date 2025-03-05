@@ -118,6 +118,14 @@ class TokenSync:
                    factory_address = contract_info.factory,
                    contract_address = contract_info.address,
                    name = contract_info.name)
+        
+@dataclass
+class CustomFee:
+    pool: str
+    fee: int
+
+
+
 
 
 

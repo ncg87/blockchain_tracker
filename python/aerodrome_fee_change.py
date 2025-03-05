@@ -4,10 +4,67 @@ from datetime import datetime, timedelta
 import pandas as pd
 from config import Settings
 import time
+import asyncio
+from chains.evm_models.evm_processor import LogProcessor
+from chains.evm_models.evm_processor import EventProcessor
+from database import DatabaseOperator, SQLDatabase, MongoDatabase
+
 # Connect to Base network
 # You'll need an RPC endpoint - use a service like Alchemy, Infura, QuickNode, etc.
 RPC_URL = Settings.BASE_ENDPOINT
 web3 = Web3(Web3.HTTPProvider(RPC_URL))
+
+# Create a simple querier class to work with LogProcessor
+class SimpleQuerier:
+    def __init__(self, web3_instance):
+        self.web3 = web3_instance
+        
+    def get_transaction_receipt(self, tx_hash):
+        return self.web3.eth.get_transaction_receipt(tx_hash)
+        
+    def get_contract(self, address, abi):
+        return self.web3.eth.contract(address=address, abi=abi)
+        
+    # Add any other methods that might be needed by LogProcessor
+    def get_block_logs(self, block_number):
+        return self.web3.eth.get_logs({'blockNumber': block_number})
+        
+    def get_transaction(self, tx_hash):
+        return self.web3.eth.get_transaction(tx_hash)
+
+# Aerodrome Factory ABI - include the minimum needed (at least the SetCustomFee event)
+AERODROME_FACTORY_ABI = [
+    {
+        "anonymous": False,
+        "inputs": [
+            {
+                "indexed": True,
+                "internalType": "address",
+                "name": "pool",
+                "type": "address"
+            },
+            {
+                "indexed": False,
+                "internalType": "uint256",
+                "name": "fee",
+                "type": "uint256"
+            }
+        ],
+        "name": "SetCustomFee",
+        "type": "event"
+    }
+    # Add other needed ABI elements here
+]
+
+# Initialize the database operator and processors
+db_operator = DatabaseOperator(SQLDatabase(), MongoDatabase())
+querier = SimpleQuerier(web3)
+
+# Create a mock ABI object if LogProcessor expects one
+abi = {"abi": json.dumps(AERODROME_FACTORY_ABI)}
+
+log_processor = LogProcessor(db_operator, querier, "base")
+event_processor = EventProcessor(db_operator, "base")
 
 # Check connection
 if not web3.is_connected():

@@ -1,3 +1,7 @@
+DROP TABLE IF EXISTS blockchain_db.block_timestamps;
+DROP TABLE IF EXISTS blockchain_db.dex_prices;  
+DROP TABLE IF EXISTS blockchain_db.dex_prices_filled;
+
 CREATE TABLE IF NOT EXISTS blockchain_db.block_timestamps
 (
     chain String,

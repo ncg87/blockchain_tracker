@@ -30,7 +30,7 @@ class LogProcessor:
         # Initialize cache
         self.abi_cache = BoundedCache(max_size=1000, ttl_hours=24)
         
-        self.aerodrome_factory_contract = self.get_aerodrome_factory_contract()
+        #self.aerodrome_factory_contract = self.get_aerodrome_factory_contract()
 
     def get_aerodrome_factory_contract(self):
         abi = self.db_operator.sql.query.evm.query_contract_abi(self.chain, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da')
